@@ -23,7 +23,7 @@
 - [x] Console selection dropdown
 - [x] iPhone model selection
 - [x] Auto-load appropriate control templates
-- [x] Canvas dimension adjustment
+- [x] Canvas dimension adjustment (1:1 pixel perfect)
 
 ### Control Mapping System
 - [x] Drag-and-drop control placement
@@ -42,6 +42,7 @@
 
 ### File Management
 - [x] Image upload with validation
+- [x] JSON preview and copy functionality
 - [ ] Local project storage
 - [ ] ZIP generation
 - [ ] Export with proper extensions
@@ -86,6 +87,9 @@
 - [x] Add 8-point resize handles for controls
 - [x] Create JSON preview panel with syntax highlighting
 - [x] Add control deletion with keyboard and UI support
+- [x] Implement 1:1 pixel perfect canvas display
+- [x] Add responsive canvas sizing
+- [x] Create DeviceInfo component for display metrics
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

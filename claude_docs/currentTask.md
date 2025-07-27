@@ -1,11 +1,12 @@
 # Current Task
 
 ## Current Objectives
-- Implement drag-and-drop functionality for control placement
-- Add resize handles for control zones
-- Create JSON preview functionality
-- Implement control editing and deletion
-- Fix any duplicate key warnings in console/device lists
+- ✅ Implement drag-and-drop functionality for control placement
+- ✅ Add resize handles for control zones
+- ✅ Create JSON preview functionality
+- ✅ Implement control editing and deletion
+- Implement grid snapping for precise control placement
+- Create custom button functionality
 
 ## Context
 - React + TypeScript + Vite project successfully initialized
@@ -49,18 +50,24 @@
 - ✅ Created control deletion (Delete key + X button)
 - ✅ Built JSON preview panel with collapsible view
 - ✅ Added copy-to-clipboard for JSON output
+- ✅ Implemented 1:1 pixel perfect canvas rendering
+- ✅ Removed scaling - canvas shows exact device dimensions
+- ✅ Added DeviceInfo component showing device specs
+- ✅ Made canvas container adapt to content size
 
 ## Next Steps
 1. ✅ Implement drag-and-drop functionality for placed controls
 2. ✅ Add resize handles for control zones
 3. ✅ Implement control deletion functionality
 4. ✅ Add JSON preview functionality
-5. Add grid snapping for control placement
+5. Add grid snapping for control placement (Next Priority)
 6. Implement custom button creation
 7. Create local storage persistence
 8. Implement ZIP file generation and export
 9. Add control property editing (extended edges)
 10. Implement landscape orientation support
+11. Add undo/redo functionality
+12. Implement keyboard shortcuts for common actions
 
 ## Related Tasks from Project Roadmap
 - Continuing "Core Features" implementation
