@@ -1,5 +1,6 @@
 // Control palette component for displaying available buttons
 import React, { useState, useEffect } from 'react';
+import { ControlMapping } from '../types';
 
 interface Button {
   name: string;
@@ -9,7 +10,7 @@ interface Button {
 
 interface ControlPaletteProps {
   consoleType: string;
-  onControlSelect: (control: any) => void;
+  onControlSelect: (control: ControlMapping) => void;
 }
 
 const ControlPalette: React.FC<ControlPaletteProps> = ({ 
@@ -49,7 +50,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
 
   const handleButtonClick = (button: Button) => {
     // Create a control object with default properties
-    const control = {
+    const control: ControlMapping = {
       inputs: [button.identifier],
       frame: {
         x: 50, // Default position
@@ -131,7 +132,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
         <button
           onClick={() => {
             // Create custom button
-            const customControl = {
+            const customControl: ControlMapping = {
               inputs: ['custom'],
               frame: {
                 x: 50,

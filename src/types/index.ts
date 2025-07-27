@@ -7,11 +7,11 @@ export interface Console {
 }
 
 export interface Device {
-  identifier: string;
-  logicalResolution: {
-    width: number;
-    height: number;
-  };
+  model: string;
+  logicalWidth: number;
+  logicalHeight: number;
+  physicalWidth: number;
+  physicalHeight: number;
   ppi: number;
 }
 

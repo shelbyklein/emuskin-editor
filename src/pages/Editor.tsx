@@ -1,6 +1,6 @@
 // Main editor page for creating emulator skins
 import React, { useState, useEffect } from 'react';
-import { Console, Device } from '../types';
+import { Console, Device, ControlMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
@@ -13,8 +13,21 @@ const Editor: React.FC = () => {
   const [skinName, setSkinName] = useState<string>('');
   const [skinIdentifier, setSkinIdentifier] = useState<string>('com.playcase.default.skin');
   const [uploadedImage, setUploadedImage] = useState<{ file: File; url: string } | null>(null);
-  const [controls, setControls] = useState<any[]>([]);
+  const [controls, setControls] = useState<ControlMapping[]>([]);
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
+
+  // Add debug logging to check data
+  useEffect(() => {
+    console.log('Consoles data:', consoles);
+    console.log('Devices data:', devices);
+    // Check for duplicate keys
+    const consoleKeys = consoles.map(c => c.shortName);
+    const deviceKeys = devices.map(d => d.model);
+    console.log('Console keys:', consoleKeys);
+    console.log('Device keys:', deviceKeys);
+    console.log('Duplicate console keys:', consoleKeys.filter((item, index) => consoleKeys.indexOf(item) !== index));
+    console.log('Duplicate device keys:', deviceKeys.filter((item, index) => deviceKeys.indexOf(item) !== index));
+  }, [consoles, devices]);
 
   // Load console and device data
   useEffect(() => {
@@ -25,8 +38,19 @@ const Editor: React.FC = () => {
           fetch('/assets/iphone-sizes.json')
         ]);
         
+        if (!consolesRes.ok || !devicesRes.ok) {
+          throw new Error('Failed to load configuration files');
+        }
+        
         const consolesData = await consolesRes.json();
         const devicesData = await devicesRes.json();
+        
+        // Check for duplicate models (debugging)
+        const deviceModels = devicesData.map((d: Device) => d.model);
+        const duplicates = deviceModels.filter((item: string, index: number) => deviceModels.indexOf(item) !== index);
+        if (duplicates.length > 0) {
+          console.warn('Duplicate device models found:', duplicates);
+        }
         
         setConsoles(consolesData);
         setDevices(devicesData);
@@ -41,8 +65,15 @@ const Editor: React.FC = () => {
   // Update selected device data when device changes
   useEffect(() => {
     if (selectedDevice && devices.length > 0) {
-      const device = devices.find(d => d.identifier === selectedDevice);
+      const device = devices.find(d => d.model === selectedDevice);
       setSelectedDeviceData(device || null);
+      
+      // Log if device not found
+      if (!device && selectedDevice) {
+        console.warn(`Device model "${selectedDevice}" not found in device list`);
+      }
+    } else {
+      setSelectedDeviceData(null);
     }
   }, [selectedDevice, devices]);
 
@@ -50,13 +81,13 @@ const Editor: React.FC = () => {
     setUploadedImage({ file, url: previewUrl });
   };
 
-  const handleControlsUpdate = (newControls: any[]) => {
+  const handleControlsUpdate = (newControls: ControlMapping[]) => {
     setControls(newControls);
   };
 
-  const handleControlSelect = (control: any) => {
+  const handleControlSelect = (control: ControlMapping) => {
     // Add new control to the list
-    setControls([...controls, { ...control, id: Date.now() }]);
+    setControls([...controls, control]);
   };
 
   return (
@@ -101,19 +132,21 @@ const Editor: React.FC = () => {
             <label htmlFor="console" className="block text-sm font-medium text-gray-700">
               Console System
             </label>
-            <select
+            <input
               id="console"
+              list="console-list"
               value={selectedConsole}
               onChange={(e) => setSelectedConsole(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="">Select a console</option>
+              placeholder="Type to search consoles..."
+            />
+            <datalist id="console-list">
               {consoles.map((console) => (
                 <option key={console.shortName} value={console.shortName}>
                   {console.console}
                 </option>
               ))}
-            </select>
+            </datalist>
           </div>
 
           {/* Device Selection */}
@@ -121,19 +154,19 @@ const Editor: React.FC = () => {
             <label htmlFor="device" className="block text-sm font-medium text-gray-700">
               iPhone Model
             </label>
-            <select
+            <input
               id="device"
+              list="device-list"
               value={selectedDevice}
               onChange={(e) => setSelectedDevice(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="">Select a device</option>
+              placeholder="Type to search devices..."
+            />
+            <datalist id="device-list">
               {devices.map((device) => (
-                <option key={device.identifier} value={device.identifier}>
-                  {device.identifier}
-                </option>
+                <option key={device.model} value={device.model} />
               ))}
-            </select>
+            </datalist>
           </div>
         </div>
       </div>

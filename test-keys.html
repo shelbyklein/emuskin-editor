@@ -1,0 +1,67 @@
+<\!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test React Keys</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <p>Open browser console to check for key warnings</p>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function TestComponent() {
+            const [consoles, setConsoles] = useState([]);
+            const [devices, setDevices] = useState([]);
+
+            useEffect(() => {
+                // Load data
+                fetch('/assets/gameTypeIdentifiers.json')
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Loaded consoles:', data);
+                        setConsoles(data);
+                    });
+                
+                fetch('/assets/iphone-sizes.json')
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Loaded devices:', data);
+                        setDevices(data);
+                    });
+            }, []);
+
+            return (
+                <div>
+                    <h2>Console Select</h2>
+                    <select>
+                        <option key="default-console" value="">Select a console</option>
+                        {consoles.map((console) => (
+                            <option key={console.shortName} value={console.shortName}>
+                                {console.console}
+                            </option>
+                        ))}
+                    </select>
+
+                    <h2>Device Select</h2>
+                    <select>
+                        <option key="default-device" value="">Select a device</option>
+                        {devices.map((device) => (
+                            <option key={device.model} value={device.model}>
+                                {device.model}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<TestComponent />, document.getElementById('root'));
+    </script>
+</body>
+</html>
+EOF < /dev/null

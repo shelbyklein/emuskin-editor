@@ -31,6 +31,7 @@
 - [ ] Resize handles for zones
 - [ ] Grid snapping
 - [ ] Multi-touch support
+- [x] Control addition from palette to canvas
 
 ### Custom Controls
 - [ ] Custom button creator
@@ -75,6 +76,8 @@
 - [x] Implement ImageUploader component for background images
 - [x] Create ControlPalette component for button selection
 - [x] Add control placement functionality to Editor
+- [x] Implement debug logging for data verification
+- [x] Add control selection from palette to canvas functionality
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

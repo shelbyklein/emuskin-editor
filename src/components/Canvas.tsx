@@ -1,19 +1,19 @@
 // Canvas component for visual skin editing
 import React, { useRef, useEffect, useState } from 'react';
-import { Device } from '../types';
+import { Device, ControlMapping } from '../types';
 
 interface CanvasProps {
   device: Device | null;
   backgroundImage: string | null;
-  controls: any[]; // Will be typed properly when we implement controls
-  onControlUpdate: (controls: any[]) => void;
+  controls: ControlMapping[];
+  onControlUpdate: (controls: ControlMapping[]) => void;
 }
 
 const Canvas: React.FC<CanvasProps> = ({ 
   device, 
   backgroundImage, 
   controls, 
-  onControlUpdate
+  onControlUpdate: _onControlUpdate
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,7 +21,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [scale, setScale] = useState(1);
   
   // TODO: Will be used for drag and drop
-  void onControlUpdate;
+  // onControlUpdate will be used when implementing drag functionality
 
   // Calculate canvas dimensions based on device
   useEffect(() => {
@@ -31,9 +31,9 @@ const Canvas: React.FC<CanvasProps> = ({
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    // Use device logical dimensions
-    const deviceWidth = device.logicalResolution.width;
-    const deviceHeight = device.logicalResolution.height;
+    // Use device logical dimensions with safety checks
+    const deviceWidth = device?.logicalWidth || 390;
+    const deviceHeight = device?.logicalHeight || 844;
     
     // Calculate scale to fit container while maintaining aspect ratio
     const scaleX = containerWidth / deviceWidth;
@@ -124,10 +124,10 @@ const Canvas: React.FC<CanvasProps> = ({
       ctx.strokeStyle = '#3b82f6';
       ctx.lineWidth = 2;
       
-      const x = control.frame.x * scale;
-      const y = control.frame.y * scale;
-      const width = control.frame.width * scale;
-      const height = control.frame.height * scale;
+      const x = (control.frame?.x || 0) * scale;
+      const y = (control.frame?.y || 0) * scale;
+      const width = (control.frame?.width || 50) * scale;
+      const height = (control.frame?.height || 50) * scale;
       
       ctx.fillRect(x, y, width, height);
       ctx.strokeRect(x, y, width, height);
@@ -137,8 +137,11 @@ const Canvas: React.FC<CanvasProps> = ({
       ctx.font = `${12 * scale}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      const label = Array.isArray(control.inputs) 
+        ? control.inputs[0] || 'Control'
+        : control.inputs || 'Control';
       ctx.fillText(
-        control.inputs?.[0] || 'Control', 
+        label, 
         x + width / 2, 
         y + height / 2
       );
