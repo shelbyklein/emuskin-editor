@@ -20,14 +20,14 @@
 ## Key Features Breakdown
 
 ### System & Device Selection
-- [ ] Console selection dropdown
-- [ ] iPhone model selection
-- [ ] Auto-load appropriate control templates
-- [ ] Canvas dimension adjustment
+- [x] Console selection dropdown
+- [x] iPhone model selection
+- [x] Auto-load appropriate control templates
+- [x] Canvas dimension adjustment
 
 ### Control Mapping System
 - [ ] Drag-and-drop control placement
-- [ ] Control zone visualization
+- [x] Control zone visualization
 - [ ] Resize handles for zones
 - [ ] Grid snapping
 - [ ] Multi-touch support
@@ -39,7 +39,7 @@
 - [ ] Timing configuration
 
 ### File Management
-- [ ] Image upload with validation
+- [x] Image upload with validation
 - [ ] Local project storage
 - [ ] ZIP generation
 - [ ] Export with proper extensions
@@ -71,6 +71,10 @@
 - [x] Build Editor page with console/device selection
 - [x] Set up TypeScript type definitions
 - [x] Move JSON assets to public folder
+- [x] Create Canvas component for visual editing
+- [x] Implement ImageUploader component for background images
+- [x] Create ControlPalette component for button selection
+- [x] Add control placement functionality to Editor
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

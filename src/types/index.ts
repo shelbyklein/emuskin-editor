@@ -1,8 +1,9 @@
 // Type definitions for the emulator skin generator
 
 export interface Console {
-  identifier: string;
-  name: string;
+  console: string;
+  gameTypeIdentifier: string;
+  shortName: string;
 }
 
 export interface Device {

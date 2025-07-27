@@ -13,7 +13,10 @@ emuskin-generator/
 │   └── vite.svg
 ├── src/
 │   ├── components/     # Reusable UI components
-│   │   └── Layout.tsx  # Main app layout
+│   │   ├── Canvas.tsx      # Visual editing canvas
+│   │   ├── ControlPalette.tsx  # Button selection palette
+│   │   ├── ImageUploader.tsx   # Background image upload
+│   │   └── Layout.tsx      # Main app layout
 │   ├── pages/          # Page components
 │   │   ├── Editor.tsx  # Main editor interface
 │   │   ├── Settings.tsx
@@ -40,10 +43,10 @@ emuskin-generator/
 
 ### Implemented Component Structure
 - **Editor Components**
-  - ControlMapper: Main visual editing interface
-  - ImageUploader: Handles skin image uploads
-  - JsonPreview: Toggle between visual and JSON view
-  - Toolbar: Control selection and tools
+  - Canvas: Visual editing surface with device-specific dimensions
+  - ImageUploader: Drag-and-drop image upload with validation
+  - ControlPalette: Dynamic button palette based on console selection
+  - Layout: Main app structure with responsive navigation
   
 - **File Management**
   - ProjectSaver: Local storage management
@@ -76,11 +79,14 @@ emuskin-generator/
 - `console-aspect-ratios.json`: Display ratios
 - `default_config.json`: JSON template structure
 
-### Planned Dependencies
-- Frontend framework (TBD)
-- JSZip for file generation
-- Canvas/SVG library for rendering
-- Touch gesture library
+### Installed Dependencies
+- React 18 with TypeScript
+- Vite for build tooling
+- Tailwind CSS for styling
+- React Router for navigation
+- JSZip for file generation (installed)
+- react-dnd for drag-and-drop (installed)
+- @use-gesture/react for touch support (installed)
 
 ## Recent Significant Changes
 - Initial project setup completed
@@ -99,6 +105,11 @@ emuskin-generator/
 - ✅ Editor page with console/device selection implemented
 - ✅ Type definitions for core data structures added
 - ✅ JSON assets moved to public folder for runtime access
+- ✅ Canvas component renders with device-specific dimensions
+- ✅ ImageUploader supports drag-and-drop with file validation
+- ✅ ControlPalette dynamically loads system-specific buttons
+- ✅ Basic control visualization on canvas implemented
+- ✅ Controls can be added to canvas from palette
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

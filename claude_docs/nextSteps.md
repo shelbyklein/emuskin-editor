@@ -1,46 +1,46 @@
 # Proposed Next Steps
 
-## Immediate Actions (Today)
+## Completed Actions
 
-### 1. Initialize React Project with Vite
-```bash
-npm create vite@latest . -- --template react-ts
-npm install
-```
+### ✅ Project Initialization
+- React project created with Vite and TypeScript
+- All core dependencies installed
+- Project structure established
+- Tailwind CSS configured
+- Basic routing implemented
 
-### 2. Install Core Dependencies
-```bash
-# Essential packages
-npm install -D tailwindcss postcss autoprefixer
-npm install jszip react-router-dom
-npm install -D @types/react @types/react-dom
+### ✅ Core Components Created
+- Canvas component with device-specific rendering
+- ImageUploader with drag-and-drop support
+- ControlPalette with dynamic button loading
+- Layout with responsive navigation
+- Editor page with integrated components
 
-# UI/Interaction libraries
-npm install react-dnd react-dnd-touch-backend
-npm install @use-gesture/react
-```
+## Immediate Next Steps
 
-### 3. Set Up Project Structure
-Create the following folders:
-- `src/components/` - React components
-- `src/hooks/` - Custom hooks
-- `src/utils/` - Helper functions
-- `src/types/` - TypeScript interfaces
-- `src/contexts/` - React contexts
-- `src/pages/` - Page components
-- `public/assets/` - Move JSON files here
+### 1. Implement Drag-and-Drop Controls
+- Set up react-dnd providers
+- Make control palette items draggable
+- Make canvas a drop target
+- Handle control positioning on drop
 
-### 4. Configure Development Environment
-- Initialize Tailwind CSS
-- Set up ESLint and Prettier
-- Configure TypeScript paths
-- Set up basic routing
+### 2. Add Control Manipulation
+- Resize handles for control zones
+- Click to select controls
+- Delete selected controls
+- Edit control properties (size, extended edges)
 
-## Week 1 Goals (As per plan.md)
-1. ✅ Project setup and documentation
-2. Create basic UI layout
-3. Implement system/device selection
-4. Set up canvas rendering system
+### 3. JSON Generation & Preview
+- Create JSON structure based on controls
+- Toggle between visual and JSON view
+- Validate JSON structure
+- Live preview updates
+
+### 4. Export Functionality
+- Generate proper JSON file
+- Package with uploaded images
+- Create ZIP file with JSZip
+- Rename to .deltaskin/.gammaskin
 
 ## Development Workflow
 1. Start with mobile layout first
@@ -54,10 +54,16 @@ Create the following folders:
 - Test on multiple mobile devices/sizes
 - Focus on touch interaction testing
 
+## Current Week Goals (Week 2)
+1. ✅ Basic UI layout created
+2. ✅ System/device selection implemented
+3. ✅ Canvas rendering system set up
+4. ⏳ Drag-and-drop control placement (in progress)
+5. ⏳ Control manipulation features
+
 ## Next Session Focus
-After project initialization:
-1. Create main layout component
-2. Implement mobile navigation
-3. Create system selector dropdown
-4. Create device selector dropdown
-5. Set up basic routing structure
+1. Complete drag-and-drop implementation
+2. Add control selection and editing
+3. Implement JSON preview functionality
+4. Start work on export features
+5. Add local storage for project persistence

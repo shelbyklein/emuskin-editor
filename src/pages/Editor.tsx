@@ -1,6 +1,9 @@
 // Main editor page for creating emulator skins
 import React, { useState, useEffect } from 'react';
 import { Console, Device } from '../types';
+import ImageUploader from '../components/ImageUploader';
+import Canvas from '../components/Canvas';
+import ControlPalette from '../components/ControlPalette';
 
 const Editor: React.FC = () => {
   const [consoles, setConsoles] = useState<Console[]>([]);
@@ -9,6 +12,9 @@ const Editor: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<string>('');
   const [skinName, setSkinName] = useState<string>('');
   const [skinIdentifier, setSkinIdentifier] = useState<string>('com.playcase.default.skin');
+  const [uploadedImage, setUploadedImage] = useState<{ file: File; url: string } | null>(null);
+  const [controls, setControls] = useState<any[]>([]);
+  const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
 
   // Load console and device data
   useEffect(() => {
@@ -31,6 +37,27 @@ const Editor: React.FC = () => {
 
     loadData();
   }, []);
+
+  // Update selected device data when device changes
+  useEffect(() => {
+    if (selectedDevice && devices.length > 0) {
+      const device = devices.find(d => d.identifier === selectedDevice);
+      setSelectedDeviceData(device || null);
+    }
+  }, [selectedDevice, devices]);
+
+  const handleImageUpload = (file: File, previewUrl: string) => {
+    setUploadedImage({ file, url: previewUrl });
+  };
+
+  const handleControlsUpdate = (newControls: any[]) => {
+    setControls(newControls);
+  };
+
+  const handleControlSelect = (control: any) => {
+    // Add new control to the list
+    setControls([...controls, { ...control, id: Date.now() }]);
+  };
 
   return (
     <div className="space-y-6">
@@ -82,8 +109,8 @@ const Editor: React.FC = () => {
             >
               <option value="">Select a console</option>
               {consoles.map((console) => (
-                <option key={console.identifier} value={console.identifier}>
-                  {console.name}
+                <option key={console.shortName} value={console.shortName}>
+                  {console.console}
                 </option>
               ))}
             </select>
@@ -111,13 +138,44 @@ const Editor: React.FC = () => {
         </div>
       </div>
 
+      {/* Image Upload Section */}
+      {selectedConsole && selectedDevice && !uploadedImage && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Skin Image</h3>
+          <ImageUploader onImageUpload={handleImageUpload} />
+        </div>
+      )}
+
+      {/* Control Palette */}
+      {selectedConsole && selectedDevice && uploadedImage && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <ControlPalette 
+            consoleType={selectedConsole}
+            onControlSelect={handleControlSelect}
+          />
+        </div>
+      )}
+
       {/* Canvas Area */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Design Canvas</h3>
-        <div className="bg-gray-100 rounded-lg flex items-center justify-center" style={{ height: '600px' }}>
-          <p className="text-gray-500">
-            Select a console and device to begin designing your skin
-          </p>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Design Canvas</h3>
+          {uploadedImage && (
+            <button
+              onClick={() => setUploadedImage(null)}
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Change Image
+            </button>
+          )}
+        </div>
+        <div style={{ height: '600px' }}>
+          <Canvas 
+            device={selectedDeviceData}
+            backgroundImage={uploadedImage?.url || null}
+            controls={controls}
+            onControlUpdate={handleControlsUpdate}
+          />
         </div>
       </div>
     </div>
