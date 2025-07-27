@@ -1,21 +1,44 @@
 # Codebase Summary
 
 ## Project Structure Overview
-This is a mobile-first web application for creating custom emulator skin files. The project is currently in the planning/setup phase.
+This is a mobile-first web application for creating custom emulator skin files. The project is now in active development with React + TypeScript + Vite.
 
 ## Key Components and Their Interactions
 
 ### Current Structure
 ```
 emuskin-generator/
-├── assets/              # Configuration data files
+├── public/              
+│   ├── assets/         # JSON configuration files
+│   └── vite.svg
+├── src/
+│   ├── components/     # Reusable UI components
+│   │   └── Layout.tsx  # Main app layout
+│   ├── pages/          # Page components
+│   │   ├── Editor.tsx  # Main editor interface
+│   │   ├── Settings.tsx
+│   │   └── About.tsx
+│   ├── types/          # TypeScript definitions
+│   │   └── index.ts    # Core type interfaces
+│   ├── hooks/          # Custom React hooks (empty)
+│   ├── utils/          # Helper functions (empty)
+│   ├── contexts/       # React contexts (empty)
+│   ├── App.tsx         # Main app with routing
+│   ├── main.tsx        # Entry point
+│   └── index.css       # Tailwind CSS directives
+├── assets/              # Original configuration files
 ├── claude_docs/         # Project documentation
 ├── plan.md             # Detailed project plan
 ├── CLAUDE.md           # AI assistant instructions
-└── README.md           # Project readme
+├── README.md           # Project readme
+├── package.json        # Dependencies and scripts
+├── tailwind.config.js  # Tailwind configuration
+├── postcss.config.js   # PostCSS configuration
+├── vite.config.ts      # Vite configuration
+└── tsconfig.json       # TypeScript configuration
 ```
 
-### Planned Component Structure
+### Implemented Component Structure
 - **Editor Components**
   - ControlMapper: Main visual editing interface
   - ImageUploader: Handles skin image uploads
@@ -68,6 +91,14 @@ emuskin-generator/
 - Technology stack finalized: React + TypeScript + Vite
 - Detailed 6-week development plan created
 - All claude_docs updated to current state
+- ✅ React project initialized with Vite and TypeScript
+- ✅ Core dependencies installed (Tailwind CSS, React Router, JSZip, react-dnd, use-gesture)
+- ✅ Project folder structure created
+- ✅ Basic routing implemented with React Router
+- ✅ Layout component with mobile navigation created
+- ✅ Editor page with console/device selection implemented
+- ✅ Type definitions for core data structures added
+- ✅ JSON assets moved to public folder for runtime access
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

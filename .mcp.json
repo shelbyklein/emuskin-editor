@@ -5,8 +5,8 @@
         "args": ["duckduckgo-mcp-server"]
         },
     "puppeteer": {
-        "command": "puppeteer-mcp-server",
-        "args": [],
+        "command": "npx",
+        "args": ["-y", "puppeteer-mcp-server"],
         "env": {}
         }
     }

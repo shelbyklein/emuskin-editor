@@ -1,0 +1,42 @@
+[
+  {
+    "console": "GameBoy (Color)",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.gbc",
+    "shortName": "gbc"
+  },
+  {
+    "console": "GameBoy Advance",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.gba",
+    "shortName": "gba"
+  },
+  {
+    "console": "Nintendo DS",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.ds",
+    "shortName": "nds"
+  },
+  {
+    "console": "Nintendo Entertainment System",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.nes",
+    "shortName": "nes"
+  },
+  {
+    "console": "Super Nintendo Entertainment System",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.snes",
+    "shortName": "snes"
+  },
+  {
+    "console": "Nintendo 64",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.n64",
+    "shortName": "n64"
+  },
+  {
+    "console": "Sega Genesis (Beta)",
+    "gameTypeIdentifier": "com.rileytestut.delta.game.genesis",
+    "shortName": "sg"
+  },
+  {
+    "console": "Sony Playstation",
+    "gameTypeIdentifier": "com.Spookysoft.gamma.game.ps1",
+    "shortName": "ps1"
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "name": "",
+  "identifier": "com.playcase.default.skin",
+  "gameTypeIdentifier": "",
+  "debug": false,
+  "representations": {
+    "iphone": {
+      "edgeToEdge": {
+        "portrait": {
+          "assets": {},
+          "items": [],
+          "screens": [],
+          "mappingSize": {
+            "width": 0,
+            "height": 0
+          },
+          "extendedEdges": { 
+            "top": 0,
+            "bottom": 5,
+            "left": 5,
+            "right": 5
+          },
+          "menuInsets": {}
+        }
+      }
+    }
+  }
+}
