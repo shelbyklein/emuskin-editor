@@ -26,12 +26,13 @@
 - [x] Canvas dimension adjustment
 
 ### Control Mapping System
-- [ ] Drag-and-drop control placement
+- [x] Drag-and-drop control placement
 - [x] Control zone visualization
-- [ ] Resize handles for zones
+- [x] Resize handles for zones
 - [ ] Grid snapping
 - [ ] Multi-touch support
 - [x] Control addition from palette to canvas
+- [x] Control deletion functionality
 
 ### Custom Controls
 - [ ] Custom button creator
@@ -81,6 +82,10 @@
 - [x] Implement React Context for global state management
 - [x] Add canvas state management context
 - [x] Improve component structure and type safety
+- [x] Implement drag-and-drop for control repositioning
+- [x] Add 8-point resize handles for controls
+- [x] Create JSON preview panel with syntax highlighting
+- [x] Add control deletion with keyboard and UI support
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

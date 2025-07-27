@@ -45,9 +45,10 @@ emuskin-generator/
 
 ### Implemented Component Structure
 - **Editor Components**
-  - Canvas: Visual editing surface with device-specific dimensions
+  - Canvas: Visual editing surface with drag-and-drop and resize functionality
   - ImageUploader: Drag-and-drop image upload with validation
   - ControlPalette: Dynamic button palette based on console selection
+  - JsonPreview: Collapsible JSON output with copy functionality
   - Layout: Main app structure with responsive navigation
   
 - **File Management**
@@ -120,6 +121,12 @@ emuskin-generator/
 - ✅ CanvasContext implemented for canvas-specific state (controls, image)
 - ✅ All components updated to use context-based state
 - ✅ State management centralized for better data flow
+- ✅ Canvas rewritten with HTML elements for interactive controls
+- ✅ Drag-and-drop repositioning implemented with boundary constraints
+- ✅ 8-point resize handles added with minimum size constraints
+- ✅ Control deletion via Delete key and X button
+- ✅ JSON preview panel shows live configuration updates
+- ✅ Visual feedback for selected/hovered controls
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

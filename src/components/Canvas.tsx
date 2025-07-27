@@ -1,6 +1,7 @@
 // Canvas component with draggable and resizable controls
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Device, ControlMapping } from '../types';
+import DeviceInfo from './DeviceInfo';
 
 interface CanvasProps {
   device: Device | null;
@@ -62,24 +63,72 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Calculate canvas dimensions based on device
   useEffect(() => {
-    if (!device || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+    if (!device) return;
 
     const deviceWidth = device.logicalWidth || 390;
     const deviceHeight = device.logicalHeight || 844;
     
-    const scaleX = containerWidth / deviceWidth;
-    const scaleY = containerHeight / deviceHeight;
-    const newScale = Math.min(scaleX, scaleY, 0.8);
+    // Calculate scale based on viewport and device aspect ratio
+    // Use viewport width for responsive scaling
+    const viewportWidth = window.innerWidth;
+    let maxCanvasWidth = 400; // Default for desktop
+    
+    // Responsive max width based on viewport
+    if (viewportWidth < 640) { // Mobile
+      maxCanvasWidth = viewportWidth - 80; // Leave some padding
+    } else if (viewportWidth < 1024) { // Tablet
+      maxCanvasWidth = Math.min(500, viewportWidth - 200);
+    } else { // Desktop
+      maxCanvasWidth = 450;
+    }
+    
+    const maxCanvasHeight = window.innerHeight - 400; // Leave room for UI
+    
+    const scaleX = maxCanvasWidth / deviceWidth;
+    const scaleY = maxCanvasHeight / deviceHeight;
+    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
 
     setScale(newScale);
     setCanvasSize({
       width: deviceWidth * newScale,
       height: deviceHeight * newScale
     });
+  }, [device]);
+
+  // Add resize observer for responsive scaling
+  useEffect(() => {
+    if (!device) return;
+
+    const handleResize = () => {
+      const deviceWidth = device.logicalWidth || 390;
+      const deviceHeight = device.logicalHeight || 844;
+      
+      const viewportWidth = window.innerWidth;
+      let maxCanvasWidth = 400;
+      
+      if (viewportWidth < 640) {
+        maxCanvasWidth = viewportWidth - 80;
+      } else if (viewportWidth < 1024) {
+        maxCanvasWidth = Math.min(500, viewportWidth - 200);
+      } else {
+        maxCanvasWidth = 450;
+      }
+      
+      const maxCanvasHeight = window.innerHeight - 400;
+      
+      const scaleX = maxCanvasWidth / deviceWidth;
+      const scaleY = maxCanvasHeight / deviceHeight;
+      const newScale = Math.min(scaleX, scaleY, 1);
+
+      setScale(newScale);
+      setCanvasSize({
+        width: deviceWidth * newScale,
+        height: deviceHeight * newScale
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [device]);
 
   // Handle mouse down on control
@@ -303,7 +352,7 @@ const Canvas: React.FC<CanvasProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg p-4"
+      className="w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg py-8"
     >
       {device ? (
         <div className="relative">
@@ -434,8 +483,13 @@ const Canvas: React.FC<CanvasProps> = ({
             })}
           </div>
 
+          {/* Device info */}
+          <div className="mt-4">
+            <DeviceInfo device={device} scale={scale} />
+          </div>
+          
           {/* Info panel */}
-          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>• Click and drag controls to reposition</p>
             <p>• Drag corner/edge handles to resize</p>
             <p>• Click a control to select, then press Delete to remove</p>

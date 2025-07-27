@@ -214,14 +214,12 @@ const Editor: React.FC = () => {
             </button>
           )}
         </div>
-        <div style={{ height: '600px' }}>
-          <Canvas 
-            device={selectedDeviceData}
-            backgroundImage={uploadedImage?.url || null}
-            controls={controls}
-            onControlUpdate={handleControlsUpdate}
-          />
-        </div>
+        <Canvas 
+          device={selectedDeviceData}
+          backgroundImage={uploadedImage?.url || null}
+          controls={controls}
+          onControlUpdate={handleControlsUpdate}
+        />
       </div>
 
       {/* JSON Preview */}
