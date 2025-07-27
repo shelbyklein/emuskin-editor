@@ -6,7 +6,9 @@ import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
+import ProjectManager from '../components/ProjectManager';
 import { useEditor } from '../contexts/EditorContext';
+import { useProject } from '../contexts/ProjectContext';
 
 const Editor: React.FC = () => {
   const [consoles, setConsoles] = useState<Console[]>([]);
@@ -20,6 +22,51 @@ const Editor: React.FC = () => {
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
   const { settings } = useEditor();
+  const { currentProject, saveProject } = useProject();
+
+  // Load project data when current project changes
+  useEffect(() => {
+    if (currentProject) {
+      setSkinName(currentProject.name);
+      setSkinIdentifier(currentProject.identifier);
+      setControls(currentProject.controls);
+      if (currentProject.console) {
+        setSelectedConsole(currentProject.console.shortName);
+      }
+      if (currentProject.device) {
+        setSelectedDevice(currentProject.device.model);
+      }
+      if (currentProject.backgroundImage && currentProject.backgroundImage.url) {
+        // Note: We can't restore the File object from localStorage, only the URL
+        // The user will need to re-upload if they want to change the image
+        setUploadedImage({
+          file: new File([], currentProject.backgroundImage.fileName || 'image'),
+          url: currentProject.backgroundImage.url
+        });
+      }
+    }
+  }, [currentProject]);
+
+  // Auto-save when data changes
+  useEffect(() => {
+    if (currentProject) {
+      const timer = setTimeout(() => {
+        saveProject({
+          name: skinName,
+          identifier: skinIdentifier,
+          console: selectedConsoleData,
+          device: selectedDeviceData,
+          controls,
+          backgroundImage: uploadedImage ? {
+            fileName: uploadedImage.file.name,
+            url: uploadedImage.url
+          } : null
+        });
+      }, 1000); // Debounce saves by 1 second
+
+      return () => clearTimeout(timer);
+    }
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, uploadedImage, currentProject, saveProject]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -117,7 +164,10 @@ const Editor: React.FC = () => {
     <div className="space-y-6">
       {/* Header Section */}
       <div className="card animate-fade-in">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Create New Skin</h2>
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Skin</h2>
+          <ProjectManager />
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Skin Name Input */}
