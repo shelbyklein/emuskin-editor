@@ -41,15 +41,20 @@
 - ✅ Implemented control selection from palette
 - ✅ Added debug logging for data verification
 - ✅ Controls now render on canvas with proper labels and transparency
+- ✅ Created AppContext for global state management
+- ✅ Implemented CanvasContext for canvas-specific state
+- ✅ Updated all components to use context-based state management
 
 ## Next Steps
-1. Implement drag-and-drop functionality using react-dnd
+1. Implement drag-and-drop functionality for placed controls
 2. Add resize handles for control zones
 3. Create control editing modal/panel
 4. Implement control deletion functionality
 5. Add JSON preview/export functionality
 6. Create local storage persistence
 7. Implement ZIP file generation with JSZip
+8. Add grid snapping for control placement
+9. Implement custom button creation
 
 ## Related Tasks from Project Roadmap
 - Continuing "Core Features" implementation

@@ -80,8 +80,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           relative border-2 border-dashed rounded-lg p-8 text-center
           transition-all duration-200 cursor-pointer
           ${isDragging 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-gray-50 dark:bg-gray-800/50'
           }
         `}
       >
@@ -93,7 +93,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         />
         
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
           stroke="currentColor"
           fill="none"
           viewBox="0 0 48 48"
@@ -107,16 +107,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           />
         </svg>
         
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           Drop your skin image here, or click to browse
         </p>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
           PNG or JPEG, max {maxSizeMB}MB
         </p>
       </div>
 
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
     </div>
   );

@@ -25,7 +25,9 @@ emuskin-generator/
 │   │   └── index.ts    # Core type interfaces
 │   ├── hooks/          # Custom React hooks (empty)
 │   ├── utils/          # Helper functions (empty)
-│   ├── contexts/       # React contexts (empty)
+│   ├── contexts/       # React contexts
+│   │   ├── AppContext.tsx    # Global app state
+│   │   └── CanvasContext.tsx # Canvas-specific state
 │   ├── App.tsx         # Main app with routing
 │   ├── main.tsx        # Entry point
 │   └── index.css       # Tailwind CSS directives
@@ -114,6 +116,10 @@ emuskin-generator/
 - ✅ Canvas renders controls with proper scaling and labels
 - ✅ Debug logging added for data verification
 - ✅ Improved type safety in components
+- ✅ AppContext created for global state management (console/device selection)
+- ✅ CanvasContext implemented for canvas-specific state (controls, image)
+- ✅ All components updated to use context-based state
+- ✅ State management centralized for better data flow
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

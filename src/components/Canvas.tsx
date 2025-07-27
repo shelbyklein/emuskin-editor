@@ -151,7 +151,7 @@ const Canvas: React.FC<CanvasProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center bg-gray-100"
+      className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg transition-colors duration-200"
     >
       {device ? (
         <div className="relative">
@@ -159,7 +159,7 @@ const Canvas: React.FC<CanvasProps> = ({
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height}
-            className="border border-gray-300 bg-white shadow-lg"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg rounded-lg"
             style={{
               maxWidth: '100%',
               maxHeight: '100%'
@@ -168,7 +168,7 @@ const Canvas: React.FC<CanvasProps> = ({
           {/* Control panel will be added here later */}
         </div>
       ) : (
-        <p className="text-gray-500">
+        <p className="text-gray-500 dark:text-gray-400">
           Select a device to begin
         </p>
       )}

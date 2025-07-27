@@ -7,5 +7,13 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.VITE_PORT || '8008'),
     strictPort: true,
+    // Disable caching
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  },
+  // Force full page reload on changes
+  optimizeDeps: {
+    force: true,
   },
 })

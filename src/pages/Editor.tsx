@@ -93,13 +93,13 @@ const Editor: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Skin</h2>
+      <div className="card animate-fade-in">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Create New Skin</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Skin Name Input */}
           <div>
-            <label htmlFor="skinName" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="skinName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Skin Name
             </label>
             <input
@@ -107,14 +107,14 @@ const Editor: React.FC = () => {
               id="skinName"
               value={skinName}
               onChange={(e) => setSkinName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 input-field"
               placeholder="My Custom Skin"
             />
           </div>
 
           {/* Skin Identifier Input */}
           <div>
-            <label htmlFor="skinIdentifier" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="skinIdentifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Skin Identifier
             </label>
             <input
@@ -122,14 +122,14 @@ const Editor: React.FC = () => {
               id="skinIdentifier"
               value={skinIdentifier}
               onChange={(e) => setSkinIdentifier(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 input-field"
               placeholder="com.playcase.default.skin"
             />
           </div>
 
           {/* Console Selection */}
           <div>
-            <label htmlFor="console" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="console" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Console System
             </label>
             <input
@@ -137,7 +137,7 @@ const Editor: React.FC = () => {
               list="console-list"
               value={selectedConsole}
               onChange={(e) => setSelectedConsole(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 input-field"
               placeholder="Type to search consoles..."
             />
             <datalist id="console-list">
@@ -151,7 +151,7 @@ const Editor: React.FC = () => {
 
           {/* Device Selection */}
           <div>
-            <label htmlFor="device" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="device" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               iPhone Model
             </label>
             <input
@@ -159,7 +159,7 @@ const Editor: React.FC = () => {
               list="device-list"
               value={selectedDevice}
               onChange={(e) => setSelectedDevice(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 input-field"
               placeholder="Type to search devices..."
             />
             <datalist id="device-list">
@@ -173,15 +173,15 @@ const Editor: React.FC = () => {
 
       {/* Image Upload Section */}
       {selectedConsole && selectedDevice && !uploadedImage && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Skin Image</h3>
+        <div className="card animate-slide-up">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
           <ImageUploader onImageUpload={handleImageUpload} />
         </div>
       )}
 
       {/* Control Palette */}
       {selectedConsole && selectedDevice && uploadedImage && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="card animate-slide-up">
           <ControlPalette 
             consoleType={selectedConsole}
             onControlSelect={handleControlSelect}
@@ -190,13 +190,13 @@ const Editor: React.FC = () => {
       )}
 
       {/* Canvas Area */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Design Canvas</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
           {uploadedImage && (
             <button
               onClick={() => setUploadedImage(null)}
-              className="text-sm text-gray-600 hover:text-gray-900"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               Change Image
             </button>
