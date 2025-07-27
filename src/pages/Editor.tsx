@@ -214,14 +214,12 @@ const Editor: React.FC = () => {
             </button>
           )}
         </div>
-        <div style={{ maxHeight: '80vh' }} className="overflow-auto rounded-lg">
-          <Canvas 
-            device={selectedDeviceData}
-            backgroundImage={uploadedImage?.url || null}
-            controls={controls}
-            onControlUpdate={handleControlsUpdate}
-          />
-        </div>
+        <Canvas 
+          device={selectedDeviceData}
+          backgroundImage={uploadedImage?.url || null}
+          controls={controls}
+          onControlUpdate={handleControlsUpdate}
+        />
       </div>
 
       {/* JSON Preview */}

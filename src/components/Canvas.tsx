@@ -297,7 +297,7 @@ const Canvas: React.FC<CanvasProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto flex justify-center"
+      className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center"
     >
       {device ? (
         <div className="inline-block">
