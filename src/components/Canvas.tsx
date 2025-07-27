@@ -1,5 +1,5 @@
-// Canvas component for visual skin editing
-import React, { useRef, useEffect, useState } from 'react';
+// Canvas component with draggable and resizable controls
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Device, ControlMapping } from '../types';
 
 interface CanvasProps {
@@ -9,19 +9,56 @@ interface CanvasProps {
   onControlUpdate: (controls: ControlMapping[]) => void;
 }
 
+interface DragState {
+  isDragging: boolean;
+  controlIndex: number | null;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+interface ResizeState {
+  isResizing: boolean;
+  controlIndex: number | null;
+  handle: string;
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
+  startLeft: number;
+  startTop: number;
+}
+
 const Canvas: React.FC<CanvasProps> = ({ 
   device, 
   backgroundImage, 
   controls, 
-  onControlUpdate: _onControlUpdate
+  onControlUpdate
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [scale, setScale] = useState(1);
-  
-  // TODO: Will be used for drag and drop
-  // onControlUpdate will be used when implementing drag functionality
+  const [selectedControl, setSelectedControl] = useState<number | null>(null);
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    controlIndex: null,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0
+  });
+  const [resizeState, setResizeState] = useState<ResizeState>({
+    isResizing: false,
+    controlIndex: null,
+    handle: '',
+    startX: 0,
+    startY: 0,
+    startWidth: 0,
+    startHeight: 0,
+    startLeft: 0,
+    startTop: 0
+  });
 
   // Calculate canvas dimensions based on device
   useEffect(() => {
@@ -31,14 +68,12 @@ const Canvas: React.FC<CanvasProps> = ({
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    // Use device logical dimensions with safety checks
-    const deviceWidth = device?.logicalWidth || 390;
-    const deviceHeight = device?.logicalHeight || 844;
+    const deviceWidth = device.logicalWidth || 390;
+    const deviceHeight = device.logicalHeight || 844;
     
-    // Calculate scale to fit container while maintaining aspect ratio
     const scaleX = containerWidth / deviceWidth;
     const scaleY = containerHeight / deviceHeight;
-    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
+    const newScale = Math.min(scaleX, scaleY, 0.8);
 
     setScale(newScale);
     setCanvasSize({
@@ -47,125 +82,365 @@ const Canvas: React.FC<CanvasProps> = ({
     });
   }, [device]);
 
-  // Render canvas content
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw background image if available
-    if (backgroundImage) {
-      const img = new Image();
-      img.onload = () => {
-        // Scale and center the image to fit the canvas
-        const imgAspect = img.width / img.height;
-        const canvasAspect = canvas.width / canvas.height;
-        
-        let drawWidth, drawHeight, drawX, drawY;
-        
-        if (imgAspect > canvasAspect) {
-          // Image is wider
-          drawWidth = canvas.width;
-          drawHeight = canvas.width / imgAspect;
-          drawX = 0;
-          drawY = (canvas.height - drawHeight) / 2;
-        } else {
-          // Image is taller
-          drawHeight = canvas.height;
-          drawWidth = canvas.height * imgAspect;
-          drawX = (canvas.width - drawWidth) / 2;
-          drawY = 0;
-        }
-        
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        
-        // Draw control overlays
-        drawControls(ctx);
-      };
-      img.src = backgroundImage;
-    } else {
-      // Draw placeholder grid
-      drawGrid(ctx);
-    }
-  }, [backgroundImage, canvasSize, controls]);
-
-  const drawGrid = (ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
+  // Handle mouse down on control
+  const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    const gridSize = 20 * scale;
+    const rect = e.currentTarget.getBoundingClientRect();
     
-    // Draw vertical lines
-    for (let x = 0; x <= ctx.canvas.width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, ctx.canvas.height);
-      ctx.stroke();
-    }
-    
-    // Draw horizontal lines
-    for (let y = 0; y <= ctx.canvas.height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(ctx.canvas.width, y);
-      ctx.stroke();
-    }
-  };
-
-  const drawControls = (ctx: CanvasRenderingContext2D) => {
-    // Draw control zones
-    controls.forEach(control => {
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)'; // Blue with transparency
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2;
-      
-      const x = (control.frame?.x || 0) * scale;
-      const y = (control.frame?.y || 0) * scale;
-      const width = (control.frame?.width || 50) * scale;
-      const height = (control.frame?.height || 50) * scale;
-      
-      ctx.fillRect(x, y, width, height);
-      ctx.strokeRect(x, y, width, height);
-      
-      // Draw control label
-      ctx.fillStyle = '#1f2937';
-      ctx.font = `${12 * scale}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const label = Array.isArray(control.inputs) 
-        ? control.inputs[0] || 'Control'
-        : control.inputs || 'Control';
-      ctx.fillText(
-        label, 
-        x + width / 2, 
-        y + height / 2
-      );
+    setDragState({
+      isDragging: true,
+      controlIndex: index,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top
     });
-  };
+    
+    setSelectedControl(index);
+  }, []);
+
+  // Handle resize start
+  const handleResizeStart = useCallback((e: React.MouseEvent, index: number, handle: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const control = controls[index];
+    
+    setResizeState({
+      isResizing: true,
+      controlIndex: index,
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: control.frame?.width || 50,
+      startHeight: control.frame?.height || 50,
+      startLeft: control.frame?.x || 0,
+      startTop: control.frame?.y || 0
+    });
+    
+    setSelectedControl(index);
+  }, [controls]);
+
+  // Handle mouse move (dragging)
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (dragState.isDragging && dragState.controlIndex !== null && !resizeState.isResizing) {
+      const container = containerRef.current?.querySelector('.canvas-area');
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const control = controls[dragState.controlIndex];
+      
+      const newX = (e.clientX - rect.left - dragState.offsetX) / scale;
+      const newY = (e.clientY - rect.top - dragState.offsetY) / scale;
+      
+      const maxX = (device?.logicalWidth || 390) - (control.frame?.width || 50);
+      const maxY = (device?.logicalHeight || 844) - (control.frame?.height || 50);
+      
+      const clampedX = Math.max(0, Math.min(newX, maxX));
+      const clampedY = Math.max(0, Math.min(newY, maxY));
+      
+      const updatedControls = [...controls];
+      updatedControls[dragState.controlIndex] = {
+        ...control,
+        frame: {
+          ...control.frame,
+          x: Math.round(clampedX),
+          y: Math.round(clampedY)
+        }
+      };
+      
+      onControlUpdate(updatedControls);
+    }
+  }, [dragState, controls, scale, device, onControlUpdate, resizeState.isResizing]);
+
+  // Handle resize
+  const handleResize = useCallback((e: MouseEvent) => {
+    if (!resizeState.isResizing || resizeState.controlIndex === null) return;
+
+    const control = controls[resizeState.controlIndex];
+    const deltaX = (e.clientX - resizeState.startX) / scale;
+    const deltaY = (e.clientY - resizeState.startY) / scale;
+    
+    let newX = resizeState.startLeft;
+    let newY = resizeState.startTop;
+    let newWidth = resizeState.startWidth;
+    let newHeight = resizeState.startHeight;
+
+    // Handle different resize handles
+    switch (resizeState.handle) {
+      case 'nw':
+        newX = resizeState.startLeft + deltaX;
+        newY = resizeState.startTop + deltaY;
+        newWidth = resizeState.startWidth - deltaX;
+        newHeight = resizeState.startHeight - deltaY;
+        break;
+      case 'ne':
+        newY = resizeState.startTop + deltaY;
+        newWidth = resizeState.startWidth + deltaX;
+        newHeight = resizeState.startHeight - deltaY;
+        break;
+      case 'sw':
+        newX = resizeState.startLeft + deltaX;
+        newWidth = resizeState.startWidth - deltaX;
+        newHeight = resizeState.startHeight + deltaY;
+        break;
+      case 'se':
+        newWidth = resizeState.startWidth + deltaX;
+        newHeight = resizeState.startHeight + deltaY;
+        break;
+      case 'n':
+        newY = resizeState.startTop + deltaY;
+        newHeight = resizeState.startHeight - deltaY;
+        break;
+      case 's':
+        newHeight = resizeState.startHeight + deltaY;
+        break;
+      case 'w':
+        newX = resizeState.startLeft + deltaX;
+        newWidth = resizeState.startWidth - deltaX;
+        break;
+      case 'e':
+        newWidth = resizeState.startWidth + deltaX;
+        break;
+    }
+
+    // Minimum size constraints
+    const minSize = 20;
+    if (newWidth < minSize) {
+      if (resizeState.handle.includes('w')) {
+        newX = resizeState.startLeft + resizeState.startWidth - minSize;
+      }
+      newWidth = minSize;
+    }
+    if (newHeight < minSize) {
+      if (resizeState.handle.includes('n')) {
+        newY = resizeState.startTop + resizeState.startHeight - minSize;
+      }
+      newHeight = minSize;
+    }
+
+    // Boundary constraints
+    newX = Math.max(0, newX);
+    newY = Math.max(0, newY);
+    const maxWidth = (device?.logicalWidth || 390) - newX;
+    const maxHeight = (device?.logicalHeight || 844) - newY;
+    newWidth = Math.min(newWidth, maxWidth);
+    newHeight = Math.min(newHeight, maxHeight);
+
+    const updatedControls = [...controls];
+    updatedControls[resizeState.controlIndex] = {
+      ...control,
+      frame: {
+        x: Math.round(newX),
+        y: Math.round(newY),
+        width: Math.round(newWidth),
+        height: Math.round(newHeight)
+      }
+    };
+    
+    onControlUpdate(updatedControls);
+  }, [resizeState, controls, scale, device, onControlUpdate]);
+
+  // Handle mouse up
+  const handleMouseUp = useCallback(() => {
+    setDragState({
+      isDragging: false,
+      controlIndex: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0
+    });
+    setResizeState({
+      isResizing: false,
+      controlIndex: null,
+      handle: '',
+      startX: 0,
+      startY: 0,
+      startWidth: 0,
+      startHeight: 0,
+      startLeft: 0,
+      startTop: 0
+    });
+  }, []);
+
+  // Add global mouse event listeners
+  useEffect(() => {
+    if (dragState.isDragging || resizeState.isResizing) {
+      const moveHandler = resizeState.isResizing ? handleResize : handleMouseMove;
+      window.addEventListener('mousemove', moveHandler);
+      window.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        window.removeEventListener('mousemove', moveHandler);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp]);
+
+  // Handle control deletion
+  const handleDeleteControl = useCallback((index: number) => {
+    const updatedControls = controls.filter((_, i) => i !== index);
+    onControlUpdate(updatedControls);
+    setSelectedControl(null);
+  }, [controls, onControlUpdate]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedControl !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        handleDeleteControl(selectedControl);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedControl, handleDeleteControl]);
 
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg transition-colors duration-200"
+      className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg p-4"
     >
       {device ? (
         <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={canvasSize.width}
-            height={canvasSize.height}
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg rounded-lg"
+          <div 
+            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden"
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%'
+              width: canvasSize.width,
+              height: canvasSize.height,
+              cursor: resizeState.isResizing ? 'grabbing' : 'auto'
             }}
-          />
-          {/* Control panel will be added here later */}
+            onClick={() => setSelectedControl(null)}
+          >
+            {/* Background image or grid */}
+            {backgroundImage ? (
+              <img 
+                src={backgroundImage} 
+                alt="Skin background"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                draggable={false}
+              />
+            ) : (
+              <div 
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                    linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                  `,
+                  backgroundSize: `${20 * scale}px ${20 * scale}px`
+                }}
+              />
+            )}
+
+            {/* Render controls */}
+            {controls.map((control, index) => {
+              const x = (control.frame?.x || 0) * scale;
+              const y = (control.frame?.y || 0) * scale;
+              const width = (control.frame?.width || 50) * scale;
+              const height = (control.frame?.height || 50) * scale;
+              const isSelected = selectedControl === index;
+              const label = Array.isArray(control.inputs) 
+                ? control.inputs[0] || 'Control'
+                : control.inputs || 'Control';
+
+              return (
+                <div
+                  key={index}
+                  className={`absolute border-2 rounded transition-all duration-75 ${
+                    isSelected 
+                      ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
+                      : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
+                  } ${dragState.isDragging && dragState.controlIndex === index ? 'opacity-75' : ''}`}
+                  style={{
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    cursor: dragState.isDragging ? 'grabbing' : 'move'
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, index)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedControl(index);
+                  }}
+                >
+                  {/* Control label */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
+                      {label}
+                    </span>
+                  </div>
+
+                  {/* Resize handles (visible when selected) */}
+                  {isSelected && (
+                    <>
+                      {/* Corner handles */}
+                      <div 
+                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-nw-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'nw')}
+                      />
+                      <div 
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ne-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'ne')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-sw-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'sw')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'se')}
+                      />
+                      
+                      {/* Edge handles */}
+                      <div 
+                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-n-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'n')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-s-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 's')}
+                      />
+                      <div 
+                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-w-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'w')}
+                      />
+                      <div 
+                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-e-resize hover:bg-blue-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'e')}
+                      />
+                      
+                      {/* Delete button */}
+                      <button
+                        className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteControl(index);
+                        }}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Info panel */}
+          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <p>• Click and drag controls to reposition</p>
+            <p>• Drag corner/edge handles to resize</p>
+            <p>• Click a control to select, then press Delete to remove</p>
+            <p>• Click empty space to deselect</p>
+          </div>
         </div>
       ) : (
         <p className="text-gray-500 dark:text-gray-400">

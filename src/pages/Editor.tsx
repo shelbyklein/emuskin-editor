@@ -4,6 +4,7 @@ import { Console, Device, ControlMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
+import JsonPreview from '../components/JsonPreview';
 
 const Editor: React.FC = () => {
   const [consoles, setConsoles] = useState<Console[]>([]);
@@ -15,6 +16,7 @@ const Editor: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<{ file: File; url: string } | null>(null);
   const [controls, setControls] = useState<ControlMapping[]>([]);
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
+  const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -76,6 +78,16 @@ const Editor: React.FC = () => {
       setSelectedDeviceData(null);
     }
   }, [selectedDevice, devices]);
+
+  // Update selected console data when console changes
+  useEffect(() => {
+    if (selectedConsole && consoles.length > 0) {
+      const console = consoles.find(c => c.shortName === selectedConsole);
+      setSelectedConsoleData(console || null);
+    } else {
+      setSelectedConsoleData(null);
+    }
+  }, [selectedConsole, consoles]);
 
   const handleImageUpload = (file: File, previewUrl: string) => {
     setUploadedImage({ file, url: previewUrl });
@@ -211,6 +223,20 @@ const Editor: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* JSON Preview */}
+      {selectedConsoleData && selectedDeviceData && (
+        <div className="card animate-slide-up">
+          <JsonPreview
+            skinName={skinName}
+            skinIdentifier={skinIdentifier}
+            selectedConsole={selectedConsoleData}
+            selectedDevice={selectedDeviceData}
+            controls={controls}
+            backgroundImageFile={uploadedImage?.file}
+          />
+        </div>
+      )}
     </div>
   );
 };
