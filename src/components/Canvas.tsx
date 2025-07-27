@@ -61,74 +61,19 @@ const Canvas: React.FC<CanvasProps> = ({
     startTop: 0
   });
 
-  // Calculate canvas dimensions based on device
+  // Set canvas dimensions to 1:1 pixel representation
   useEffect(() => {
     if (!device) return;
 
     const deviceWidth = device.logicalWidth || 390;
     const deviceHeight = device.logicalHeight || 844;
     
-    // Calculate scale based on viewport and device aspect ratio
-    // Use viewport width for responsive scaling
-    const viewportWidth = window.innerWidth;
-    let maxCanvasWidth = 400; // Default for desktop
-    
-    // Responsive max width based on viewport
-    if (viewportWidth < 640) { // Mobile
-      maxCanvasWidth = viewportWidth - 80; // Leave some padding
-    } else if (viewportWidth < 1024) { // Tablet
-      maxCanvasWidth = Math.min(500, viewportWidth - 200);
-    } else { // Desktop
-      maxCanvasWidth = 450;
-    }
-    
-    const maxCanvasHeight = window.innerHeight - 400; // Leave room for UI
-    
-    const scaleX = maxCanvasWidth / deviceWidth;
-    const scaleY = maxCanvasHeight / deviceHeight;
-    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
-
-    setScale(newScale);
+    // Always use scale of 1 for 1:1 pixel representation
+    setScale(1);
     setCanvasSize({
-      width: deviceWidth * newScale,
-      height: deviceHeight * newScale
+      width: deviceWidth,
+      height: deviceHeight
     });
-  }, [device]);
-
-  // Add resize observer for responsive scaling
-  useEffect(() => {
-    if (!device) return;
-
-    const handleResize = () => {
-      const deviceWidth = device.logicalWidth || 390;
-      const deviceHeight = device.logicalHeight || 844;
-      
-      const viewportWidth = window.innerWidth;
-      let maxCanvasWidth = 400;
-      
-      if (viewportWidth < 640) {
-        maxCanvasWidth = viewportWidth - 80;
-      } else if (viewportWidth < 1024) {
-        maxCanvasWidth = Math.min(500, viewportWidth - 200);
-      } else {
-        maxCanvasWidth = 450;
-      }
-      
-      const maxCanvasHeight = window.innerHeight - 400;
-      
-      const scaleX = maxCanvasWidth / deviceWidth;
-      const scaleY = maxCanvasHeight / deviceHeight;
-      const newScale = Math.min(scaleX, scaleY, 1);
-
-      setScale(newScale);
-      setCanvasSize({
-        width: deviceWidth * newScale,
-        height: deviceHeight * newScale
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [device]);
 
   // Handle mouse down on control
@@ -181,8 +126,8 @@ const Canvas: React.FC<CanvasProps> = ({
       const rect = container.getBoundingClientRect();
       const control = controls[dragState.controlIndex];
       
-      const newX = (e.clientX - rect.left - dragState.offsetX) / scale;
-      const newY = (e.clientY - rect.top - dragState.offsetY) / scale;
+      const newX = e.clientX - rect.left - dragState.offsetX;
+      const newY = e.clientY - rect.top - dragState.offsetY;
       
       const maxX = (device?.logicalWidth || 390) - (control.frame?.width || 50);
       const maxY = (device?.logicalHeight || 844) - (control.frame?.height || 50);
@@ -209,8 +154,8 @@ const Canvas: React.FC<CanvasProps> = ({
     if (!resizeState.isResizing || resizeState.controlIndex === null) return;
 
     const control = controls[resizeState.controlIndex];
-    const deltaX = (e.clientX - resizeState.startX) / scale;
-    const deltaY = (e.clientY - resizeState.startY) / scale;
+    const deltaX = e.clientX - resizeState.startX;
+    const deltaY = e.clientY - resizeState.startY;
     
     let newX = resizeState.startLeft;
     let newY = resizeState.startTop;
@@ -352,12 +297,12 @@ const Canvas: React.FC<CanvasProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg py-8"
+      className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto flex justify-center"
     >
       {device ? (
-        <div className="relative">
+        <div className="inline-block">
           <div 
-            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden"
+            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto"
             style={{
               width: canvasSize.width,
               height: canvasSize.height,
@@ -381,17 +326,17 @@ const Canvas: React.FC<CanvasProps> = ({
                     linear-gradient(to right, #e5e7eb 1px, transparent 1px),
                     linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
                   `,
-                  backgroundSize: `${20 * scale}px ${20 * scale}px`
+                  backgroundSize: '20px 20px'
                 }}
               />
             )}
 
             {/* Render controls */}
             {controls.map((control, index) => {
-              const x = (control.frame?.x || 0) * scale;
-              const y = (control.frame?.y || 0) * scale;
-              const width = (control.frame?.width || 50) * scale;
-              const height = (control.frame?.height || 50) * scale;
+              const x = control.frame?.x || 0;
+              const y = control.frame?.y || 0;
+              const width = control.frame?.width || 50;
+              const height = control.frame?.height || 50;
               const isSelected = selectedControl === index;
               const label = Array.isArray(control.inputs) 
                 ? control.inputs[0] || 'Control'

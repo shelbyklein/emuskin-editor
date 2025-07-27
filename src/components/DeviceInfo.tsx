@@ -22,8 +22,8 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, scale }) => {
         <span>
           <strong>Physical:</strong> {device.physicalWidth} × {device.physicalHeight}
         </span>
-        <span>
-          <strong>Scale:</strong> {Math.round(scale * 100)}%
+        <span className="text-green-600 dark:text-green-400">
+          <strong>1:1 Pixel Perfect</strong>
         </span>
       </div>
     </div>
