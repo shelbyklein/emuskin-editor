@@ -7,6 +7,7 @@ import ControlPalette from '../components/ControlPalette';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
+import ExportButton from '../components/ExportButton';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
 
@@ -267,14 +268,24 @@ const Editor: React.FC = () => {
         <div className="flex flex-col space-y-4 mb-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
-            {uploadedImage && (
-              <button
-                onClick={() => setUploadedImage(null)}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Change Image
-              </button>
-            )}
+            <div className="flex items-center space-x-3">
+              {uploadedImage && (
+                <button
+                  onClick={() => setUploadedImage(null)}
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  Change Image
+                </button>
+              )}
+              <ExportButton
+                skinName={skinName}
+                skinIdentifier={skinIdentifier}
+                selectedConsole={selectedConsoleData}
+                selectedDevice={selectedDeviceData}
+                controls={controls}
+                backgroundImage={uploadedImage}
+              />
+            </div>
           </div>
           {/* Grid Controls */}
           {selectedDeviceData && (
