@@ -7,7 +7,7 @@ interface DeviceInfoProps {
   scale: number;
 }
 
-const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, scale }) => {
+const DeviceInfo: React.FC<DeviceInfoProps> = ({ device }) => {
   if (!device) return null;
 
   return (

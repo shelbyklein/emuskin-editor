@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Device, ControlMapping } from '../types';
 import DeviceInfo from './DeviceInfo';
+import { useEditor } from '../contexts/EditorContext';
 
 interface CanvasProps {
   device: Device | null;
@@ -41,6 +42,12 @@ const Canvas: React.FC<CanvasProps> = ({
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [scale, setScale] = useState(1);
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
+  const { settings } = useEditor();
+
+  // Helper function to snap value to grid
+  const snapToGrid = (value: number, gridSize: number): number => {
+    return Math.round(value / gridSize) * gridSize;
+  };
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     controlIndex: null,
@@ -132,8 +139,14 @@ const Canvas: React.FC<CanvasProps> = ({
       const maxX = (device?.logicalWidth || 390) - (control.frame?.width || 50);
       const maxY = (device?.logicalHeight || 844) - (control.frame?.height || 50);
       
-      const clampedX = Math.max(0, Math.min(newX, maxX));
-      const clampedY = Math.max(0, Math.min(newY, maxY));
+      let clampedX = Math.max(0, Math.min(newX, maxX));
+      let clampedY = Math.max(0, Math.min(newY, maxY));
+      
+      // Apply grid snapping if enabled
+      if (settings.snapToGrid) {
+        clampedX = snapToGrid(clampedX, settings.gridSize);
+        clampedY = snapToGrid(clampedY, settings.gridSize);
+      }
       
       const updatedControls = [...controls];
       updatedControls[dragState.controlIndex] = {
@@ -147,7 +160,7 @@ const Canvas: React.FC<CanvasProps> = ({
       
       onControlUpdate(updatedControls);
     }
-  }, [dragState, controls, scale, device, onControlUpdate, resizeState.isResizing]);
+  }, [dragState, controls, scale, device, onControlUpdate, resizeState.isResizing, settings]);
 
   // Handle resize
   const handleResize = useCallback((e: MouseEvent) => {
@@ -223,6 +236,14 @@ const Canvas: React.FC<CanvasProps> = ({
     newWidth = Math.min(newWidth, maxWidth);
     newHeight = Math.min(newHeight, maxHeight);
 
+    // Apply grid snapping if enabled
+    if (settings.snapToGrid) {
+      newX = snapToGrid(newX, settings.gridSize);
+      newY = snapToGrid(newY, settings.gridSize);
+      newWidth = snapToGrid(newWidth, settings.gridSize);
+      newHeight = snapToGrid(newHeight, settings.gridSize);
+    }
+
     const updatedControls = [...controls];
     updatedControls[resizeState.controlIndex] = {
       ...control,
@@ -235,7 +256,7 @@ const Canvas: React.FC<CanvasProps> = ({
     };
     
     onControlUpdate(updatedControls);
-  }, [resizeState, controls, scale, device, onControlUpdate]);
+  }, [resizeState, controls, scale, device, onControlUpdate, settings]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
@@ -310,23 +331,26 @@ const Canvas: React.FC<CanvasProps> = ({
             }}
             onClick={() => setSelectedControl(null)}
           >
-            {/* Background image or grid */}
-            {backgroundImage ? (
+            {/* Background image */}
+            {backgroundImage && (
               <img 
                 src={backgroundImage} 
                 alt="Skin background"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                 draggable={false}
               />
-            ) : (
+            )}
+            
+            {/* Grid overlay */}
+            {settings.gridEnabled && (
               <div 
-                className="absolute inset-0"
+                className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundImage: `
-                    linear-gradient(to right, #e5e7eb 1px, transparent 1px),
-                    linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                    linear-gradient(to right, ${backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb'} 1px, transparent 1px),
+                    linear-gradient(to bottom, ${backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb'} 1px, transparent 1px)
                   `,
-                  backgroundSize: '20px 20px'
+                  backgroundSize: `${settings.gridSize}px ${settings.gridSize}px`
                 }}
               />
             )}

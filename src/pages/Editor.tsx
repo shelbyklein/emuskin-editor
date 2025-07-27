@@ -5,6 +5,8 @@ import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
 import JsonPreview from '../components/JsonPreview';
+import GridControls from '../components/GridControls';
+import { useEditor } from '../contexts/EditorContext';
 
 const Editor: React.FC = () => {
   const [consoles, setConsoles] = useState<Console[]>([]);
@@ -17,6 +19,7 @@ const Editor: React.FC = () => {
   const [controls, setControls] = useState<ControlMapping[]>([]);
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
+  const { settings } = useEditor();
 
   // Add debug logging to check data
   useEffect(() => {
@@ -98,6 +101,14 @@ const Editor: React.FC = () => {
   };
 
   const handleControlSelect = (control: ControlMapping) => {
+    // Apply grid snapping to initial placement if enabled
+    if (settings.snapToGrid && control.frame) {
+      const snapToGrid = (value: number) => Math.round(value / settings.gridSize) * settings.gridSize;
+      control.frame.x = snapToGrid(control.frame.x);
+      control.frame.y = snapToGrid(control.frame.y);
+      control.frame.width = snapToGrid(control.frame.width);
+      control.frame.height = snapToGrid(control.frame.height);
+    }
     // Add new control to the list
     setControls([...controls, control]);
   };
@@ -203,15 +214,21 @@ const Editor: React.FC = () => {
 
       {/* Canvas Area */}
       <div className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
-          {uploadedImage && (
-            <button
-              onClick={() => setUploadedImage(null)}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              Change Image
-            </button>
+        <div className="flex flex-col space-y-4 mb-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
+            {uploadedImage && (
+              <button
+                onClick={() => setUploadedImage(null)}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                Change Image
+              </button>
+            )}
+          </div>
+          {/* Grid Controls */}
+          {selectedDeviceData && (
+            <GridControls />
           )}
         </div>
         <Canvas 
