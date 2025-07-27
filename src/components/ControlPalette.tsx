@@ -1,12 +1,8 @@
 // Control palette component for displaying available buttons
 import React, { useState, useEffect } from 'react';
-import { ControlMapping } from '../types';
+import { ControlMapping, Button } from '../types';
+import CustomButtonModal from './CustomButtonModal';
 
-interface Button {
-  name: string;
-  identifier: string;
-  type?: string;
-}
 
 interface ControlPaletteProps {
   consoleType: string;
@@ -19,6 +15,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
 }) => {
   const [availableButtons, setAvailableButtons] = useState<Button[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
 
   useEffect(() => {
     if (!consoleType) {
@@ -33,7 +30,13 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
         const data = await response.json();
         
         if (data[consoleType]) {
-          setAvailableButtons(data[consoleType]);
+          // Map the button data to match our Button type
+          const buttons = data[consoleType].map((btn: any) => ({
+            key: btn.identifier,
+            label: btn.name,
+            type: btn.type
+          }));
+          setAvailableButtons(buttons);
         } else {
           setAvailableButtons([]);
         }
@@ -51,7 +54,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
   const handleButtonClick = (button: Button) => {
     // Create a control object with default properties
     const control: ControlMapping = {
-      inputs: [button.identifier],
+      inputs: [button.key],
       frame: {
         x: 50, // Default position
         y: 50,
@@ -70,15 +73,15 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
   };
 
   const renderButton = (button: Button) => {
-    const isDpad = button.identifier === 'dpad';
+    const isDpad = button.key === 'dpad';
     const isThumbstick = button.type === 'thumbstick';
     
     return (
       <button
-        key={button.identifier}
+        key={button.key}
         onClick={() => handleButtonClick(button)}
         className="flex flex-col items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
-        title={`Add ${button.name}`}
+        title={`Add ${button.label}`}
       >
         <div className="w-8 h-8 flex items-center justify-center">
           {isDpad ? (
@@ -95,11 +98,11 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
           ) : (
             // Regular button
             <div className="w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
-              {button.name.charAt(0)}
+              {button.label.charAt(0)}
             </div>
           )}
         </div>
-        <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">{button.name}</span>
+        <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">{button.label}</span>
       </button>
     );
   };
@@ -130,30 +133,22 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
       
       <div className="border-t dark:border-gray-700 pt-4">
         <button
-          onClick={() => {
-            // Create custom button
-            const customControl: ControlMapping = {
-              inputs: ['custom'],
-              frame: {
-                x: 50,
-                y: 50,
-                width: 50,
-                height: 50
-              },
-              extendedEdges: {
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0
-              }
-            };
-            onControlSelect(customControl);
-          }}
+          onClick={() => setShowCustomModal(true)}
           className="w-full py-2 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-all duration-200"
         >
           + Add Custom Button
         </button>
       </div>
+      
+      <CustomButtonModal
+        isOpen={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        onConfirm={(control) => {
+          onControlSelect(control);
+          setShowCustomModal(false);
+        }}
+        availableButtons={availableButtons}
+      />
     </div>
   );
 };

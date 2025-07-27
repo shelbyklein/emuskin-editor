@@ -20,6 +20,8 @@ export interface Button {
   label: string;
   type?: string;
   composite?: boolean;
+  identifier?: string;
+  name?: string;
 }
 
 export interface ControlMapping {
