@@ -1,33 +1,33 @@
 # Tech Stack
 
 ## Frontend Framework
-- **To be decided**: React, Vue, or Angular
-- **Justification**: Need modern component-based architecture for complex UI interactions
+- **Chosen**: React with TypeScript
+- **Justification**: Component flexibility for complex UI, strong TypeScript support, extensive ecosystem for touch/gesture libraries
 
 ## Styling
 - **CSS Framework**: Mobile-first framework (e.g., Tailwind CSS)
 - **Justification**: Rapid responsive development, utility-first approach
 
 ## Core Technologies
-- **Language**: JavaScript/TypeScript
-- **Build Tool**: Vite or Create React App (depending on framework choice)
-- **Package Manager**: npm or yarn
+- **Language**: TypeScript
+- **Build Tool**: Vite (fast HMR, TypeScript support out of box)
+- **Package Manager**: npm
 
 ## UI Libraries
-- **Canvas/SVG**: For control overlay rendering
-- **Touch Gestures**: Library for mobile interactions (e.g., Hammer.js)
-- **Drag & Drop**: Native HTML5 or react-dnd/vue-draggable
+- **Canvas/SVG**: React + Canvas API for control overlay rendering
+- **Touch Gestures**: react-use-gesture for mobile interactions
+- **Drag & Drop**: react-dnd with touch backend
 
 ## Data Management
-- **State Management**: Context API/Redux (React), Vuex (Vue), or NgRx (Angular)
+- **State Management**: React Context API + useReducer (sufficient for MVP)
 - **Storage**: LocalStorage for settings, IndexedDB for projects and images
 - **File Handling**: JSZip for generating skin files
 
 ## Development Tools
 - **Version Control**: Git with GitHub
-- **Testing**: Jest + Testing Library (framework-specific)
+- **Testing**: Vitest + React Testing Library
 - **Linting**: ESLint + Prettier
-- **Development Server**: Hot module replacement
+- **Development Server**: Vite dev server with HMR
 
 ## Architecture Decisions
 - **Frontend-Only MVP**: No backend required initially

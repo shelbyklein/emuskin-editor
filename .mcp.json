@@ -1,0 +1,13 @@
+{
+"mcpServers": {
+    "ddg-search": {
+        "command": "uvx",
+        "args": ["duckduckgo-mcp-server"]
+        },
+    "puppeteer": {
+        "command": "puppeteer-mcp-server",
+        "args": [],
+        "env": {}
+        }
+    }
+}
