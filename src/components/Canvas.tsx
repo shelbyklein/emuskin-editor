@@ -4,6 +4,7 @@ import { Device, ControlMapping } from '../types';
 import DeviceInfo from './DeviceInfo';
 import ControlPropertiesPanel from './ControlPropertiesPanel';
 import { useEditor } from '../contexts/EditorContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface CanvasProps {
   device: Device | null;
@@ -44,6 +45,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [scale, setScale] = useState(1);
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
   const { settings } = useEditor();
+  const { isDark } = useTheme();
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
 
@@ -381,8 +383,16 @@ const Canvas: React.FC<CanvasProps> = ({
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundImage: `
-                    linear-gradient(to right, ${backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb'} 1px, transparent 1px),
-                    linear-gradient(to bottom, ${backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb'} 1px, transparent 1px)
+                    linear-gradient(to right, ${
+                      isDark 
+                        ? (backgroundImage ? 'rgba(75, 85, 99, 0.3)' : 'rgba(75, 85, 99, 0.4)')
+                        : (backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb')
+                    } 1px, transparent 1px),
+                    linear-gradient(to bottom, ${
+                      isDark 
+                        ? (backgroundImage ? 'rgba(75, 85, 99, 0.3)' : 'rgba(75, 85, 99, 0.4)')
+                        : (backgroundImage ? 'rgba(229, 231, 235, 0.5)' : '#e5e7eb')
+                    } 1px, transparent 1px)
                   `,
                   backgroundSize: `${settings.gridSize}px ${settings.gridSize}px`
                 }}
