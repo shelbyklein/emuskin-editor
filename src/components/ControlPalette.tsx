@@ -31,10 +31,10 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
         
         if (data[consoleType]) {
           // Map the button data to match our Button type
-          const buttons = data[consoleType].map((btn: any) => ({
-            key: btn.identifier,
-            label: btn.name,
-            type: btn.type
+          const buttons = data[consoleType].map((btnId: string) => ({
+            key: btnId,
+            label: btnId.charAt(0).toUpperCase() + btnId.slice(1), // Capitalize first letter
+            type: btnId === 'dpad' ? 'dpad' : btnId === 'leftThumbstick' || btnId === 'rightThumbstick' ? 'thumbstick' : undefined
           }));
           setAvailableButtons(buttons);
         } else {
