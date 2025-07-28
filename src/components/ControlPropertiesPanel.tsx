@@ -6,7 +6,7 @@ import { useEditor } from '../contexts/EditorContext';
 interface ControlPropertiesPanelProps {
   control: ControlMapping | null;
   controlIndex: number | null;
-  onUpdate: (index: number, updates: Partial<ControlMapping>) => void;
+  onUpdate: (index: number, updates: ControlMapping) => void;
   onClose: () => void;
 }
 
@@ -56,6 +56,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
   };
 
   const handleApply = () => {
+    if (!control || controlIndex === null) return;
+    
     // Apply grid snapping if enabled
     let finalX = formData.x;
     let finalY = formData.y;
@@ -70,7 +72,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
       finalHeight = snap(finalHeight);
     }
 
-    onUpdate(controlIndex, {
+    // Create complete updated control object
+    const updatedControl: ControlMapping = {
+      ...control,
       frame: {
         x: Math.max(0, finalX),
         y: Math.max(0, finalY),
@@ -83,7 +87,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         left: formData.extendedLeft,
         right: formData.extendedRight
       }
-    });
+    };
+
+    onUpdate(controlIndex, updatedControl);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, field: keyof typeof formData) => {
