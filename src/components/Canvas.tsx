@@ -45,6 +45,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
   const { settings } = useEditor();
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
+  const [hasDragged, setHasDragged] = useState(false);
 
   // Helper function to snap value to grid
   const snapToGrid = (value: number, gridSize: number): number => {
@@ -92,6 +93,9 @@ const Canvas: React.FC<CanvasProps> = ({
     
     const rect = e.currentTarget.getBoundingClientRect();
     
+    // Reset drag flag at start of new interaction
+    setHasDragged(false);
+    
     setDragState({
       isDragging: true,
       controlIndex: index,
@@ -129,6 +133,12 @@ const Canvas: React.FC<CanvasProps> = ({
   // Handle mouse move (dragging)
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (dragState.isDragging && dragState.controlIndex !== null && !resizeState.isResizing) {
+      // Mark that we've actually dragged (not just clicked)
+      const dragDistance = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
+      if (dragDistance > 5) { // Threshold to distinguish between click and drag
+        setHasDragged(true);
+      }
+
       const container = containerRef.current?.querySelector('.canvas-area');
       if (!container) return;
 
@@ -262,6 +272,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
+    // Don't reset hasDragged here - let the click handler deal with it
     setDragState({
       isDragging: false,
       controlIndex: null,
@@ -408,8 +419,12 @@ const Canvas: React.FC<CanvasProps> = ({
                   onMouseDown={(e) => handleMouseDown(e, index)}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedControl(index);
-                    setShowPropertiesPanel(true);
+                    // Only show properties panel if we didn't just drag
+                    if (!hasDragged) {
+                      setSelectedControl(index);
+                      setShowPropertiesPanel(true);
+                    }
+                    setHasDragged(false); // Reset for next interaction
                   }}
                 >
                   {/* Control label */}
