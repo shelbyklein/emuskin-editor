@@ -54,9 +54,26 @@ export interface SkinConfig {
   };
 }
 
+export interface ScreenMapping {
+  inputFrame?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  outputFrame: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  label?: string; // For DS: "Top Screen" or "Bottom Screen"
+}
+
 export interface SkinOrientation {
   assets: string[];
   items: ControlMapping[];
+  screens?: ScreenMapping[];
   mappingSize: {
     width: number;
     height: number;

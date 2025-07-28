@@ -1,8 +1,9 @@
-// Canvas component with draggable and resizable controls
+// Canvas component with draggable and resizable controls and screens
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Device, ControlMapping } from '../types';
+import { Device, ControlMapping, ScreenMapping } from '../types';
 import DeviceInfo from './DeviceInfo';
 import ControlPropertiesPanel from './ControlPropertiesPanel';
+import ScreenPropertiesPanel from './ScreenPropertiesPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -10,12 +11,16 @@ interface CanvasProps {
   device: Device | null;
   backgroundImage: string | null;
   controls: ControlMapping[];
+  screens: ScreenMapping[];
+  consoleType: string;
   onControlUpdate: (controls: ControlMapping[]) => void;
+  onScreenUpdate: (screens: ScreenMapping[]) => void;
 }
 
 interface DragState {
   isDragging: boolean;
-  controlIndex: number | null;
+  itemType: 'control' | 'screen' | null;
+  itemIndex: number | null;
   startX: number;
   startY: number;
   offsetX: number;
@@ -24,7 +29,8 @@ interface DragState {
 
 interface ResizeState {
   isResizing: boolean;
-  controlIndex: number | null;
+  itemType: 'control' | 'screen' | null;
+  itemIndex: number | null;
   handle: string;
   startX: number;
   startY: number;
@@ -37,16 +43,21 @@ interface ResizeState {
 const Canvas: React.FC<CanvasProps> = ({ 
   device, 
   backgroundImage, 
-  controls, 
-  onControlUpdate
+  controls,
+  screens,
+  consoleType,
+  onControlUpdate,
+  onScreenUpdate
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [scale, setScale] = useState(1);
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
+  const [selectedScreen, setSelectedScreen] = useState<number | null>(null);
   const { settings } = useEditor();
   const { isDark } = useTheme();
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
+  const [showScreenPropertiesPanel, setShowScreenPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
 
   // Helper function to snap value to grid
@@ -55,7 +66,8 @@ const Canvas: React.FC<CanvasProps> = ({
   };
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
-    controlIndex: null,
+    itemType: null,
+    itemIndex: null,
     startX: 0,
     startY: 0,
     offsetX: 0,
@@ -63,7 +75,8 @@ const Canvas: React.FC<CanvasProps> = ({
   });
   const [resizeState, setResizeState] = useState<ResizeState>({
     isResizing: false,
-    controlIndex: null,
+    itemType: null,
+    itemIndex: null,
     handle: '',
     startX: 0,
     startY: 0,
@@ -88,8 +101,8 @@ const Canvas: React.FC<CanvasProps> = ({
     });
   }, [device]);
 
-  // Handle mouse down on control
-  const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
+  // Handle mouse down on control or screen
+  const handleMouseDown = useCallback((e: React.MouseEvent, index: number, itemType: 'control' | 'screen') => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -100,14 +113,21 @@ const Canvas: React.FC<CanvasProps> = ({
     
     setDragState({
       isDragging: true,
-      controlIndex: index,
+      itemType,
+      itemIndex: index,
       startX: e.clientX,
       startY: e.clientY,
       offsetX: e.clientX - rect.left,
       offsetY: e.clientY - rect.top
     });
     
-    setSelectedControl(index);
+    if (itemType === 'control') {
+      setSelectedControl(index);
+      setSelectedScreen(null);
+    } else {
+      setSelectedScreen(index);
+      setSelectedControl(null);
+    }
   }, []);
 
   // Handle resize start
