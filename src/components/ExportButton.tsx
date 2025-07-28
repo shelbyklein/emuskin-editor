@@ -1,7 +1,7 @@
 // Export button component for generating skin files
 import React, { useState } from 'react';
 import JSZip from 'jszip';
-import { Console, Device, ControlMapping } from '../types';
+import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { useProject } from '../contexts/ProjectContext';
 import { indexedDBManager } from '../utils/indexedDB';
 
@@ -11,6 +11,7 @@ interface ExportButtonProps {
   selectedConsole: Console | null;
   selectedDevice: Device | null;
   controls: ControlMapping[];
+  screens: ScreenMapping[];
   backgroundImage: { file: File; url: string } | null;
 }
 
@@ -20,6 +21,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   selectedConsole,
   selectedDevice,
   controls,
+  screens,
   backgroundImage
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -56,6 +58,28 @@ const ExportButton: React.FC<ExportButtonProps> = ({
                   right: 0
                 }
               })),
+              screens: screens.map(screen => {
+                const screenObj: any = {
+                  outputFrame: {
+                    x: screen.outputFrame?.x || 0,
+                    y: screen.outputFrame?.y || 0,
+                    width: screen.outputFrame?.width || 200,
+                    height: screen.outputFrame?.height || 150
+                  }
+                };
+                
+                // Only include inputFrame if it exists (not for SEGA Genesis)
+                if (screen.inputFrame) {
+                  screenObj.inputFrame = {
+                    x: screen.inputFrame.x,
+                    y: screen.inputFrame.y,
+                    width: screen.inputFrame.width,
+                    height: screen.inputFrame.height
+                  };
+                }
+                
+                return screenObj;
+              }),
               mappingSize: {
                 width: selectedDevice.logicalWidth,
                 height: selectedDevice.logicalHeight
@@ -98,6 +122,10 @@ const ExportButton: React.FC<ExportButtonProps> = ({
     
     if (controls.length === 0) {
       errors.push('At least one control must be added');
+    }
+    
+    if (screens.length === 0) {
+      errors.push('At least one screen must be added to display the game');
     }
     
     return {

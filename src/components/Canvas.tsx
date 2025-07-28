@@ -64,6 +64,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const snapToGrid = (value: number, gridSize: number): number => {
     return Math.round(value / gridSize) * gridSize;
   };
+
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     itemType: null,
@@ -73,6 +74,7 @@ const Canvas: React.FC<CanvasProps> = ({
     offsetX: 0,
     offsetY: 0
   });
+
   const [resizeState, setResizeState] = useState<ResizeState>({
     isResizing: false,
     itemType: null,
@@ -101,7 +103,7 @@ const Canvas: React.FC<CanvasProps> = ({
     });
   }, [device]);
 
-  // Handle mouse down on control or screen
+  // Handle mouse down on item (control or screen)
   const handleMouseDown = useCallback((e: React.MouseEvent, index: number, itemType: 'control' | 'screen') => {
     e.preventDefault();
     e.stopPropagation();
@@ -131,30 +133,38 @@ const Canvas: React.FC<CanvasProps> = ({
   }, []);
 
   // Handle resize start
-  const handleResizeStart = useCallback((e: React.MouseEvent, index: number, handle: string) => {
+  const handleResizeStart = useCallback((e: React.MouseEvent, index: number, handle: string, itemType: 'control' | 'screen') => {
     e.preventDefault();
     e.stopPropagation();
     
-    const control = controls[index];
+    const item = itemType === 'control' ? controls[index] : screens[index];
+    const frame = itemType === 'control' ? item.frame : (item as ScreenMapping).outputFrame;
     
     setResizeState({
       isResizing: true,
-      controlIndex: index,
+      itemType,
+      itemIndex: index,
       handle,
       startX: e.clientX,
       startY: e.clientY,
-      startWidth: control.frame?.width || 50,
-      startHeight: control.frame?.height || 50,
-      startLeft: control.frame?.x || 0,
-      startTop: control.frame?.y || 0
+      startWidth: frame?.width || 50,
+      startHeight: frame?.height || 50,
+      startLeft: frame?.x || 0,
+      startTop: frame?.y || 0
     });
     
-    setSelectedControl(index);
-  }, [controls]);
+    if (itemType === 'control') {
+      setSelectedControl(index);
+      setSelectedScreen(null);
+    } else {
+      setSelectedScreen(index);
+      setSelectedControl(null);
+    }
+  }, [controls, screens]);
 
   // Handle mouse move (dragging)
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (dragState.isDragging && dragState.controlIndex !== null && !resizeState.isResizing) {
+    if (dragState.isDragging && dragState.itemIndex !== null && dragState.itemType && !resizeState.isResizing) {
       // Mark that we've actually dragged (not just clicked)
       const dragDistance = Math.abs(e.clientX - dragState.startX) + Math.abs(e.clientY - dragState.startY);
       if (dragDistance > 5) { // Threshold to distinguish between click and drag
@@ -165,13 +175,23 @@ const Canvas: React.FC<CanvasProps> = ({
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const control = controls[dragState.controlIndex];
       
       const newX = e.clientX - rect.left - dragState.offsetX;
       const newY = e.clientY - rect.top - dragState.offsetY;
       
-      const maxX = (device?.logicalWidth || 390) - (control.frame?.width || 50);
-      const maxY = (device?.logicalHeight || 844) - (control.frame?.height || 50);
+      let width, height;
+      if (dragState.itemType === 'control') {
+        const control = controls[dragState.itemIndex];
+        width = control.frame?.width || 50;
+        height = control.frame?.height || 50;
+      } else {
+        const screen = screens[dragState.itemIndex];
+        width = screen.outputFrame?.width || 200;
+        height = screen.outputFrame?.height || 150;
+      }
+      
+      const maxX = (device?.logicalWidth || 390) - width;
+      const maxY = (device?.logicalHeight || 844) - height;
       
       let clampedX = Math.max(0, Math.min(newX, maxX));
       let clampedY = Math.max(0, Math.min(newY, maxY));
@@ -186,28 +206,43 @@ const Canvas: React.FC<CanvasProps> = ({
       clampedX = Math.round(clampedX);
       clampedY = Math.round(clampedY);
       
-      // Only update if position actually changed
-      if (clampedX !== control.frame?.x || clampedY !== control.frame?.y) {
-        const updatedControls = [...controls];
-        updatedControls[dragState.controlIndex] = {
-          ...control,
-          frame: {
-            ...control.frame,
-            x: clampedX,
-            y: clampedY
-          }
-        };
-        
-        onControlUpdate(updatedControls);
+      // Update the appropriate item
+      if (dragState.itemType === 'control') {
+        const control = controls[dragState.itemIndex];
+        if (clampedX !== control.frame?.x || clampedY !== control.frame?.y) {
+          const updatedControls = [...controls];
+          updatedControls[dragState.itemIndex] = {
+            ...control,
+            frame: {
+              ...control.frame,
+              x: clampedX,
+              y: clampedY
+            }
+          };
+          onControlUpdate(updatedControls);
+        }
+      } else {
+        const screen = screens[dragState.itemIndex];
+        if (clampedX !== screen.outputFrame?.x || clampedY !== screen.outputFrame?.y) {
+          const updatedScreens = [...screens];
+          updatedScreens[dragState.itemIndex] = {
+            ...screen,
+            outputFrame: {
+              ...screen.outputFrame,
+              x: clampedX,
+              y: clampedY
+            }
+          };
+          onScreenUpdate(updatedScreens);
+        }
       }
     }
-  }, [dragState, controls, scale, device, onControlUpdate, resizeState.isResizing, settings]);
+  }, [dragState, controls, screens, device, onControlUpdate, onScreenUpdate, resizeState.isResizing, settings]);
 
   // Handle resize
   const handleResize = useCallback((e: MouseEvent) => {
-    if (!resizeState.isResizing || resizeState.controlIndex === null) return;
+    if (!resizeState.isResizing || resizeState.itemIndex === null || !resizeState.itemType) return;
 
-    const control = controls[resizeState.controlIndex];
     const deltaX = e.clientX - resizeState.startX;
     const deltaY = e.clientY - resizeState.startY;
     
@@ -285,26 +320,41 @@ const Canvas: React.FC<CanvasProps> = ({
       newHeight = snapToGrid(newHeight, settings.gridSize);
     }
 
-    const updatedControls = [...controls];
-    updatedControls[resizeState.controlIndex] = {
-      ...control,
-      frame: {
-        x: Math.round(newX),
-        y: Math.round(newY),
-        width: Math.round(newWidth),
-        height: Math.round(newHeight)
-      }
-    };
-    
-    onControlUpdate(updatedControls);
-  }, [resizeState, controls, scale, device, onControlUpdate, settings]);
+    // Update the appropriate item
+    if (resizeState.itemType === 'control') {
+      const updatedControls = [...controls];
+      updatedControls[resizeState.itemIndex] = {
+        ...controls[resizeState.itemIndex],
+        frame: {
+          x: Math.round(newX),
+          y: Math.round(newY),
+          width: Math.round(newWidth),
+          height: Math.round(newHeight)
+        }
+      };
+      onControlUpdate(updatedControls);
+    } else {
+      const updatedScreens = [...screens];
+      updatedScreens[resizeState.itemIndex] = {
+        ...screens[resizeState.itemIndex],
+        outputFrame: {
+          x: Math.round(newX),
+          y: Math.round(newY),
+          width: Math.round(newWidth),
+          height: Math.round(newHeight)
+        }
+      };
+      onScreenUpdate(updatedScreens);
+    }
+  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
     // Don't reset hasDragged here - let the click handler deal with it
     setDragState({
       isDragging: false,
-      controlIndex: null,
+      itemType: null,
+      itemIndex: null,
       startX: 0,
       startY: 0,
       offsetX: 0,
@@ -312,7 +362,8 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     setResizeState({
       isResizing: false,
-      controlIndex: null,
+      itemType: null,
+      itemIndex: null,
       handle: '',
       startX: 0,
       startY: 0,
@@ -345,12 +396,19 @@ const Canvas: React.FC<CanvasProps> = ({
     setShowPropertiesPanel(false);
   }, [controls, onControlUpdate]);
 
+  // Handle screen deletion
+  const handleDeleteScreen = useCallback((index: number) => {
+    const updatedScreens = screens.filter((_, i) => i !== index);
+    onScreenUpdate(updatedScreens);
+    setSelectedScreen(null);
+    setShowScreenPropertiesPanel(false);
+  }, [screens, onScreenUpdate]);
+
   // Handle control properties update
   const handleControlPropertiesUpdate = useCallback((index: number, updates: ControlMapping) => {
-    // Create a new array with a new control object to ensure React detects the change
     const updatedControls = controls.map((control, i) => {
       if (i === index) {
-        return { ...updates }; // Create a new object
+        return { ...updates };
       }
       return control;
     });
@@ -358,18 +416,33 @@ const Canvas: React.FC<CanvasProps> = ({
     onControlUpdate(updatedControls);
   }, [controls, onControlUpdate]);
 
+  // Handle screen properties update
+  const handleScreenPropertiesUpdate = useCallback((index: number, updates: ScreenMapping) => {
+    const updatedScreens = screens.map((screen, i) => {
+      if (i === index) {
+        return { ...updates };
+      }
+      return screen;
+    });
+    
+    onScreenUpdate(updatedScreens);
+  }, [screens, onScreenUpdate]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedControl !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         handleDeleteControl(selectedControl);
+      } else if (selectedScreen !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        handleDeleteScreen(selectedScreen);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedControl, handleDeleteControl]);
+  }, [selectedControl, selectedScreen, handleDeleteControl, handleDeleteScreen]);
 
   return (
     <div 
@@ -389,7 +462,9 @@ const Canvas: React.FC<CanvasProps> = ({
             }}
             onClick={() => {
               setSelectedControl(null);
+              setSelectedScreen(null);
               setShowPropertiesPanel(false);
+              setShowScreenPropertiesPanel(false);
             }}
           >
             {/* Background image */}
@@ -426,6 +501,106 @@ const Canvas: React.FC<CanvasProps> = ({
               />
             )}
 
+            {/* Render screens (behind controls) */}
+            {screens.map((screen, index) => {
+              const x = screen.outputFrame?.x || 0;
+              const y = screen.outputFrame?.y || 0;
+              const width = screen.outputFrame?.width || 200;
+              const height = screen.outputFrame?.height || 150;
+              const isSelected = selectedScreen === index;
+
+              return (
+                <div
+                  id={`screen-${index}`}
+                  key={`screen-${index}`}
+                  className={`absolute border-2 rounded ${
+                    isSelected 
+                      ? 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50' 
+                      : 'border-green-400 bg-green-400/10 hover:border-green-500 hover:bg-green-500/20'
+                  } ${dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen' ? 'opacity-75' : ''}`}
+                  style={{
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    cursor: dragState.isDragging ? 'grabbing' : 'move',
+                    transition: dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen' ? 'none' : 'all 75ms'
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, index, 'screen')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!hasDragged) {
+                      setSelectedScreen(index);
+                      setShowScreenPropertiesPanel(true);
+                    }
+                    setHasDragged(false);
+                  }}
+                >
+                  {/* Screen label */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded">
+                      {screen.label || 'Game Screen'}
+                    </span>
+                  </div>
+
+                  {/* Resize handles (visible when selected) */}
+                  {isSelected && (
+                    <>
+                      {/* Corner handles */}
+                      <div 
+                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-nw-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'nw', 'screen')}
+                      />
+                      <div 
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-ne-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'ne', 'screen')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-sw-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'sw', 'screen')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-se-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'se', 'screen')}
+                      />
+                      
+                      {/* Edge handles */}
+                      <div 
+                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-n-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'n', 'screen')}
+                      />
+                      <div 
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-s-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 's', 'screen')}
+                      />
+                      <div 
+                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-w-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'w', 'screen')}
+                      />
+                      <div 
+                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-e-resize hover:bg-green-100"
+                        onMouseDown={(e) => handleResizeStart(e, index, 'e', 'screen')}
+                      />
+                      
+                      {/* Delete button */}
+                      <button
+                        className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteScreen(index);
+                        }}
+                        aria-label={`Delete ${screen.label || 'screen'}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+
             {/* Render controls */}
             {controls.map((control, index) => {
               const x = control.frame?.x || 0;
@@ -445,16 +620,16 @@ const Canvas: React.FC<CanvasProps> = ({
                     isSelected 
                       ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
                       : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
-                  } ${dragState.isDragging && dragState.controlIndex === index ? 'opacity-75' : ''}`}
+                  } ${dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control' ? 'opacity-75' : ''}`}
                   style={{
                     left: `${x}px`,
                     top: `${y}px`,
                     width: `${width}px`,
                     height: `${height}px`,
                     cursor: dragState.isDragging ? 'grabbing' : 'move',
-                    transition: dragState.isDragging && dragState.controlIndex === index ? 'none' : 'all 75ms'
+                    transition: dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control' ? 'none' : 'all 75ms'
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, index)}
+                  onMouseDown={(e) => handleMouseDown(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Only show properties panel if we didn't just drag
@@ -493,40 +668,40 @@ const Canvas: React.FC<CanvasProps> = ({
                       <div 
                         id={`resize-handle-nw-${index}`}
                         className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-nw-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'nw')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'nw', 'control')}
                       />
                       <div 
                         id={`resize-handle-ne-${index}`}
                         className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ne-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'ne')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'ne', 'control')}
                       />
                       <div 
                         id={`resize-handle-sw-${index}`}
                         className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-sw-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'sw')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'sw', 'control')}
                       />
                       <div 
                         id={`resize-handle-se-${index}`}
                         className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'se')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'se', 'control')}
                       />
                       
                       {/* Edge handles */}
                       <div 
                         className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-n-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'n')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'n', 'control')}
                       />
                       <div 
                         className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-s-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 's')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 's', 'control')}
                       />
                       <div 
                         className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-w-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'w')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'w', 'control')}
                       />
                       <div 
                         className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-e-resize hover:bg-blue-100"
-                        onMouseDown={(e) => handleResizeStart(e, index, 'e')}
+                        onMouseDown={(e) => handleResizeStart(e, index, 'e', 'control')}
                       />
                       
                       {/* Delete button */}
@@ -557,9 +732,9 @@ const Canvas: React.FC<CanvasProps> = ({
           
           {/* Info panel */}
           <div id="canvas-help-text" className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <p>• Click and drag controls to reposition</p>
+            <p>• Click and drag controls/screens to reposition</p>
             <p>• Drag corner/edge handles to resize</p>
-            <p>• Click a control to select, then press Delete to remove</p>
+            <p>• Click an item to select, then press Delete to remove</p>
             <p>• Click empty space to deselect</p>
           </div>
         </div>
@@ -592,6 +767,36 @@ const Canvas: React.FC<CanvasProps> = ({
                 controlIndex={selectedControl}
                 onUpdate={handleControlPropertiesUpdate}
                 onClose={() => setShowPropertiesPanel(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen Properties Panel - Fixed Position */}
+      {showScreenPropertiesPanel && selectedScreen !== null && device && (
+        <div 
+          id="screen-properties-panel-overlay" 
+          className="fixed inset-0 z-40 pointer-events-none"
+        >
+          <div 
+            id="screen-properties-panel-backdrop"
+            className="absolute inset-0 bg-black/20 pointer-events-auto"
+            onClick={() => setShowScreenPropertiesPanel(false)}
+          />
+          <div 
+            id="screen-properties-panel-container" 
+            className={`absolute bottom-0 left-0 right-0 pointer-events-auto transform transition-transform duration-300 ease-out ${
+              showScreenPropertiesPanel ? 'translate-y-0' : 'translate-y-full'
+            }`}
+          >
+            <div className="flex justify-center pb-4">
+              <ScreenPropertiesPanel
+                screen={screens[selectedScreen] || null}
+                screenIndex={selectedScreen}
+                consoleType={consoleType}
+                onUpdate={handleScreenPropertiesUpdate}
+                onClose={() => setShowScreenPropertiesPanel(false)}
               />
             </div>
           </div>

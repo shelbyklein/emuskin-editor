@@ -1,7 +1,7 @@
 // Project context for managing skin projects with local storage
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { ControlMapping, Device, Console } from '../types';
+import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
 
 interface Project {
@@ -11,6 +11,7 @@ interface Project {
   console: Console | null;
   device: Device | null;
   controls: ControlMapping[];
+  screens: ScreenMapping[];
   backgroundImage: {
     fileName?: string;
     url: string | null;
@@ -37,6 +38,7 @@ const defaultProject: Project = {
   console: null,
   device: null,
   controls: [],
+  screens: [],
   backgroundImage: null,
   lastModified: Date.now()
 };

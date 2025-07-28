@@ -1,6 +1,6 @@
 // JSON Preview component for displaying generated skin configuration
 import React, { useState, useMemo } from 'react';
-import { Console, Device, ControlMapping } from '../types';
+import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 
 interface JsonPreviewProps {
   skinName: string;
@@ -8,6 +8,7 @@ interface JsonPreviewProps {
   selectedConsole: Console | null;
   selectedDevice: Device | null;
   controls: ControlMapping[];
+  screens: ScreenMapping[];
   backgroundImageFile?: File | null;
 }
 
@@ -17,6 +18,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
   selectedConsole,
   selectedDevice,
   controls,
+  screens,
   backgroundImageFile
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -52,6 +54,28 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
                   right: 0
                 }
               })),
+              screens: screens.map(screen => {
+                const screenObj: any = {
+                  outputFrame: {
+                    x: screen.outputFrame?.x || 0,
+                    y: screen.outputFrame?.y || 0,
+                    width: screen.outputFrame?.width || 200,
+                    height: screen.outputFrame?.height || 150
+                  }
+                };
+                
+                // Only include inputFrame if it exists (not for SEGA Genesis)
+                if (screen.inputFrame) {
+                  screenObj.inputFrame = {
+                    x: screen.inputFrame.x,
+                    y: screen.inputFrame.y,
+                    width: screen.inputFrame.width,
+                    height: screen.inputFrame.height
+                  };
+                }
+                
+                return screenObj;
+              }),
               mappingSize: {
                 width: selectedDevice.logicalWidth,
                 height: selectedDevice.logicalHeight
@@ -110,7 +134,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
           </svg>
           <span>JSON Preview</span>
           <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-            ({controls.length} controls)
+            ({controls.length} controls, {screens.length} screens)
           </span>
         </button>
 

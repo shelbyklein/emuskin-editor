@@ -1,9 +1,10 @@
 // Main editor page for creating emulator skins
 import React, { useState, useEffect } from 'react';
-import { Console, Device, ControlMapping } from '../types';
+import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
+import ScreenPalette from '../components/ScreenPalette';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
@@ -20,6 +21,7 @@ const Editor: React.FC = () => {
   const [skinIdentifier, setSkinIdentifier] = useState<string>('com.playcase.default.skin');
   const [uploadedImage, setUploadedImage] = useState<{ file: File; url: string } | null>(null);
   const [controls, setControls] = useState<ControlMapping[]>([]);
+  const [screens, setScreens] = useState<ScreenMapping[]>([]);
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
   const { settings } = useEditor();
@@ -31,6 +33,7 @@ const Editor: React.FC = () => {
       setSkinName(currentProject.name);
       setSkinIdentifier(currentProject.identifier);
       setControls(currentProject.controls);
+      setScreens(currentProject.screens || []);
       if (currentProject.console) {
         setSelectedConsole(currentProject.console.shortName);
       }
@@ -58,6 +61,7 @@ const Editor: React.FC = () => {
           console: selectedConsoleData,
           device: selectedDeviceData,
           controls,
+          screens,
           // Don't save the blob URL, just mark that we have an image
           backgroundImage: currentProject.backgroundImage ? {
             fileName: currentProject.backgroundImage.fileName,
@@ -69,7 +73,7 @@ const Editor: React.FC = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, currentProject, saveProject]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, currentProject, saveProject]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -132,15 +136,77 @@ const Editor: React.FC = () => {
     }
   }, [selectedDevice, devices]);
 
-  // Update selected console data when console changes
+  // Update selected console data when console changes and handle screens
   useEffect(() => {
     if (selectedConsole && consoles.length > 0) {
       const console = consoles.find(c => c.shortName === selectedConsole);
       setSelectedConsoleData(console || null);
+      
+      // Auto-initialize screens based on console type (unless already loaded from project)
+      if (console && screens.length === 0 && !currentProject) {
+        if (selectedConsole === 'nds') {
+          // Nintendo DS needs two screens
+          setScreens([
+            {
+              label: 'Top Screen',
+              inputFrame: { x: 0, y: 0, width: 256, height: 192 },
+              outputFrame: { x: 67, y: 50, width: 256, height: 192 }
+            },
+            {
+              label: 'Bottom Screen',
+              inputFrame: { x: 0, y: 192, width: 256, height: 192 },
+              outputFrame: { x: 67, y: 262, width: 256, height: 192 }
+            }
+          ]);
+        } else if (selectedConsole === 'sg') {
+          // SEGA Genesis - no inputFrame
+          setScreens([
+            {
+              label: 'Game Screen',
+              outputFrame: { x: 50, y: 100, width: 290, height: 218 }
+            }
+          ]);
+        } else {
+          // Other consoles - single screen with default position
+          const defaultWidth = 290;
+          const aspectRatios: { [key: string]: number } = {
+            'gbc': 160 / 144,
+            'gba': 240 / 160,
+            'nes': 256 / 240,
+            'snes': 256 / 224,
+            'n64': 256 / 224,
+            'ps1': 4 / 3
+          };
+          const aspectRatio = aspectRatios[selectedConsole] || 1.333;
+          const defaultHeight = Math.round(defaultWidth / aspectRatio);
+          
+          setScreens([
+            {
+              label: 'Game Screen',
+              inputFrame: {
+                x: 0,
+                y: 0,
+                width: selectedConsole === 'gbc' ? 160 : 
+                       selectedConsole === 'gba' ? 240 : 
+                       selectedConsole === 'ps1' ? 320 : 256,
+                height: selectedConsole === 'gbc' ? 144 : 
+                        selectedConsole === 'gba' ? 160 : 
+                        selectedConsole === 'nes' ? 240 :
+                        selectedConsole === 'ps1' ? 240 : 224
+              },
+              outputFrame: { x: 50, y: 100, width: defaultWidth, height: defaultHeight }
+            }
+          ]);
+        }
+      }
     } else {
       setSelectedConsoleData(null);
+      // Clear screens when no console selected (unless loading from project)
+      if (!currentProject) {
+        setScreens([]);
+      }
     }
-  }, [selectedConsole, consoles]);
+  }, [selectedConsole, consoles, screens.length, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
     setUploadedImage({ file, url: previewUrl });
@@ -161,6 +227,11 @@ const Editor: React.FC = () => {
     setControls([...newControls]);
   };
 
+  const handleScreensUpdate = (newScreens: ScreenMapping[]) => {
+    // Force a new array reference to ensure React detects the change
+    setScreens([...newScreens]);
+  };
+
   const handleControlSelect = (control: ControlMapping) => {
     // Apply grid snapping to initial placement if enabled
     if (settings.snapToGrid && control.frame) {
@@ -172,6 +243,19 @@ const Editor: React.FC = () => {
     }
     // Add new control to the list
     setControls([...controls, control]);
+  };
+
+  const handleScreenAdd = (screen: ScreenMapping) => {
+    // Apply grid snapping to initial placement if enabled
+    if (settings.snapToGrid && screen.outputFrame) {
+      const snapToGrid = (value: number) => Math.round(value / settings.gridSize) * settings.gridSize;
+      screen.outputFrame.x = snapToGrid(screen.outputFrame.x);
+      screen.outputFrame.y = snapToGrid(screen.outputFrame.y);
+      screen.outputFrame.width = snapToGrid(screen.outputFrame.width);
+      screen.outputFrame.height = snapToGrid(screen.outputFrame.height);
+    }
+    // Add new screen to the list
+    setScreens([...screens, screen]);
   };
 
   return (
@@ -280,6 +364,18 @@ const Editor: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Screen Palette */}
+          {selectedConsole && selectedDevice && (
+            <div id="screen-palette-section" className="card animate-slide-up">
+              <h3 id="screen-palette-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Game Screens</h3>
+              <ScreenPalette 
+                consoleType={selectedConsole}
+                existingScreens={screens}
+                onScreenAdd={handleScreenAdd}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Column - Canvas and JSON Preview */}
@@ -305,6 +401,7 @@ const Editor: React.FC = () => {
                     selectedConsole={selectedConsoleData}
                     selectedDevice={selectedDeviceData}
                     controls={controls}
+                    screens={screens}
                     backgroundImage={uploadedImage}
                   />
                 </div>
@@ -318,7 +415,10 @@ const Editor: React.FC = () => {
               device={selectedDeviceData}
               backgroundImage={uploadedImage?.url || null}
               controls={controls}
+              screens={screens}
+              consoleType={selectedConsole}
               onControlUpdate={handleControlsUpdate}
+              onScreenUpdate={handleScreensUpdate}
             />
           </div>
 
@@ -331,6 +431,7 @@ const Editor: React.FC = () => {
                 selectedConsole={selectedConsoleData}
                 selectedDevice={selectedDeviceData}
                 controls={controls}
+                screens={screens}
                 backgroundImageFile={uploadedImage?.file}
               />
             </div>
