@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Console, Device, ControlMapping } from '../types';
+import { useProject } from '../contexts/ProjectContext';
+import { indexedDBManager } from '../utils/indexedDB';
 
 interface ExportButtonProps {
   skinName: string;
@@ -21,6 +23,9 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   backgroundImage
 }) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'deltaskin' | 'gammaskin'>('deltaskin');
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
+  const { currentProject } = useProject();
 
   const generateSkinJson = () => {
     if (!selectedConsole || !selectedDevice) {
@@ -70,9 +75,42 @@ const ExportButton: React.FC<ExportButtonProps> = ({
     return JSON.stringify(skinConfig, null, 2);
   };
 
-  const handleExport = async () => {
-    if (!selectedConsole || !selectedDevice || controls.length === 0) {
-      alert('Please select a console, device, and add at least one control before exporting.');
+  const validateExport = (): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (!skinName || skinName.trim() === '') {
+      errors.push('Skin name is required');
+    }
+    
+    if (!skinIdentifier || skinIdentifier.trim() === '') {
+      errors.push('Skin identifier is required');
+    } else if (!/^[a-z0-9.]+$/i.test(skinIdentifier)) {
+      errors.push('Skin identifier must use reverse domain notation (e.g., com.example.skin)');
+    }
+    
+    if (!selectedConsole) {
+      errors.push('Console system must be selected');
+    }
+    
+    if (!selectedDevice) {
+      errors.push('iPhone model must be selected');
+    }
+    
+    if (controls.length === 0) {
+      errors.push('At least one control must be added');
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  };
+
+  const handleExport = async (format: 'deltaskin' | 'gammaskin' = exportFormat) => {
+    // Validate before export
+    const validation = validateExport();
+    if (!validation.valid) {
+      alert('Cannot export:\n\n' + validation.errors.join('\n'));
       return;
     }
 
@@ -86,8 +124,25 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       zip.file('info.json', jsonContent);
 
       // Add the background image if present
-      if (backgroundImage) {
-        zip.file(backgroundImage.file.name, backgroundImage.file);
+      let imageFile: File | null = null;
+      
+      if (backgroundImage && backgroundImage.file.size > 0) {
+        // Use the provided image file
+        imageFile = backgroundImage.file;
+      } else if (currentProject?.backgroundImage?.hasStoredImage && currentProject.id) {
+        // Try to retrieve from IndexedDB
+        try {
+          const storedImage = await indexedDBManager.getImage(currentProject.id);
+          if (storedImage) {
+            imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+          }
+        } catch (error) {
+          console.error('Failed to retrieve stored image:', error);
+        }
+      }
+      
+      if (imageFile) {
+        zip.file(imageFile.name, imageFile);
       }
 
       // Generate the ZIP file
@@ -96,7 +151,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const fileName = `${skinName || 'untitled'}.deltaskin`;
+      const fileName = `${skinName || 'untitled'}.${format}`;
       link.href = url;
       link.download = fileName;
       document.body.appendChild(link);
@@ -115,35 +170,81 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   };
 
   return (
-    <button
-      id="export-deltaskin-button"
-      onClick={handleExport}
-      disabled={isExporting || !selectedConsole || !selectedDevice || controls.length === 0}
-      className={`
-        px-4 py-2 rounded-lg font-medium transition-all duration-200
-        ${isExporting || !selectedConsole || !selectedDevice || controls.length === 0
-          ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-          : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
-        }
-      `}
-    >
-      {isExporting ? (
-        <span className="flex items-center">
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <div className="relative">
+      <div className="flex items-center space-x-1">
+        <button
+          id="export-button"
+          onClick={() => handleExport()}
+          disabled={isExporting || !selectedConsole || !selectedDevice || controls.length === 0}
+          className={`
+            px-4 py-2 rounded-l-lg font-medium transition-all duration-200
+            ${isExporting || !selectedConsole || !selectedDevice || controls.length === 0
+              ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
+            }
+          `}
+        >
+          {isExporting ? (
+            <span className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Exporting...
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export .{exportFormat}
+            </span>
+          )}
+        </button>
+        <button
+          id="export-format-toggle"
+          onClick={() => setShowFormatMenu(!showFormatMenu)}
+          disabled={isExporting || !selectedConsole || !selectedDevice || controls.length === 0}
+          className={`
+            px-2 py-2 rounded-r-lg font-medium transition-all duration-200 border-l border-green-600
+            ${isExporting || !selectedConsole || !selectedDevice || controls.length === 0
+              ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
+            }
+          `}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-          Exporting...
-        </span>
-      ) : (
-        <span className="flex items-center">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Export .deltaskin
-        </span>
+        </button>
+      </div>
+      
+      {/* Format Selection Menu */}
+      {showFormatMenu && (
+        <div className="absolute top-full mt-1 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-10">
+          <button
+            onClick={() => {
+              setExportFormat('deltaskin');
+              handleExport('deltaskin');
+              setShowFormatMenu(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            Export as .deltaskin
+          </button>
+          <button
+            onClick={() => {
+              setExportFormat('gammaskin');
+              handleExport('gammaskin');
+              setShowFormatMenu(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            Export as .gammaskin
+          </button>
+        </div>
       )}
-    </button>
+    </div>
   );
 };
 

@@ -23,7 +23,7 @@ const Editor: React.FC = () => {
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
   const { settings } = useEditor();
-  const { currentProject, saveProject } = useProject();
+  const { currentProject, saveProject, saveProjectImage } = useProject();
 
   // Load project data when current project changes
   useEffect(() => {
@@ -48,7 +48,7 @@ const Editor: React.FC = () => {
     }
   }, [currentProject]);
 
-  // Auto-save when data changes
+  // Auto-save when data changes (except image which is saved separately)
   useEffect(() => {
     if (currentProject) {
       const timer = setTimeout(() => {
@@ -58,16 +58,18 @@ const Editor: React.FC = () => {
           console: selectedConsoleData,
           device: selectedDeviceData,
           controls,
-          backgroundImage: uploadedImage ? {
-            fileName: uploadedImage.file.name,
-            url: uploadedImage.url
+          // Don't save the blob URL, just mark that we have an image
+          backgroundImage: currentProject.backgroundImage ? {
+            fileName: currentProject.backgroundImage.fileName,
+            url: null, // Don't save blob URLs to localStorage
+            hasStoredImage: currentProject.backgroundImage.hasStoredImage
           } : null
         });
       }, 1000); // Debounce saves by 1 second
 
       return () => clearTimeout(timer);
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, uploadedImage, currentProject, saveProject]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, currentProject, saveProject]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -140,8 +142,18 @@ const Editor: React.FC = () => {
     }
   }, [selectedConsole, consoles]);
 
-  const handleImageUpload = (file: File, previewUrl: string) => {
+  const handleImageUpload = async (file: File, previewUrl: string) => {
     setUploadedImage({ file, url: previewUrl });
+    
+    // Save image to IndexedDB if we have a current project
+    if (currentProject) {
+      try {
+        await saveProjectImage(file);
+      } catch (error) {
+        console.error('Failed to save image:', error);
+        // Still allow the image to be used even if storage fails
+      }
+    }
   };
 
   const handleControlsUpdate = (newControls: ControlMapping[]) => {

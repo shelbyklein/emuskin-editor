@@ -1,7 +1,8 @@
 // Project context for managing skin projects with local storage
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console } from '../types';
+import { indexedDBManager } from '../utils/indexedDB';
 
 interface Project {
   id: string;
@@ -13,6 +14,7 @@ interface Project {
   backgroundImage: {
     fileName?: string;
     url: string | null;
+    hasStoredImage?: boolean; // Flag to indicate if image is in IndexedDB
   } | null;
   lastModified: number;
 }
@@ -23,6 +25,7 @@ interface ProjectContextType {
   createProject: (name: string) => string;
   loadProject: (id: string) => void;
   saveProject: (updates: Partial<Project>) => void;
+  saveProjectImage: (file: File) => Promise<void>;
   deleteProject: (id: string) => void;
   clearProject: () => void;
 }
@@ -58,6 +61,13 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   const currentProject = projects.find(p => p.id === currentProjectId) || null;
 
+  // Initialize IndexedDB on mount
+  useEffect(() => {
+    indexedDBManager.init().catch(console.error);
+    // Clean up old images periodically
+    indexedDBManager.clearOldImages(30).catch(console.error);
+  }, []);
+
   const createProject = (name: string): string => {
     const newProject: Project = {
       ...defaultProject,
@@ -71,10 +81,34 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     return newProject.id;
   };
 
-  const loadProject = (id: string) => {
+  const loadProject = async (id: string) => {
     const project = projects.find(p => p.id === id);
     if (project) {
       setCurrentProjectId(id);
+      
+      // Load image from IndexedDB if it exists
+      if (project.backgroundImage?.hasStoredImage) {
+        try {
+          const storedImage = await indexedDBManager.getImage(id);
+          if (storedImage) {
+            // Update the project with the restored image URL
+            setProjects(prev => prev.map(p => {
+              if (p.id === id) {
+                return {
+                  ...p,
+                  backgroundImage: {
+                    ...p.backgroundImage!,
+                    url: storedImage.url
+                  }
+                };
+              }
+              return p;
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to load image from IndexedDB:', error);
+        }
+      }
     }
   };
 
@@ -93,7 +127,42 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }));
   };
 
-  const deleteProject = (id: string) => {
+  const saveProjectImage = async (file: File) => {
+    if (!currentProjectId) return;
+    
+    try {
+      // Store image in IndexedDB
+      const url = await indexedDBManager.storeImage(currentProjectId, file);
+      
+      // Update project with new image info
+      setProjects(prev => prev.map(project => {
+        if (project.id === currentProjectId) {
+          return {
+            ...project,
+            backgroundImage: {
+              fileName: file.name,
+              url,
+              hasStoredImage: true
+            },
+            lastModified: Date.now()
+          };
+        }
+        return project;
+      }));
+    } catch (error) {
+      console.error('Failed to save image to IndexedDB:', error);
+      throw error;
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    // Delete associated images from IndexedDB
+    try {
+      await indexedDBManager.deleteProjectImages(id);
+    } catch (error) {
+      console.error('Failed to delete project images:', error);
+    }
+    
     setProjects(prev => prev.filter(p => p.id !== id));
     if (currentProjectId === id) {
       setCurrentProjectId(null);
@@ -111,6 +180,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       createProject,
       loadProject,
       saveProject,
+      saveProjectImage,
       deleteProject,
       clearProject
     }}>
