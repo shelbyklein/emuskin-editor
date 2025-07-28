@@ -29,10 +29,12 @@
 - [x] Drag-and-drop control placement
 - [x] Control zone visualization
 - [x] Resize handles for zones
-- [ ] Grid snapping
+- [x] Grid snapping with toggle
 - [ ] Multi-touch support
 - [x] Control addition from palette to canvas
 - [x] Control deletion functionality
+- [x] Extended edges visualization
+- [x] Control properties panel with live editing
 
 ### Custom Controls
 - [ ] Custom button creator
@@ -43,9 +45,11 @@
 ### File Management
 - [x] Image upload with validation
 - [x] JSON preview and copy functionality
-- [ ] Local project storage
-- [ ] ZIP generation
-- [ ] Export with proper extensions
+- [x] Local project storage with ProjectContext
+- [x] ZIP generation with JSZip
+- [x] Export with proper extensions (.deltaskin/.gammaskin)
+- [x] IndexedDB for large image storage
+- [x] Project management UI with create/load/delete
 
 ## Completion Criteria
 - User can select console and device
@@ -90,6 +94,19 @@
 - [x] Implement 1:1 pixel perfect canvas display
 - [x] Add responsive canvas sizing
 - [x] Create DeviceInfo component for display metrics
+- [x] Add comprehensive ID system for all elements
+- [x] Implement two-column desktop layout
+- [x] Create bottom-sliding properties panel
+- [x] Add dark mode support with ThemeContext
+- [x] Implement grid display with toggleable visibility
+- [x] Add localStorage persistence for editor settings
+- [x] Fix dragging performance issues
+- [x] Make extended edges always visible
+- [x] Add screen support for game display
+- [x] Create ScreenPalette and ScreenPropertiesPanel
+- [x] Implement automatic dual-screen for Nintendo DS
+- [x] Add export validation and error messages
+- [x] Support both .deltaskin and .gammaskin formats
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

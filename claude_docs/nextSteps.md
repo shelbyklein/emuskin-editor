@@ -1,91 +1,126 @@
-# Proposed Next Steps
+# Next Steps
 
-## Completed Actions
+## Immediate Priorities (Next Session)
 
-### ✅ Project Initialization
-- React project created with Vite and TypeScript
-- All core dependencies installed
-- Project structure established
-- Tailwind CSS configured
-- Basic routing implemented
+### 1. Import Functionality for Existing Skins
+- **Purpose**: Allow users to load and edit existing .deltaskin/.gammaskin files
+- **Implementation**:
+  - Add import button to ProjectManager or main toolbar
+  - Use JSZip to parse uploaded skin files
+  - Extract info.json and parse controls/screens
+  - Load background images from ZIP
+  - Handle format differences between legacy skins
+  - Validate imported data before loading
+- **Time Estimate**: 2-3 hours
 
-### ✅ Core Components Created
-- Canvas component with device-specific rendering
-- ImageUploader with drag-and-drop support
-- ControlPalette with dynamic button loading
-- Layout with responsive navigation
-- Editor page with integrated components
+### 2. Complete Custom Button Creator
+- **Current State**: Modal exists but doesn't create functional custom buttons
+- **Needed**:
+  - Wire up the "Create Button" action to actually add custom controls
+  - Support multi-input arrays (e.g., ["a", "b"] for A+B)
+  - Add custom button type to available_buttons.json or handle dynamically
+  - Allow editing existing custom buttons
+- **Time Estimate**: 1-2 hours
 
-### ✅ Advanced Features Implemented
-- Drag-and-drop control placement and repositioning
-- 8-point resize handles for controls
-- Control deletion (Delete key + X button)
-- JSON preview with live updates
-- Grid snapping system with visual overlay
-- Custom button creator modal
-- Control properties panel (position/size/extended edges)
-- Two-column desktop layout
-- Bottom-sliding properties panel
-- Project save/load with localStorage
-- Export to .deltaskin functionality
-- Comprehensive ID system for all elements
+### 3. Landscape Orientation Support
+- **Purpose**: Many skins need both portrait and landscape layouts
+- **Implementation**:
+  - Add orientation toggle in Editor
+  - Duplicate controls/screens for landscape
+  - Update Canvas to handle orientation switching
+  - Modify export to include both orientations in JSON
+  - Consider auto-rotate functionality
+- **Time Estimate**: 3-4 hours
 
-## Immediate Next Steps
+## Secondary Priorities
 
-### 1. Complete Image Persistence
-- Store uploaded images in IndexedDB
-- Restore images when loading projects
-- Handle large file storage efficiently
-- Add image caching for performance
+### 4. Keyboard Shortcuts
+- Cmd/Ctrl+S: Save current project
+- Cmd/Ctrl+E: Export skin
+- Cmd/Ctrl+Z: Undo (requires history implementation)
+- Cmd/Ctrl+Shift+Z: Redo
+- Arrow keys: Nudge selected item by 1px (10px with Shift)
+- Escape: Deselect current item
 
-### 2. Enhanced Export Functionality
-- Validate skin data before export
-- Add export format options (.deltaskin/.gammaskin)
-- Include metadata in exports
-- Generate preview thumbnails
+### 5. Control Alignment Tools
+- Align selected controls (left, right, center, top, bottom, middle)
+- Distribute controls evenly (horizontal/vertical spacing)
+- Match sizes (width, height, both)
+- Visual guides when dragging near other controls
 
-### 3. Import Existing Skins
-- Parse .deltaskin file structure
-- Load existing control mappings
-- Import background images
-- Handle version compatibility
+### 6. Improved Visual Feedback
+- Loading states for async operations
+- Success/error toasts instead of alerts
+- Progress indicator for export process
+- Hover states for all interactive elements
 
-### 4. Landscape Orientation Support
-- Add orientation toggle
-- Separate control mappings for portrait/landscape
-- Responsive canvas sizing
-- Maintain control positions across orientations
+## Nice-to-Have Features
 
-### 5. Advanced Features
-- Undo/redo functionality with history stack
-- Keyboard shortcuts (Ctrl+Z, Ctrl+S, etc.)
-- Control grouping and alignment tools
-- Copy/paste controls
-- Snap to other controls (not just grid)
+### 7. Template System
+- Pre-made layouts for common configurations
+- Save current layout as reusable template
+- Share templates between projects
 
-## Development Workflow
-1. Focus on completing persistence features
-2. Ensure all data survives page refresh
-3. Test export/import cycle thoroughly
-4. Add comprehensive error handling
+### 8. Advanced Grid Options
+- Different grid sizes for X and Y axes
+- Grid offset controls
+- Hex grid option for certain button layouts
 
-## Testing Strategy
-- Test localStorage limits and fallbacks
-- Verify export files work in actual emulators
-- Test with various image sizes and formats
-- Cross-browser compatibility testing
+### 9. Batch Operations
+- Select multiple controls (with Shift+click or drag selection)
+- Move/resize multiple controls together
+- Copy/paste controls between projects
 
-## Current Sprint Goals
-1. ✅ Grid snapping and visual feedback
-2. ✅ Custom button creation
-3. ✅ Properties panel for fine control
-4. ✅ Project management UI
-5. ⏳ Complete persistence layer
-6. ⏳ Polish export functionality
+### 10. Export Previews
+- Show how the skin will look in the emulator
+- Simulate button presses
+- Preview both orientations side-by-side
 
-## Next Session Focus
-1. Implement IndexedDB for image storage
-2. Complete auto-save functionality
-3. Add import feature for existing skins
-4. Create landscape orientation support
-5. Begin undo/redo implementation
+## Technical Improvements
+
+### 11. Performance Optimizations
+- Virtualize control/screen lists for large numbers of items
+- Debounce project saves more intelligently
+- Lazy load large images
+- Use Web Workers for ZIP generation
+
+### 12. Testing Infrastructure
+- Unit tests for utility functions
+- Integration tests for critical workflows
+- E2E tests for export functionality
+- Visual regression tests for Canvas
+
+### 13. Accessibility
+- Keyboard navigation for all features
+- Screen reader support
+- High contrast mode
+- Focus indicators
+
+## Long-Term Vision
+
+### 14. Cloud Features
+- User accounts with cloud storage
+- Share skins publicly
+- Browse community creations
+- Version control for skins
+
+### 15. Advanced Editing
+- Layers system for complex layouts
+- Control grouping
+- Advanced animation support
+- Conditional visibility based on orientation
+
+### 16. Platform Expansion
+- iPad skin support
+- Export to other emulator formats
+- Native app versions
+- CLI tool for batch processing
+
+## Recommended Next Session Plan
+
+1. **Start with Import Functionality** - This is a highly requested feature that complements the export system
+2. **Fix Custom Button Creator** - Quick win that completes an existing feature
+3. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
+4. **Implement Success/Error Toasts** - Better UX than current alert() calls
+
+These priorities balance new features with polishing existing functionality, ensuring the app remains stable while adding value for users.

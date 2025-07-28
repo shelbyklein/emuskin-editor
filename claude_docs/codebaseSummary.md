@@ -13,28 +13,32 @@ emuskin-generator/
 │   └── vite.svg
 ├── src/
 │   ├── components/     # Reusable UI components
-│   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize
+│   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize for controls and screens
 │   │   ├── ControlPalette.tsx   # Button selection palette
-│   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor
+│   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
 │   │   ├── DeviceInfo.tsx       # Device metrics display
-│   │   ├── ExportButton.tsx     # Export to .deltaskin functionality
+│   │   ├── ExportButton.tsx     # Export to .deltaskin/.gammaskin with validation
 │   │   ├── GridControls.tsx     # Grid snapping controls
 │   │   ├── ImageUploader.tsx    # Background image upload
-│   │   ├── JsonPreview.tsx      # JSON output display
-│   │   ├── Layout.tsx           # Main app layout
-│   │   └── ProjectManager.tsx   # Project save/load management
+│   │   ├── JsonPreview.tsx      # JSON output display with screens support
+│   │   ├── Layout.tsx           # Main app layout with ID system
+│   │   ├── ProjectManager.tsx   # Project save/load management
+│   │   ├── ScreenPalette.tsx    # Screen selection for game display
+│   │   └── ScreenPropertiesPanel.tsx # Bottom-sliding editor for screens
 │   ├── pages/          # Page components
 │   │   ├── Editor.tsx  # Main editor interface
 │   │   ├── Settings.tsx
 │   │   └── About.tsx
 │   ├── types/          # TypeScript definitions
-│   │   └── index.ts    # Core type interfaces
-│   ├── hooks/          # Custom React hooks (empty)
-│   ├── utils/          # Helper functions (empty)
+│   │   └── index.ts    # Core type interfaces (includes ScreenMapping)
+│   ├── hooks/          # Custom React hooks
+│   │   └── useLocalStorage.tsx # LocalStorage with JSON parsing
+│   ├── utils/          # Helper functions
+│   │   └── indexedDB.ts # IndexedDB manager for large file storage
 │   ├── contexts/       # React contexts
-│   │   ├── EditorContext.tsx  # Editor settings (grid, etc)
-│   │   ├── ProjectContext.tsx # Project management state
+│   │   ├── EditorContext.tsx  # Editor settings (grid, etc) with persistence
+│   │   ├── ProjectContext.tsx # Project management state with screens
 │   │   └── ThemeContext.tsx   # Dark/light theme state
 │   ├── App.tsx         # Main app with routing
 │   ├── main.tsx        # Entry point
@@ -92,6 +96,7 @@ emuskin-generator/
 - `iphone-sizes.json`: Device specifications
 - `available_buttons.json`: System-specific button mappings
 - `console-aspect-ratios.json`: Display ratios
+- `console-screens.json`: Screen specifications for each console
 - `default_config.json`: JSON template structure
 
 ### Installed Dependencies
@@ -154,8 +159,20 @@ emuskin-generator/
 - ✅ Added comprehensive IDs to all UI elements for debugging
 - ✅ Restructured to two-column desktop layout
 - ✅ Properties panel converted to fixed bottom-sliding panel
-- ✅ ExportButton generates proper .deltaskin files
+- ✅ ExportButton generates proper .deltaskin/.gammaskin files with validation
 - ✅ ProjectManager handles multiple projects with localStorage
+- ✅ IndexedDB integration for large image storage
+- ✅ Fixed control properties apply button functionality
+- ✅ Prevented properties panel from opening after drag
+- ✅ Made grid more subtle in dark mode
+- ✅ Extended edges always visible on canvas
+- ✅ localStorage persistence for editor settings
+- ✅ Fixed dragging performance when grid snapping disabled
+- ✅ Complete screen support system implemented
+- ✅ ScreenPalette and ScreenPropertiesPanel components
+- ✅ Automatic dual-screen setup for Nintendo DS
+- ✅ Screens included in JSON export with validation
+- ✅ Green theme for screens vs blue for controls
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)
