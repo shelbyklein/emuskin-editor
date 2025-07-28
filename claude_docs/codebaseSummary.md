@@ -13,12 +13,17 @@ emuskin-generator/
 │   └── vite.svg
 ├── src/
 │   ├── components/     # Reusable UI components
-│   │   ├── Canvas.tsx      # Visual editing canvas
-│   │   ├── ControlPalette.tsx  # Button selection palette
-│   │   ├── ImageUploader.tsx   # Background image upload
-│   │   ├── JsonPreview.tsx      # JSON output display
+│   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize
+│   │   ├── ControlPalette.tsx   # Button selection palette
+│   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor
+│   │   ├── CustomButtonModal.tsx # Custom button creation dialog
 │   │   ├── DeviceInfo.tsx       # Device metrics display
-│   │   └── Layout.tsx          # Main app layout
+│   │   ├── ExportButton.tsx     # Export to .deltaskin functionality
+│   │   ├── GridControls.tsx     # Grid snapping controls
+│   │   ├── ImageUploader.tsx    # Background image upload
+│   │   ├── JsonPreview.tsx      # JSON output display
+│   │   ├── Layout.tsx           # Main app layout
+│   │   └── ProjectManager.tsx   # Project save/load management
 │   ├── pages/          # Page components
 │   │   ├── Editor.tsx  # Main editor interface
 │   │   ├── Settings.tsx
@@ -28,8 +33,9 @@ emuskin-generator/
 │   ├── hooks/          # Custom React hooks (empty)
 │   ├── utils/          # Helper functions (empty)
 │   ├── contexts/       # React contexts
-│   │   ├── AppContext.tsx    # Global app state
-│   │   └── CanvasContext.tsx # Canvas-specific state
+│   │   ├── EditorContext.tsx  # Editor settings (grid, etc)
+│   │   ├── ProjectContext.tsx # Project management state
+│   │   └── ThemeContext.tsx   # Dark/light theme state
 │   ├── App.tsx         # Main app with routing
 │   ├── main.tsx        # Entry point
 │   └── index.css       # Tailwind CSS directives
@@ -48,19 +54,22 @@ emuskin-generator/
 ### Implemented Component Structure
 - **Editor Components**
   - Canvas: 1:1 pixel perfect editing surface with drag-and-drop and resize
+  - ControlPropertiesPanel: Bottom-sliding panel for control editing
+  - ControlPalette: Dynamic button palette with custom button support
+  - CustomButtonModal: Modal for creating custom multi-button controls
+  - GridControls: Toggle and adjust grid snapping settings
   - ImageUploader: Drag-and-drop image upload with validation
-  - ControlPalette: Dynamic button palette based on console selection
   - JsonPreview: Collapsible JSON output with copy functionality
   - DeviceInfo: Display device dimensions and pixel perfect status
-  - Layout: Main app structure with responsive navigation
   
 - **File Management**
-  - ProjectSaver: Local storage management
-  - ExportGenerator: ZIP file creation
+  - ProjectManager: Project save/load with localStorage
+  - ExportButton: Generate and download .deltaskin files
   
-- **Common Components**
-  - MobileNav: Mobile navigation
-  - TouchControls: Touch gesture handlers
+- **Layout Components**
+  - Layout: Main app structure with responsive navigation
+  - Two-column desktop layout (controls left, canvas right)
+  - Comprehensive ID system for all UI elements
 
 ## Data Flow
 
@@ -135,6 +144,18 @@ emuskin-generator/
 - ✅ Canvas container adapts to device dimensions automatically
 - ✅ Added DeviceInfo component for device metrics display
 - ✅ Improved drag/resize calculations for 1:1 display
+- ✅ Grid snapping system with visual grid overlay
+- ✅ GridControls component for toggling grid display and adjusting size
+- ✅ Custom button creator modal for multi-button combinations
+- ✅ Control properties panel with position/size/extended edges editing
+- ✅ Implemented EditorContext for managing grid settings
+- ✅ ProjectContext for project save/load functionality
+- ✅ ThemeContext for dark/light mode support
+- ✅ Added comprehensive IDs to all UI elements for debugging
+- ✅ Restructured to two-column desktop layout
+- ✅ Properties panel converted to fixed bottom-sliding panel
+- ✅ ExportButton generates proper .deltaskin files
+- ✅ ProjectManager handles multiple projects with localStorage
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

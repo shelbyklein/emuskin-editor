@@ -116,6 +116,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
 
   return (
     <button
+      id="export-deltaskin-button"
       onClick={handleExport}
       disabled={isExporting || !selectedConsole || !selectedDevice || controls.length === 0}
       className={`

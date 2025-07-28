@@ -330,12 +330,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
   return (
     <div 
+      id="canvas-container"
       ref={containerRef}
       className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center"
     >
       {device ? (
-        <div className="inline-flex items-start">
+        <div id="canvas-wrapper" className="inline-flex flex-col items-start">
           <div 
+            id="canvas-drawing-area"
             className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto"
             style={{
               width: canvasSize.width,
@@ -350,6 +352,7 @@ const Canvas: React.FC<CanvasProps> = ({
             {/* Background image */}
             {backgroundImage && (
               <img 
+                id="canvas-background-image"
                 src={backgroundImage} 
                 alt="Skin background"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
@@ -360,6 +363,7 @@ const Canvas: React.FC<CanvasProps> = ({
             {/* Grid overlay */}
             {settings.gridEnabled && (
               <div 
+                id="canvas-grid-overlay"
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundImage: `
@@ -384,6 +388,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
               return (
                 <div
+                  id={`control-${index}`}
                   key={index}
                   className={`absolute border-2 rounded transition-all duration-75 ${
                     isSelected 
@@ -405,8 +410,8 @@ const Canvas: React.FC<CanvasProps> = ({
                   }}
                 >
                   {/* Control label */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
+                  <div id={`control-label-${index}`} className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
                       {label}
                     </span>
                   </div>
@@ -416,18 +421,22 @@ const Canvas: React.FC<CanvasProps> = ({
                     <>
                       {/* Corner handles */}
                       <div 
+                        id={`resize-handle-nw-${index}`}
                         className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-nw-resize hover:bg-blue-100"
                         onMouseDown={(e) => handleResizeStart(e, index, 'nw')}
                       />
                       <div 
+                        id={`resize-handle-ne-${index}`}
                         className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ne-resize hover:bg-blue-100"
                         onMouseDown={(e) => handleResizeStart(e, index, 'ne')}
                       />
                       <div 
+                        id={`resize-handle-sw-${index}`}
                         className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-sw-resize hover:bg-blue-100"
                         onMouseDown={(e) => handleResizeStart(e, index, 'sw')}
                       />
                       <div 
+                        id={`resize-handle-se-${index}`}
                         className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize hover:bg-blue-100"
                         onMouseDown={(e) => handleResizeStart(e, index, 'se')}
                       />
@@ -452,11 +461,13 @@ const Canvas: React.FC<CanvasProps> = ({
                       
                       {/* Delete button */}
                       <button
+                        id={`control-delete-${index}`}
                         className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteControl(index);
                         }}
+                        aria-label={`Delete ${label} control`}
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -484,12 +495,12 @@ const Canvas: React.FC<CanvasProps> = ({
           </div>
 
           {/* Device info */}
-          <div className="mt-4">
+          <div id="device-info-section" className="mt-4">
             <DeviceInfo device={device} scale={scale} />
           </div>
           
           {/* Info panel */}
-          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <div id="canvas-help-text" className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>• Click and drag controls to reposition</p>
             <p>• Drag corner/edge handles to resize</p>
             <p>• Click a control to select, then press Delete to remove</p>
@@ -502,15 +513,32 @@ const Canvas: React.FC<CanvasProps> = ({
         </p>
       )}
       
-      {/* Control Properties Panel */}
+      {/* Control Properties Panel - Fixed Position */}
       {showPropertiesPanel && selectedControl !== null && device && (
-        <div className="ml-4">
-          <ControlPropertiesPanel
-            control={controls[selectedControl] || null}
-            controlIndex={selectedControl}
-            onUpdate={handleControlPropertiesUpdate}
-            onClose={() => setShowPropertiesPanel(false)}
+        <div 
+          id="properties-panel-overlay" 
+          className="fixed inset-0 z-40 pointer-events-none"
+        >
+          <div 
+            id="properties-panel-backdrop"
+            className="absolute inset-0 bg-black/20 pointer-events-auto"
+            onClick={() => setShowPropertiesPanel(false)}
           />
+          <div 
+            id="properties-panel-container" 
+            className={`absolute bottom-0 left-0 right-0 pointer-events-auto transform transition-transform duration-300 ease-out ${
+              showPropertiesPanel ? 'translate-y-0' : 'translate-y-full'
+            }`}
+          >
+            <div className="flex justify-center pb-4">
+              <ControlPropertiesPanel
+                control={controls[selectedControl] || null}
+                controlIndex={selectedControl}
+                onUpdate={handleControlPropertiesUpdate}
+                onClose={() => setShowPropertiesPanel(false)}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

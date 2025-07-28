@@ -105,14 +105,16 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     : control.inputs || 'Control';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-72">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    <div id="control-properties-panel" className="bg-white dark:bg-gray-800 rounded-t-xl shadow-2xl p-6 w-full max-w-2xl">
+      <div id="properties-panel-header" className="flex justify-between items-center mb-4">
+        <h3 id="properties-panel-title" className="text-lg font-medium text-gray-900 dark:text-white">
           Control Properties
         </h3>
         <button
+          id="control-properties-close"
           onClick={onClose}
           className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+          aria-label="Close properties panel"
         >
           <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -120,17 +122,20 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         </button>
       </div>
 
-      <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-        <strong>{label}</strong>
+      <div id="control-label-display" className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        <strong>Editing: {label}</strong>
       </div>
 
-      {/* Position Section */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Position</h4>
-        <div className="grid grid-cols-2 gap-2">
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Position Section */}
+        <div id="position-section" className="space-y-3">
+          <h4 id="position-section-title" className="text-sm font-medium text-gray-700 dark:text-gray-300">Position</h4>
+          <div id="position-inputs" className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">X</label>
+            <label htmlFor="control-x-position" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">X</label>
             <input
+              id="control-x-position"
               type="number"
               value={formData.x}
               onChange={(e) => handleInputChange('x', e.target.value)}
@@ -139,8 +144,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Y</label>
+            <label htmlFor="control-y-position" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Y</label>
             <input
+              id="control-y-position"
               type="number"
               value={formData.y}
               onChange={(e) => handleInputChange('y', e.target.value)}
@@ -148,16 +154,17 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
+          </div>
         </div>
-      </div>
 
-      {/* Size Section */}
-      <div className="space-y-3 mt-4">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Size</h4>
-        <div className="grid grid-cols-2 gap-2">
+        {/* Size Section */}
+        <div id="size-section" className="space-y-3">
+          <h4 id="size-section-title" className="text-sm font-medium text-gray-700 dark:text-gray-300">Size</h4>
+          <div id="size-inputs" className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Width</label>
+            <label htmlFor="control-width" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Width</label>
             <input
+              id="control-width"
               type="number"
               value={formData.width}
               onChange={(e) => handleInputChange('width', e.target.value)}
@@ -167,8 +174,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Height</label>
+            <label htmlFor="control-height" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Height</label>
             <input
+              id="control-height"
               type="number"
               value={formData.height}
               onChange={(e) => handleInputChange('height', e.target.value)}
@@ -177,26 +185,27 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
+          </div>
         </div>
-      </div>
 
-      {/* Extended Edges Section */}
-      <div className="space-y-3 mt-4">
-        <div className="flex items-center space-x-2">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Extended Edges</h4>
-          <div className="group relative">
+        {/* Extended Edges Section */}
+        <div id="extended-edges-section" className="space-y-3">
+          <div id="extended-edges-header" className="flex items-center space-x-2">
+            <h4 id="extended-edges-title" className="text-sm font-medium text-gray-700 dark:text-gray-300">Extended Edges</h4>
+            <div id="extended-edges-tooltip" className="group relative">
             <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div id="extended-edges-tooltip-content" className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               Extended edges increase the touch area beyond the visible button boundaries
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div id="extended-edges-inputs" className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Top</label>
+            <label htmlFor="control-extended-top" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Top</label>
             <input
+              id="control-extended-top"
               type="number"
               value={formData.extendedTop}
               onChange={(e) => handleInputChange('extendedTop', e.target.value)}
@@ -205,8 +214,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Bottom</label>
+            <label htmlFor="control-extended-bottom" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Bottom</label>
             <input
+              id="control-extended-bottom"
               type="number"
               value={formData.extendedBottom}
               onChange={(e) => handleInputChange('extendedBottom', e.target.value)}
@@ -215,8 +225,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Left</label>
+            <label htmlFor="control-extended-left" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Left</label>
             <input
+              id="control-extended-left"
               type="number"
               value={formData.extendedLeft}
               onChange={(e) => handleInputChange('extendedLeft', e.target.value)}
@@ -225,8 +236,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Right</label>
+            <label htmlFor="control-extended-right" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Right</label>
             <input
+              id="control-extended-right"
               type="number"
               value={formData.extendedRight}
               onChange={(e) => handleInputChange('extendedRight', e.target.value)}
@@ -236,21 +248,24 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
           </div>
         </div>
       </div>
+      </div>
 
       {/* Actions */}
-      <div className="flex justify-end space-x-2 mt-6">
+      <div id="properties-panel-actions" className="flex justify-between items-center mt-6">
+        <div id="properties-panel-help" className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
+          <span>• Use arrow keys to adjust values</span>
+          <span>• Hold Shift for ±10 increments</span>
+          <span>• Press Enter to apply changes</span>
+        </div>
+        <div className="flex space-x-2">
         <button
+          id="control-properties-apply"
           onClick={handleApply}
           className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
         >
           Apply
         </button>
-      </div>
-
-      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        <p>• Use arrow keys to adjust values</p>
-        <p>• Hold Shift for ±10 increments</p>
-        <p>• Press Enter to apply changes</p>
+        </div>
       </div>
     </div>
   );

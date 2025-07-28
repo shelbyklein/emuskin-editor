@@ -162,157 +162,168 @@ const Editor: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="card animate-fade-in">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Skin</h2>
-          <ProjectManager />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Skin Name Input */}
-          <div>
-            <label htmlFor="skinName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Skin Name
-            </label>
-            <input
-              type="text"
-              id="skinName"
-              value={skinName}
-              onChange={(e) => setSkinName(e.target.value)}
-              className="mt-1 input-field"
-              placeholder="My Custom Skin"
-            />
-          </div>
-
-          {/* Skin Identifier Input */}
-          <div>
-            <label htmlFor="skinIdentifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Skin Identifier
-            </label>
-            <input
-              type="text"
-              id="skinIdentifier"
-              value={skinIdentifier}
-              onChange={(e) => setSkinIdentifier(e.target.value)}
-              className="mt-1 input-field"
-              placeholder="com.playcase.default.skin"
-            />
-          </div>
-
-          {/* Console Selection */}
-          <div>
-            <label htmlFor="console" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Console System
-            </label>
-            <input
-              id="console"
-              list="console-list"
-              value={selectedConsole}
-              onChange={(e) => setSelectedConsole(e.target.value)}
-              className="mt-1 input-field"
-              placeholder="Type to search consoles..."
-            />
-            <datalist id="console-list">
-              {consoles.map((console) => (
-                <option key={console.shortName} value={console.shortName}>
-                  {console.console}
-                </option>
-              ))}
-            </datalist>
-          </div>
-
-          {/* Device Selection */}
-          <div>
-            <label htmlFor="device" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              iPhone Model
-            </label>
-            <input
-              id="device"
-              list="device-list"
-              value={selectedDevice}
-              onChange={(e) => setSelectedDevice(e.target.value)}
-              className="mt-1 input-field"
-              placeholder="Type to search devices..."
-            />
-            <datalist id="device-list">
-              {devices.map((device) => (
-                <option key={device.model} value={device.model} />
-              ))}
-            </datalist>
-          </div>
-        </div>
+    <div id="editor-container">
+      {/* Project Manager - Top Right */}
+      <div className="flex justify-end mb-4">
+        <ProjectManager />
       </div>
 
-      {/* Image Upload Section */}
-      {selectedConsole && selectedDevice && !uploadedImage && (
-        <div className="card animate-slide-up">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
-          <ImageUploader onImageUpload={handleImageUpload} />
-        </div>
-      )}
+      {/* Two Column Layout */}
+      <div id="editor-layout" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Form, Controls and Image Upload */}
+        <div id="editor-left-column" className="space-y-6">
+          {/* Header Section */}
+          <div id="editor-header" className="card animate-fade-in">
+            <h2 id="editor-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Create New Skin</h2>
+            
+            <div id="editor-form-grid" className="grid grid-cols-1 gap-4">
+              {/* Skin Name Input */}
+              <div id="skin-name-container">
+                <label htmlFor="skinName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Skin Name
+                </label>
+                <input
+                  type="text"
+                  id="skinName"
+                  value={skinName}
+                  onChange={(e) => setSkinName(e.target.value)}
+                  className="mt-1 input-field"
+                  placeholder="My Custom Skin"
+                />
+              </div>
 
-      {/* Control Palette */}
-      {selectedConsole && selectedDevice && (
-        <div className="card animate-slide-up">
-          <ControlPalette 
-            consoleType={selectedConsole}
-            onControlSelect={handleControlSelect}
-          />
-        </div>
-      )}
+              {/* Skin Identifier Input */}
+              <div id="skin-identifier-container">
+                <label htmlFor="skinIdentifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Skin Identifier
+                </label>
+                <input
+                  type="text"
+                  id="skinIdentifier"
+                  value={skinIdentifier}
+                  onChange={(e) => setSkinIdentifier(e.target.value)}
+                  className="mt-1 input-field"
+                  placeholder="com.playcase.default.skin"
+                />
+              </div>
 
-      {/* Canvas Area */}
-      <div className="card">
-        <div className="flex flex-col space-y-4 mb-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
-            <div className="flex items-center space-x-3">
-              {uploadedImage && (
-                <button
-                  onClick={() => setUploadedImage(null)}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Change Image
-                </button>
+              {/* Console Selection */}
+              <div id="console-selection-container">
+                <label htmlFor="console" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Console System
+                </label>
+                <input
+                  id="console"
+                  list="console-list"
+                  value={selectedConsole}
+                  onChange={(e) => setSelectedConsole(e.target.value)}
+                  className="mt-1 input-field"
+                  placeholder="Type to search consoles..."
+                />
+                <datalist id="console-list">
+                  {consoles.map((console) => (
+                    <option key={console.shortName} value={console.shortName}>
+                      {console.console}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Device Selection */}
+              <div id="device-selection-container">
+                <label htmlFor="device" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  iPhone Model
+                </label>
+                <input
+                  id="device"
+                  list="device-list"
+                  value={selectedDevice}
+                  onChange={(e) => setSelectedDevice(e.target.value)}
+                  className="mt-1 input-field"
+                  placeholder="Type to search devices..."
+                />
+                <datalist id="device-list">
+                  {devices.map((device) => (
+                    <option key={device.model} value={device.model} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+          </div>
+          {/* Image Upload Section */}
+          {selectedConsole && selectedDevice && !uploadedImage && (
+            <div id="image-upload-section" className="card animate-slide-up">
+              <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
+              <ImageUploader onImageUpload={handleImageUpload} />
+            </div>
+          )}
+
+          {/* Control Palette */}
+          {selectedConsole && selectedDevice && (
+            <div id="control-palette-section" className="card animate-slide-up">
+              <ControlPalette 
+                consoleType={selectedConsole}
+                onControlSelect={handleControlSelect}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Canvas and JSON Preview */}
+        <div id="editor-right-column" className="space-y-6">
+          {/* Canvas Area */}
+          <div id="canvas-section" className="card">
+            <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
+              <div id="canvas-toolbar" className="flex justify-between items-center">
+                <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
+                <div id="canvas-actions" className="flex items-center space-x-3">
+                  {uploadedImage && (
+                    <button
+                      id="change-image-button"
+                      onClick={() => setUploadedImage(null)}
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                    >
+                      Change Image
+                    </button>
+                  )}
+                  <ExportButton
+                    skinName={skinName}
+                    skinIdentifier={skinIdentifier}
+                    selectedConsole={selectedConsoleData}
+                    selectedDevice={selectedDeviceData}
+                    controls={controls}
+                    backgroundImage={uploadedImage}
+                  />
+                </div>
+              </div>
+              {/* Grid Controls */}
+              {selectedDeviceData && (
+                <GridControls />
               )}
-              <ExportButton
+            </div>
+            <Canvas 
+              device={selectedDeviceData}
+              backgroundImage={uploadedImage?.url || null}
+              controls={controls}
+              onControlUpdate={handleControlsUpdate}
+            />
+          </div>
+
+          {/* JSON Preview */}
+          {selectedConsoleData && selectedDeviceData && (
+            <div id="json-preview-section" className="card animate-slide-up">
+              <JsonPreview
                 skinName={skinName}
                 skinIdentifier={skinIdentifier}
                 selectedConsole={selectedConsoleData}
                 selectedDevice={selectedDeviceData}
                 controls={controls}
-                backgroundImage={uploadedImage}
+                backgroundImageFile={uploadedImage?.file}
               />
             </div>
-          </div>
-          {/* Grid Controls */}
-          {selectedDeviceData && (
-            <GridControls />
           )}
         </div>
-        <Canvas 
-          device={selectedDeviceData}
-          backgroundImage={uploadedImage?.url || null}
-          controls={controls}
-          onControlUpdate={handleControlsUpdate}
-        />
       </div>
-
-      {/* JSON Preview */}
-      {selectedConsoleData && selectedDeviceData && (
-        <div className="card animate-slide-up">
-          <JsonPreview
-            skinName={skinName}
-            skinIdentifier={skinIdentifier}
-            selectedConsole={selectedConsoleData}
-            selectedDevice={selectedDeviceData}
-            controls={controls}
-            backgroundImageFile={uploadedImage?.file}
-          />
-        </div>
-      )}
     </div>
   );
 };

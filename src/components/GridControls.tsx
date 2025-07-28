@@ -8,8 +8,9 @@ const GridControls: React.FC = () => {
   return (
     <div className="flex items-center space-x-4 text-sm">
       {/* Grid Display Toggle */}
-      <label className="flex items-center space-x-2 cursor-pointer">
+      <label htmlFor="grid-display-toggle" className="flex items-center space-x-2 cursor-pointer">
         <input
+          id="grid-display-toggle"
           type="checkbox"
           checked={settings.gridEnabled}
           onChange={(e) => updateSettings({ gridEnabled: e.target.checked })}
@@ -19,8 +20,9 @@ const GridControls: React.FC = () => {
       </label>
 
       {/* Snap to Grid Toggle */}
-      <label className="flex items-center space-x-2 cursor-pointer">
+      <label htmlFor="snap-to-grid-toggle" className="flex items-center space-x-2 cursor-pointer">
         <input
+          id="snap-to-grid-toggle"
           type="checkbox"
           checked={settings.snapToGrid}
           onChange={(e) => updateSettings({ snapToGrid: e.target.checked })}

@@ -26,10 +26,10 @@ const ProjectManager: React.FC = () => {
   };
 
   return (
-    <div className="relative">
-      <div className="flex items-center space-x-2">
+    <div id="project-manager" className="relative">
+      <div id="project-manager-header" className="flex items-center space-x-2">
         {/* Current Project Display */}
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div id="current-project-display" className="text-sm text-gray-600 dark:text-gray-400">
           {currentProject ? (
             <>
               <span className="font-medium">{currentProject.name}</span>
@@ -43,11 +43,13 @@ const ProjectManager: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-1">
+        <div id="project-actions" className="flex items-center space-x-1">
           <button
+            id="new-project-button"
             onClick={() => setShowNewProject(true)}
             className="p-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             title="New Project"
+            aria-label="Create new project"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -55,9 +57,11 @@ const ProjectManager: React.FC = () => {
           </button>
           
           <button
+            id="open-project-button"
             onClick={() => setShowProjectList(!showProjectList)}
             className="p-1.5 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             title="Open Project"
+            aria-label="Open existing project"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
@@ -68,9 +72,10 @@ const ProjectManager: React.FC = () => {
 
       {/* New Project Dialog */}
       {showNewProject && (
-        <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 z-10">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">New Project</h3>
+        <div id="new-project-dialog" className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 z-10">
+          <h3 id="new-project-dialog-title" className="text-sm font-medium text-gray-900 dark:text-white mb-2">New Project</h3>
           <input
+            id="new-project-name"
             type="text"
             value={newProjectName}
             onChange={(e) => setNewProjectName(e.target.value)}
@@ -79,8 +84,9 @@ const ProjectManager: React.FC = () => {
             className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             autoFocus
           />
-          <div className="flex justify-end space-x-2 mt-2">
+          <div id="new-project-actions" className="flex justify-end space-x-2 mt-2">
             <button
+              id="new-project-cancel"
               onClick={() => {
                 setShowNewProject(false);
                 setNewProjectName('');
@@ -90,6 +96,7 @@ const ProjectManager: React.FC = () => {
               Cancel
             </button>
             <button
+              id="new-project-create"
               onClick={handleNewProject}
               disabled={!newProjectName.trim()}
               className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded"
@@ -102,13 +109,14 @@ const ProjectManager: React.FC = () => {
 
       {/* Project List */}
       {showProjectList && projects.length > 0 && (
-        <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 w-72 max-h-64 overflow-y-auto z-10">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white px-2 pb-2 border-b dark:border-gray-700">
+        <div id="project-list" className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 w-72 max-h-64 overflow-y-auto z-10">
+          <h3 id="project-list-title" className="text-sm font-medium text-gray-900 dark:text-white px-2 pb-2 border-b dark:border-gray-700">
             Projects
           </h3>
-          <div className="mt-2 space-y-1">
+          <div id="project-list-items" className="mt-2 space-y-1">
             {projects.map((project) => (
               <div
+                id={`project-item-${project.id}`}
                 key={project.id}
                 className={`flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
                   currentProject?.id === project.id ? 'bg-gray-100 dark:bg-gray-700' : ''
@@ -129,12 +137,14 @@ const ProjectManager: React.FC = () => {
                   </div>
                 </button>
                 <button
+                  id={`delete-project-${project.id}`}
                   onClick={() => {
                     if (confirm(`Delete project "${project.name}"?`)) {
                       deleteProject(project.id);
                     }
                   }}
                   className="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  aria-label={`Delete project ${project.name}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

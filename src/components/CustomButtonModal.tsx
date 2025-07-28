@@ -54,14 +54,14 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+    <div id="custom-button-modal-overlay" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div id="custom-button-modal" className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h2 id="custom-button-modal-title" className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Create Custom Button
         </h2>
 
         {/* Button Name */}
-        <div className="mb-4">
+        <div id="button-name-section" className="mb-4">
           <label htmlFor="buttonName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Custom Button Name
           </label>
@@ -76,17 +76,18 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
         </div>
 
         {/* Button Selection */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div id="button-selection-section" className="mb-4">
+          <label id="button-selection-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Select Buttons to Combine
           </label>
-          <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+          <div id="button-selection-grid" className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
             {availableButtons.map((button) => (
               <label
                 key={button.key}
                 className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <input
+                  id={`custom-button-${button.key}`}
                   type="checkbox"
                   checked={selectedButtons.includes(button.key)}
                   onChange={() => handleButtonToggle(button.key)}
@@ -101,14 +102,16 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
         </div>
 
         {/* Timing Option */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div id="timing-section" className="mb-6">
+          <label id="timing-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Button Press Timing
           </label>
-          <div className="space-y-2">
+          <div id="timing-options" className="space-y-2">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
+                id="timing-simultaneous"
                 type="radio"
+                name="timing"
                 value="simultaneous"
                 checked={timing === 'simultaneous'}
                 onChange={(e) => setTiming(e.target.value as 'simultaneous')}
@@ -120,7 +123,9 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
             </label>
             <label className="flex items-center space-x-2 cursor-pointer opacity-50">
               <input
+                id="timing-sequential"
                 type="radio"
+                name="timing"
                 value="sequential"
                 checked={timing === 'sequential'}
                 onChange={(e) => setTiming(e.target.value as 'sequential')}
@@ -136,22 +141,24 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
 
         {/* Selected Buttons Preview */}
         {selectedButtons.length > 0 && (
-          <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-700 rounded">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+          <div id="button-preview" className="mb-6 p-3 bg-gray-100 dark:bg-gray-700 rounded">
+            <p id="button-preview-text" className="text-sm text-gray-700 dark:text-gray-300">
               <strong>Preview:</strong> {buttonName || 'Custom Button'} = {selectedButtons.join(' + ')}
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3">
+        <div id="modal-actions" className="flex justify-end space-x-3">
           <button
+            id="custom-button-cancel"
             onClick={handleClose}
             className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             Cancel
           </button>
           <button
+            id="custom-button-create"
             onClick={handleConfirm}
             disabled={!buttonName || selectedButtons.length === 0}
             className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded transition-colors"

@@ -94,8 +94,11 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       {/* Header */}
       <div className="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <button
+          id="json-preview-toggle"
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+          aria-expanded={isExpanded}
+          aria-label="Toggle JSON preview"
         >
           <svg 
             className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
@@ -116,8 +119,10 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
             <span className="text-xs text-green-600 dark:text-green-400">Copied!</span>
           )}
           <button
+            id="copy-json-button"
             onClick={handleCopy}
             className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+            aria-label="Copy JSON to clipboard"
           >
             Copy JSON
           </button>

@@ -5,17 +5,23 @@
 - ✅ Add resize handles for control zones
 - ✅ Create JSON preview functionality
 - ✅ Implement control editing and deletion
-- Implement grid snapping for precise control placement
-- Create custom button functionality
+- ✅ Implement grid snapping for precise control placement
+- ✅ Create custom button functionality
+- ✅ Add comprehensive IDs to all UI elements
+- ✅ Implement two-column layout on desktop
+- ✅ Create bottom-sliding properties panel
+- Implement local storage persistence
+- Add export functionality for .deltaskin files
 
 ## Context
 - React + TypeScript + Vite project successfully initialized
-- Basic routing and layout structure implemented
-- Console and device selection dropdowns functional
-- Canvas component created with background image support
-- Control visualization working with basic rendering
-- ImageUploader component completed
-- ControlPalette showing system-specific buttons
+- Full-featured editor with drag-and-drop controls
+- Grid snapping system with toggleable display
+- Custom button creator modal implemented
+- Control properties panel with position/size/extended edges editing
+- Two-column desktop layout for better workflow
+- Comprehensive ID system for all UI elements
+- Bottom-sliding properties panel for control editing
 
 ## Completed Steps
 - Created documentation structure in claude_docs folder
@@ -54,20 +60,33 @@
 - ✅ Removed scaling - canvas shows exact device dimensions
 - ✅ Added DeviceInfo component showing device specs
 - ✅ Made canvas container adapt to content size
+- ✅ Implemented grid snapping with visual grid display
+- ✅ Created GridControls component with toggle and size adjustment
+- ✅ Built custom button creator modal
+- ✅ Added control properties panel for editing position/size/extended edges
+- ✅ Implemented EditorContext for grid settings
+- ✅ Added comprehensive IDs to all UI elements for better debugging
+- ✅ Restructured layout to two-column on desktop (controls left, canvas right)
+- ✅ Moved "Create New Skin" form to left column
+- ✅ Added flex-direction: column to canvas wrapper
+- ✅ Converted properties panel to fixed bottom-sliding panel
 
 ## Next Steps
-1. ✅ Implement drag-and-drop functionality for placed controls
-2. ✅ Add resize handles for control zones
-3. ✅ Implement control deletion functionality
-4. ✅ Add JSON preview functionality
-5. Add grid snapping for control placement (Next Priority)
-6. Implement custom button creation
-7. Create local storage persistence
-8. Implement ZIP file generation and export
-9. Add control property editing (extended edges)
-10. Implement landscape orientation support
-11. Add undo/redo functionality
-12. Implement keyboard shortcuts for common actions
+1. Implement local storage persistence (Next Priority)
+   - Save/load projects with ProjectContext
+   - Auto-save functionality
+   - Multiple project management
+2. Complete export functionality
+   - Generate proper .deltaskin files
+   - Include all assets in ZIP
+3. Add image persistence
+   - Store uploaded images in IndexedDB
+   - Restore images when loading projects
+4. Implement landscape orientation support
+5. Add undo/redo functionality
+6. Implement keyboard shortcuts for common actions
+7. Add validation for skin data before export
+8. Create import functionality for existing .deltaskin files
 
 ## Related Tasks from Project Roadmap
 - Continuing "Core Features" implementation

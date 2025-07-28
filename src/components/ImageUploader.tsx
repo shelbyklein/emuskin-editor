@@ -86,10 +86,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         `}
       >
         <input
+          id="image-upload-input"
           type="file"
           accept={acceptedFormats.join(',')}
           onChange={handleFileInput}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          aria-label="Upload skin background image"
         />
         
         <svg

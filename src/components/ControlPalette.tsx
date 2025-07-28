@@ -78,10 +78,12 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
     
     return (
       <button
+        id={`control-button-${button.key}`}
         key={button.key}
         onClick={() => handleButtonClick(button)}
         className="flex flex-col items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
         title={`Add ${button.label}`}
+        aria-label={`Add ${button.label} control`}
       >
         <div className="w-8 h-8 flex items-center justify-center">
           {isDpad ? (
@@ -133,8 +135,10 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
       
       <div className="border-t dark:border-gray-700 pt-4">
         <button
+          id="add-custom-button"
           onClick={() => setShowCustomModal(true)}
           className="w-full py-2 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-all duration-200"
+          aria-label="Add custom button"
         >
           + Add Custom Button
         </button>

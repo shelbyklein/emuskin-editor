@@ -10,21 +10,23 @@ import About from './pages/About';
 
 function App() {
   return (
-    <ThemeProvider>
-      <ProjectProvider>
-        <EditorProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Editor />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="about" element={<About />} />
-              </Route>
-            </Routes>
-          </Router>
-        </EditorProvider>
-      </ProjectProvider>
-    </ThemeProvider>
+    <div id="app-root">
+      <ThemeProvider>
+        <ProjectProvider>
+          <EditorProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Editor />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="about" element={<About />} />
+                </Route>
+              </Routes>
+            </Router>
+          </EditorProvider>
+        </ProjectProvider>
+      </ThemeProvider>
+    </div>
   );
 }
 
