@@ -254,7 +254,7 @@ const Editor: React.FC = () => {
       )}
 
       {/* Control Palette */}
-      {selectedConsole && selectedDevice && uploadedImage && (
+      {selectedConsole && selectedDevice && (
         <div className="card animate-slide-up">
           <ControlPalette 
             consoleType={selectedConsole}
