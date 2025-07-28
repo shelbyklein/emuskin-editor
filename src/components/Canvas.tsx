@@ -162,17 +162,24 @@ const Canvas: React.FC<CanvasProps> = ({
         clampedY = snapToGrid(clampedY, settings.gridSize);
       }
       
-      const updatedControls = [...controls];
-      updatedControls[dragState.controlIndex] = {
-        ...control,
-        frame: {
-          ...control.frame,
-          x: Math.round(clampedX),
-          y: Math.round(clampedY)
-        }
-      };
+      // Round the values
+      clampedX = Math.round(clampedX);
+      clampedY = Math.round(clampedY);
       
-      onControlUpdate(updatedControls);
+      // Only update if position actually changed
+      if (clampedX !== control.frame?.x || clampedY !== control.frame?.y) {
+        const updatedControls = [...controls];
+        updatedControls[dragState.controlIndex] = {
+          ...control,
+          frame: {
+            ...control.frame,
+            x: clampedX,
+            y: clampedY
+          }
+        };
+        
+        onControlUpdate(updatedControls);
+      }
     }
   }, [dragState, controls, scale, device, onControlUpdate, resizeState.isResizing, settings]);
 
@@ -414,7 +421,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`control-${index}`}
                   key={index}
-                  className={`absolute border-2 rounded transition-all duration-75 ${
+                  className={`absolute border-2 rounded ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
                       : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
@@ -424,7 +431,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     top: `${y}px`,
                     width: `${width}px`,
                     height: `${height}px`,
-                    cursor: dragState.isDragging ? 'grabbing' : 'move'
+                    cursor: dragState.isDragging ? 'grabbing' : 'move',
+                    transition: dragState.isDragging && dragState.controlIndex === index ? 'none' : 'all 75ms'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, index)}
                   onClick={(e) => {
