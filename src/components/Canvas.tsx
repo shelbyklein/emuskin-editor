@@ -496,22 +496,22 @@ const Canvas: React.FC<CanvasProps> = ({
             <p>• Click empty space to deselect</p>
           </div>
         </div>
-        
-        {/* Control Properties Panel */}
-        {showPropertiesPanel && selectedControl !== null && (
-          <div className="ml-4">
-            <ControlPropertiesPanel
-              control={controls[selectedControl] || null}
-              controlIndex={selectedControl}
-              onUpdate={handleControlPropertiesUpdate}
-              onClose={() => setShowPropertiesPanel(false)}
-            />
-          </div>
-        )}
       ) : (
         <p className="text-gray-500 dark:text-gray-400">
           Select a device to begin
         </p>
+      )}
+      
+      {/* Control Properties Panel */}
+      {showPropertiesPanel && selectedControl !== null && device && (
+        <div className="ml-4">
+          <ControlPropertiesPanel
+            control={controls[selectedControl] || null}
+            controlIndex={selectedControl}
+            onUpdate={handleControlPropertiesUpdate}
+            onClose={() => setShowPropertiesPanel(false)}
+          />
+        </div>
       )}
     </div>
   );

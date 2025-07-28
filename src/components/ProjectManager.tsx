@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useProject } from '../contexts/ProjectContext';
 
 const ProjectManager: React.FC = () => {
-  const { currentProject, projects, createProject, loadProject, deleteProject, clearProject } = useProject();
+  const { currentProject, projects, createProject, loadProject, deleteProject } = useProject();
   const [showProjectList, setShowProjectList] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
