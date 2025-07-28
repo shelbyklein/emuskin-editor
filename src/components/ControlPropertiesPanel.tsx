@@ -17,6 +17,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
   onClose
 }) => {
   const { settings } = useEditor();
+  const [isEditing, setIsEditing] = useState(false);
   
   // Local state for form inputs
   const [formData, setFormData] = useState({
@@ -30,9 +31,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     extendedRight: 0
   });
 
-  // Update form when control changes
+  // Update form when control changes (but not when we're actively editing)
   useEffect(() => {
-    if (control) {
+    if (control && !isEditing) {
       setFormData({
         x: control.frame?.x || 0,
         y: control.frame?.y || 0,
@@ -44,19 +45,22 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         extendedRight: control.extendedEdges?.right || 0
       });
     }
-  }, [control]);
+  }, [control, isEditing]);
 
   if (!control || controlIndex === null) {
     return null;
   }
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setIsEditing(true);
     const numValue = parseInt(value) || 0;
     setFormData(prev => ({ ...prev, [field]: numValue }));
   };
 
   const handleApply = () => {
-    if (!control || controlIndex === null) return;
+    if (!control || controlIndex === null) {
+      return;
+    }
     
     // Apply grid snapping if enabled
     let finalX = formData.x;
@@ -90,6 +94,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     };
 
     onUpdate(controlIndex, updatedControl);
+    setIsEditing(false); // Reset editing flag
+    // Close the panel after applying changes
+    onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, field: keyof typeof formData) => {

@@ -157,7 +157,8 @@ const Editor: React.FC = () => {
   };
 
   const handleControlsUpdate = (newControls: ControlMapping[]) => {
-    setControls(newControls);
+    // Force a new array reference to ensure React detects the change
+    setControls([...newControls]);
   };
 
   const handleControlSelect = (control: ControlMapping) => {

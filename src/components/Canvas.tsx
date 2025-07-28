@@ -307,8 +307,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Handle control properties update
   const handleControlPropertiesUpdate = useCallback((index: number, updates: ControlMapping) => {
-    const updatedControls = [...controls];
-    updatedControls[index] = updates;
+    // Create a new array with a new control object to ensure React detects the change
+    const updatedControls = controls.map((control, i) => {
+      if (i === index) {
+        return { ...updates }; // Create a new object
+      }
+      return control;
+    });
+    
     onControlUpdate(updatedControls);
   }, [controls, onControlUpdate]);
 
