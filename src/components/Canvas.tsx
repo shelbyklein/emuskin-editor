@@ -444,6 +444,20 @@ const Canvas: React.FC<CanvasProps> = ({
                     </span>
                   </div>
 
+                  {/* Extended edges visualization (always visible) */}
+                  {(control.extendedEdges?.top || control.extendedEdges?.bottom || 
+                    control.extendedEdges?.left || control.extendedEdges?.right) && (
+                    <div 
+                      className="absolute pointer-events-none border-2 border-dashed border-purple-400 opacity-30"
+                      style={{
+                        top: `${-(control.extendedEdges?.top || 0)}px`,
+                        bottom: `${-(control.extendedEdges?.bottom || 0)}px`,
+                        left: `${-(control.extendedEdges?.left || 0)}px`,
+                        right: `${-(control.extendedEdges?.right || 0)}px`,
+                      }}
+                    />
+                  )}
+
                   {/* Resize handles (visible when selected) */}
                   {isSelected && (
                     <>
@@ -501,20 +515,6 @@ const Canvas: React.FC<CanvasProps> = ({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                      
-                      {/* Extended edges visualization */}
-                      {(control.extendedEdges?.top || control.extendedEdges?.bottom || 
-                        control.extendedEdges?.left || control.extendedEdges?.right) && (
-                        <div 
-                          className="absolute pointer-events-none border-2 border-dashed border-purple-400 opacity-50"
-                          style={{
-                            top: `${-(control.extendedEdges?.top || 0)}px`,
-                            bottom: `${-(control.extendedEdges?.bottom || 0)}px`,
-                            left: `${-(control.extendedEdges?.left || 0)}px`,
-                            right: `${-(control.extendedEdges?.right || 0)}px`,
-                          }}
-                        />
-                      )}
                     </>
                   )}
                 </div>
