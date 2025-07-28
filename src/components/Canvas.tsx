@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Device, ControlMapping } from '../types';
 import DeviceInfo from './DeviceInfo';
+import ControlPropertiesPanel from './ControlPropertiesPanel';
 import { useEditor } from '../contexts/EditorContext';
 
 interface CanvasProps {
@@ -43,6 +44,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [scale, setScale] = useState(1);
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
   const { settings } = useEditor();
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
 
   // Helper function to snap value to grid
   const snapToGrid = (value: number, gridSize: number): number => {
@@ -300,6 +302,17 @@ const Canvas: React.FC<CanvasProps> = ({
     const updatedControls = controls.filter((_, i) => i !== index);
     onControlUpdate(updatedControls);
     setSelectedControl(null);
+    setShowPropertiesPanel(false);
+  }, [controls, onControlUpdate]);
+
+  // Handle control properties update
+  const handleControlPropertiesUpdate = useCallback((index: number, updates: Partial<ControlMapping>) => {
+    const updatedControls = [...controls];
+    updatedControls[index] = {
+      ...updatedControls[index],
+      ...updates
+    };
+    onControlUpdate(updatedControls);
   }, [controls, onControlUpdate]);
 
   // Handle keyboard shortcuts
@@ -321,7 +334,7 @@ const Canvas: React.FC<CanvasProps> = ({
       className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center"
     >
       {device ? (
-        <div className="inline-block">
+        <div className="inline-flex items-start">
           <div 
             className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto"
             style={{
@@ -329,7 +342,10 @@ const Canvas: React.FC<CanvasProps> = ({
               height: canvasSize.height,
               cursor: resizeState.isResizing ? 'grabbing' : 'auto'
             }}
-            onClick={() => setSelectedControl(null)}
+            onClick={() => {
+              setSelectedControl(null);
+              setShowPropertiesPanel(false);
+            }}
           >
             {/* Background image */}
             {backgroundImage && (
@@ -385,6 +401,7 @@ const Canvas: React.FC<CanvasProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedControl(index);
+                    setShowPropertiesPanel(true);
                   }}
                 >
                   {/* Control label */}
@@ -445,6 +462,20 @@ const Canvas: React.FC<CanvasProps> = ({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
+                      
+                      {/* Extended edges visualization */}
+                      {(control.extendedEdges?.top || control.extendedEdges?.bottom || 
+                        control.extendedEdges?.left || control.extendedEdges?.right) && (
+                        <div 
+                          className="absolute pointer-events-none border-2 border-dashed border-purple-400 opacity-50"
+                          style={{
+                            top: `${-(control.extendedEdges?.top || 0)}px`,
+                            bottom: `${-(control.extendedEdges?.bottom || 0)}px`,
+                            left: `${-(control.extendedEdges?.left || 0)}px`,
+                            right: `${-(control.extendedEdges?.right || 0)}px`,
+                          }}
+                        />
+                      )}
                     </>
                   )}
                 </div>
@@ -465,6 +496,18 @@ const Canvas: React.FC<CanvasProps> = ({
             <p>• Click empty space to deselect</p>
           </div>
         </div>
+        
+        {/* Control Properties Panel */}
+        {showPropertiesPanel && selectedControl !== null && (
+          <div className="ml-4">
+            <ControlPropertiesPanel
+              control={controls[selectedControl] || null}
+              controlIndex={selectedControl}
+              onUpdate={handleControlPropertiesUpdate}
+              onClose={() => setShowPropertiesPanel(false)}
+            />
+          </div>
+        )}
       ) : (
         <p className="text-gray-500 dark:text-gray-400">
           Select a device to begin
