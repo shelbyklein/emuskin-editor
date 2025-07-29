@@ -6,7 +6,7 @@ import { indexedDBManager } from '../utils/indexedDB';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { projects, loadProject, deleteProject, createNewProject } = useProject();
+  const { projects, loadProject, deleteProject, createProject, clearProject } = useProject();
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -41,7 +41,9 @@ const Home: React.FC = () => {
   }, [projects]);
 
   const handleCreateNew = () => {
-    createNewProject();
+    clearProject(); // Clear any current project
+    const projectId = createProject('New Skin');
+    loadProject(projectId);
     navigate('/editor');
   };
 
