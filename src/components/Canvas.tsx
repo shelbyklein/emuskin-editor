@@ -834,7 +834,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`control-${index}`}
                   key={index}
-                  className={`absolute border-2 rounded group ${
+                  className={`control absolute border-2 rounded group ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
                       : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
