@@ -41,61 +41,67 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       representations: {
         iphone: {
           edgeToEdge: {
-            portrait: {
-              assets: backgroundImageFile ? { medium: backgroundImageFile.name } : {},
-              items: controls.map(control => ({
-                inputs: control.inputs,
-                frame: {
-                  x: control.frame?.x || 0,
-                  y: control.frame?.y || 0,
-                  width: control.frame?.width || 50,
-                  height: control.frame?.height || 50
+            portrait: (() => {
+              const portrait: any = {
+                assets: backgroundImageFile ? { medium: backgroundImageFile.name } : {},
+                items: controls.map(control => ({
+                  inputs: control.inputs,
+                  frame: {
+                    x: control.frame?.x || 0,
+                    y: control.frame?.y || 0,
+                    width: control.frame?.width || 50,
+                    height: control.frame?.height || 50
+                  },
+                  extendedEdges: control.extendedEdges || {
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0
+                  }
+                })),
+                screens: screens.map(screen => {
+                  const screenObj: any = {
+                    outputFrame: {
+                      x: screen.outputFrame?.x || 0,
+                      y: screen.outputFrame?.y || 0,
+                      width: screen.outputFrame?.width || 200,
+                      height: screen.outputFrame?.height || 150
+                    }
+                  };
+                  
+                  // Only include inputFrame if it exists (not for SEGA Genesis)
+                  if (screen.inputFrame) {
+                    screenObj.inputFrame = {
+                      x: screen.inputFrame.x,
+                      y: screen.inputFrame.y,
+                      width: screen.inputFrame.width,
+                      height: screen.inputFrame.height
+                    };
+                  }
+                  
+                  return screenObj;
+                }),
+                mappingSize: {
+                  width: selectedDevice.logicalWidth,
+                  height: selectedDevice.logicalHeight
                 },
-                extendedEdges: control.extendedEdges || {
+                extendedEdges: {
                   top: 0,
                   bottom: 0,
                   left: 0,
                   right: 0
                 }
-              })),
-              screens: screens.map(screen => {
-                const screenObj: any = {
-                  outputFrame: {
-                    x: screen.outputFrame?.x || 0,
-                    y: screen.outputFrame?.y || 0,
-                    width: screen.outputFrame?.width || 200,
-                    height: screen.outputFrame?.height || 150
-                  }
-                };
-                
-                // Only include inputFrame if it exists (not for SEGA Genesis)
-                if (screen.inputFrame) {
-                  screenObj.inputFrame = {
-                    x: screen.inputFrame.x,
-                    y: screen.inputFrame.y,
-                    width: screen.inputFrame.width,
-                    height: screen.inputFrame.height
-                  };
-                }
-                
-                return screenObj;
-              }),
-              mappingSize: {
-                width: selectedDevice.logicalWidth,
-                height: selectedDevice.logicalHeight
-              },
-              extendedEdges: {
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0
-              },
-              ...(menuInsetsEnabled && {
-                menuInsets: {
+              };
+              
+              // Add menuInsets after extendedEdges if enabled
+              if (menuInsetsEnabled) {
+                portrait.menuInsets = {
                   bottom: menuInsetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
-                }
-              })
-            }
+                };
+              }
+              
+              return portrait;
+            })()
           }
         }
       }
