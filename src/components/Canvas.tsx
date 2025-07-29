@@ -69,6 +69,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [showScreenPropertiesPanel, setShowScreenPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
+  const [hasResized, setHasResized] = useState(false);
   
   // Performance optimization refs
   const resizePositionRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -167,6 +168,8 @@ const Canvas: React.FC<CanvasProps> = ({
     
     const item = itemType === 'control' ? controls[index] : screens[index];
     const frame = itemType === 'control' ? item.frame : (item as ScreenMapping).outputFrame;
+    
+    setHasResized(true); // Set flag when resize starts
     
     setResizeState({
       isResizing: true,
@@ -567,6 +570,11 @@ const Canvas: React.FC<CanvasProps> = ({
       startLeft: 0,
       startTop: 0
     });
+    
+    // Reset resize flag after a short delay
+    setTimeout(() => {
+      setHasResized(false);
+    }, 100);
   }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
 
   // Add global mouse event listeners
@@ -754,7 +762,7 @@ const Canvas: React.FC<CanvasProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the screen and open properties panel
-                    if (!hasDragged) {
+                    if (!hasDragged && !hasResized) {
                       setSelectedScreen(index);
                       setShowScreenPropertiesPanel(true);
                     }
@@ -884,7 +892,7 @@ const Canvas: React.FC<CanvasProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the control and open properties panel
-                    if (!hasDragged) {
+                    if (!hasDragged && !hasResized) {
                       setSelectedControl(index);
                       setShowPropertiesPanel(true);
                     }
