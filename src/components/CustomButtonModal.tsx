@@ -87,7 +87,9 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
             Select Buttons to Combine
           </label>
           <div id="button-selection-grid" className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-            {availableButtons.map((button) => (
+            {availableButtons
+              .filter(button => !['quickSave', 'quickLoad', 'fastForward', 'toggleFastForward'].includes(button.key))
+              .map((button) => (
               <label
                 key={button.key}
                 className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
