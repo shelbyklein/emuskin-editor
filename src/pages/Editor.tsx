@@ -316,21 +316,19 @@ const Editor: React.FC = () => {
                 <label htmlFor="console" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Console System
                 </label>
-                <input
+                <select
                   id="console"
-                  list="console-list"
                   value={selectedConsole}
                   onChange={(e) => setSelectedConsole(e.target.value)}
                   className="mt-1 input-field"
-                  placeholder="Type to search consoles..."
-                />
-                <datalist id="console-list">
+                >
+                  <option value="">Select a console...</option>
                   {consoles.map((console) => (
                     <option key={console.shortName} value={console.shortName}>
                       {console.console}
                     </option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               {/* Device Selection */}
@@ -338,19 +336,19 @@ const Editor: React.FC = () => {
                 <label htmlFor="device" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   iPhone Model
                 </label>
-                <input
+                <select
                   id="device"
-                  list="device-list"
                   value={selectedDevice}
                   onChange={(e) => setSelectedDevice(e.target.value)}
                   className="mt-1 input-field"
-                  placeholder="Type to search devices..."
-                />
-                <datalist id="device-list">
+                >
+                  <option value="">Select an iPhone model...</option>
                   {devices.map((device) => (
-                    <option key={device.model} value={device.model} />
+                    <option key={device.model} value={device.model}>
+                      {device.model}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
             </div>
           </div>
