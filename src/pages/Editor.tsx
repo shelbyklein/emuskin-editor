@@ -14,6 +14,7 @@ import ImportButton from '../components/ImportButton';
 import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
+import { indexedDBManager } from '../utils/indexedDB';
 
 const Editor: React.FC = () => {
   const location = useLocation();

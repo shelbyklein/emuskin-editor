@@ -28,6 +28,8 @@
 - Screens use green theme to distinguish from blue controls
 
 ## Recent Accomplishments
+- ✅ Fixed property panel trigger behavior - now only opens on settings button click
+- ✅ Fixed missing indexedDBManager import error in Editor component
 - ✅ Added comprehensive ID system for all UI elements
 - ✅ Implemented two-column desktop layout (info/controls left, canvas/JSON right)
 - ✅ Created bottom-sliding properties panel for controls and screens

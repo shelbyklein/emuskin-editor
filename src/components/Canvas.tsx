@@ -761,10 +761,10 @@ const Canvas: React.FC<CanvasProps> = ({
                   onMouseDown={(e) => handleMouseDown(e, index, 'screen')}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Select the screen and open properties panel
+                    // Select the screen (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
                       setSelectedScreen(index);
-                      setShowScreenPropertiesPanel(true);
+                      setSelectedControl(null);
                     }
                     setHasDragged(false);
                   }}
@@ -891,10 +891,10 @@ const Canvas: React.FC<CanvasProps> = ({
                   onMouseDown={(e) => handleMouseDown(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Select the control and open properties panel
+                    // Select the control (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
                       setSelectedControl(index);
-                      setShowPropertiesPanel(true);
+                      setSelectedScreen(null);
                     }
                     setHasDragged(false); // Reset for next interaction
                   }}
