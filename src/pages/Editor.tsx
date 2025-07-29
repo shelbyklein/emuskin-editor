@@ -30,6 +30,17 @@ const Editor: React.FC = () => {
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
   const [menuInsetsEnabled, setMenuInsetsEnabled] = useState<boolean>(false);
   const [menuInsetsBottom, setMenuInsetsBottom] = useState<number>(0);
+  const [thumbstickImages, setThumbstickImages] = useState<{ [controlId: string]: string }>({});
+  const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
+  
+  // Clean up thumbstick URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(thumbstickImages).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
   const { settings } = useEditor();
   const { currentProject, saveProject, saveProjectImage } = useProject();
 
@@ -274,6 +285,38 @@ const Editor: React.FC = () => {
     // Add new screen to the list
     setScreens([...screens, screen]);
   };
+  
+  const handleThumbstickImageUpload = (file: File, controlIndex: number) => {
+    const control = controls[controlIndex];
+    if (control && control.id) {
+      // Create object URL for the image
+      const url = URL.createObjectURL(file);
+      
+      // Update thumbstick images state
+      setThumbstickImages(prev => ({
+        ...prev,
+        [control.id!]: url
+      }));
+      
+      // Store the file for export
+      setThumbstickFiles(prev => ({
+        ...prev,
+        [control.id!]: file
+      }));
+      
+      // Update the control with thumbstick info
+      const updatedControls = [...controls];
+      updatedControls[controlIndex] = {
+        ...control,
+        thumbstick: {
+          name: file.name,
+          width: control.thumbstick?.width || 85,
+          height: control.thumbstick?.height || 87
+        }
+      };
+      setControls(updatedControls);
+    }
+  };
 
   const handleImport = async (
     importedName: string,
@@ -471,29 +514,6 @@ const Editor: React.FC = () => {
             <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
               <div id="canvas-toolbar" className="flex justify-between items-center">
                 <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
-                <div id="canvas-actions" className="flex items-center space-x-3">
-                  {uploadedImage && (
-                    <button
-                      id="change-image-button"
-                      onClick={() => setUploadedImage(null)}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                    >
-                      Change Image
-                    </button>
-                  )}
-                  <ImportButton onImport={handleImport} />
-                  <ExportButton
-                    skinName={skinName}
-                    skinIdentifier={skinIdentifier}
-                    selectedConsole={selectedConsoleData}
-                    selectedDevice={selectedDeviceData}
-                    controls={controls}
-                    screens={screens}
-                    backgroundImage={uploadedImage}
-                    menuInsetsEnabled={menuInsetsEnabled}
-                    menuInsetsBottom={menuInsetsBottom}
-                  />
-                </div>
               </div>
               {/* Grid Controls */}
               {selectedDeviceData && (
@@ -511,7 +531,34 @@ const Editor: React.FC = () => {
               onControlUpdate={handleControlsUpdate}
               onScreenUpdate={handleScreensUpdate}
               onInteractionChange={setIsInteracting}
+              thumbstickImages={thumbstickImages}
+              onThumbstickImageUpload={handleThumbstickImageUpload}
             />
+            {/* Canvas Actions - Moved to bottom */}
+            <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
+              {uploadedImage && (
+                <button
+                  id="change-image-button"
+                  onClick={() => setUploadedImage(null)}
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  Change Image
+                </button>
+              )}
+              <ImportButton onImport={handleImport} />
+              <ExportButton
+                skinName={skinName}
+                skinIdentifier={skinIdentifier}
+                selectedConsole={selectedConsoleData}
+                selectedDevice={selectedDeviceData}
+                controls={controls}
+                screens={screens}
+                backgroundImage={uploadedImage}
+                menuInsetsEnabled={menuInsetsEnabled}
+                menuInsetsBottom={menuInsetsBottom}
+                thumbstickFiles={thumbstickFiles}
+              />
+            </div>
           </div>
 
           {/* JSON Preview */}

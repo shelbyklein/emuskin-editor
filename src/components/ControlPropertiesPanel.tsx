@@ -8,13 +8,15 @@ interface ControlPropertiesPanelProps {
   controlIndex: number | null;
   onUpdate: (index: number, updates: ControlMapping) => void;
   onClose: () => void;
+  onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
 }
 
 const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
   control,
   controlIndex,
   onUpdate,
-  onClose
+  onClose,
+  onThumbstickImageUpload
 }) => {
   const { settings } = useEditor();
   const [isEditing, setIsEditing] = useState(false);
@@ -29,8 +31,22 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     extendedBottom: 0,
     extendedLeft: 0,
     extendedRight: 0,
-    label: ''
+    label: '',
+    thumbstickWidth: 85,
+    thumbstickHeight: 87
   });
+  
+  const [thumbstickImage, setThumbstickImage] = useState<File | null>(null);
+  const [thumbstickImageUrl, setThumbstickImageUrl] = useState<string | null>(null);
+  
+  // Clean up object URLs
+  useEffect(() => {
+    return () => {
+      if (thumbstickImageUrl) {
+        URL.revokeObjectURL(thumbstickImageUrl);
+      }
+    };
+  }, [thumbstickImageUrl]);
 
   // Update form when control changes (but not when we're actively editing)
   useEffect(() => {
@@ -44,7 +60,9 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         extendedBottom: control.extendedEdges?.bottom || 0,
         extendedLeft: control.extendedEdges?.left || 0,
         extendedRight: control.extendedEdges?.right || 0,
-        label: control.label || ''
+        label: control.label || '',
+        thumbstickWidth: control.thumbstick?.width || 85,
+        thumbstickHeight: control.thumbstick?.height || 87
       });
     }
   }, [control, isEditing]);
@@ -99,6 +117,15 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
       },
       label: formData.label || undefined
     };
+    
+    // Add thumbstick data if this is a thumbstick control with an image
+    if (isThumbstick && thumbstickImage) {
+      updatedControl.thumbstick = {
+        name: thumbstickImage.name,
+        width: formData.thumbstickWidth,
+        height: formData.thumbstickHeight
+      };
+    }
 
     onUpdate(controlIndex, updatedControl);
     setIsEditing(false); // Reset editing flag
@@ -122,7 +149,23 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
 
   const label = Array.isArray(control.inputs) 
     ? control.inputs.join(' + ')
+    : typeof control.inputs === 'object' && !Array.isArray(control.inputs)
+    ? 'Thumbstick'
     : control.inputs || 'Control';
+    
+  // Check if this is a thumbstick control
+  const isThumbstick = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+    'up' in control.inputs && control.inputs.up === 'analogStickUp';
+    
+  const handleThumbstickImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/') && onThumbstickImageUpload && controlIndex !== null) {
+      setThumbstickImage(file);
+      const url = URL.createObjectURL(file);
+      setThumbstickImageUrl(url);
+      onThumbstickImageUpload(file, controlIndex);
+    }
+  };
 
   return (
     <div id="control-properties-panel" className="bg-white dark:bg-gray-800 rounded-t-xl shadow-2xl p-6 w-full max-w-2xl">
@@ -160,6 +203,68 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
             placeholder="e.g., Turbo Fire"
             className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
           />
+        </div>
+      )}
+      
+      {/* Thumbstick Properties (only show for thumbstick controls) */}
+      {isThumbstick && (
+        <div id="thumbstick-section" className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Thumbstick Properties</h4>
+          
+          {/* Thumbstick Image Upload */}
+          <div className="mb-3">
+            <label htmlFor="thumbstick-image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Thumbstick Image
+            </label>
+            <input
+              id="thumbstick-image"
+              type="file"
+              accept="image/*"
+              onChange={handleThumbstickImageUpload}
+              className="w-full text-sm text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-700 dark:file:text-gray-300"
+            />
+            {thumbstickImageUrl && (
+              <div className="mt-2">
+                <img src={thumbstickImageUrl} alt="Thumbstick preview" className="w-16 h-16 object-contain bg-gray-200 dark:bg-gray-700 rounded" />
+              </div>
+            )}
+          </div>
+          
+          {/* Thumbstick Size */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="thumbstick-width" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                Thumbstick Width
+              </label>
+              <input
+                id="thumbstick-width"
+                type="number"
+                value={formData.thumbstickWidth}
+                onChange={(e) => handleInputChange('thumbstickWidth', e.target.value)}
+                min="20"
+                max="200"
+                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label htmlFor="thumbstick-height" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                Thumbstick Height
+              </label>
+              <input
+                id="thumbstick-height"
+                type="number"
+                value={formData.thumbstickHeight}
+                onChange={(e) => handleInputChange('thumbstickHeight', e.target.value)}
+                min="20"
+                max="200"
+                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            The thumbstick image will be centered within the control area.
+          </p>
         </div>
       )}
 

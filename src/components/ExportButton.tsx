@@ -15,6 +15,7 @@ interface ExportButtonProps {
   backgroundImage: { file: File; url: string } | null;
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
+  thumbstickFiles?: { [controlId: string]: File };
 }
 
 const ExportButton: React.FC<ExportButtonProps> = ({
@@ -26,7 +27,8 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   screens,
   backgroundImage,
   menuInsetsEnabled = false,
-  menuInsetsBottom = 0
+  menuInsetsBottom = 0,
+  thumbstickFiles = {}
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'deltaskin' | 'gammaskin'>('deltaskin');
@@ -48,21 +50,39 @@ const ExportButton: React.FC<ExportButtonProps> = ({
             portrait: (() => {
               const portrait: any = {
                 assets: backgroundImage ? { medium: backgroundImage.file.name } : {},
-                items: controls.map(control => ({
-                  inputs: control.inputs,
-                  frame: {
+                items: controls.map(control => {
+                  const item: any = {};
+                  
+                  // Add thumbstick if present (must come before inputs)
+                  if (control.thumbstick) {
+                    item.thumbstick = {
+                      name: control.thumbstick.name,
+                      width: control.thumbstick.width,
+                      height: control.thumbstick.height
+                    };
+                  }
+                  
+                  // Add inputs
+                  item.inputs = control.inputs;
+                  
+                  // Add frame
+                  item.frame = {
                     x: control.frame?.x || 0,
                     y: control.frame?.y || 0,
                     width: control.frame?.width || 50,
                     height: control.frame?.height || 50
-                  },
-                  extendedEdges: control.extendedEdges || {
+                  };
+                  
+                  // Add extended edges
+                  item.extendedEdges = control.extendedEdges || {
                     top: 0,
                     bottom: 0,
                     left: 0,
                     right: 0
-                  }
-                })),
+                  };
+                  
+                  return item;
+                }),
                 screens: screens.map(screen => {
                   const screenObj: any = {
                     outputFrame: {
@@ -186,6 +206,14 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       
       if (imageFile) {
         zip.file(imageFile.name, imageFile);
+      }
+      
+      // Add thumbstick images
+      for (const control of controls) {
+        if (control.thumbstick && control.id && thumbstickFiles[control.id]) {
+          const thumbstickFile = thumbstickFiles[control.id];
+          zip.file(control.thumbstick.name, thumbstickFile);
+        }
       }
 
       // Generate the ZIP file

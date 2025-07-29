@@ -44,21 +44,39 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
             portrait: (() => {
               const portrait: any = {
                 assets: backgroundImageFile ? { medium: backgroundImageFile.name } : {},
-                items: controls.map(control => ({
-                  inputs: control.inputs,
-                  frame: {
+                items: controls.map(control => {
+                  const item: any = {};
+                  
+                  // Add thumbstick if present (must come before inputs)
+                  if (control.thumbstick) {
+                    item.thumbstick = {
+                      name: control.thumbstick.name,
+                      width: control.thumbstick.width,
+                      height: control.thumbstick.height
+                    };
+                  }
+                  
+                  // Add inputs
+                  item.inputs = control.inputs;
+                  
+                  // Add frame
+                  item.frame = {
                     x: control.frame?.x || 0,
                     y: control.frame?.y || 0,
                     width: control.frame?.width || 50,
                     height: control.frame?.height || 50
-                  },
-                  extendedEdges: control.extendedEdges || {
+                  };
+                  
+                  // Add extended edges
+                  item.extendedEdges = control.extendedEdges || {
                     top: 0,
                     bottom: 0,
                     left: 0,
                     right: 0
-                  }
-                })),
+                  };
+                  
+                  return item;
+                }),
                 screens: screens.map(screen => {
                   const screenObj: any = {
                     outputFrame: {

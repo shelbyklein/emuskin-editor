@@ -18,6 +18,8 @@ interface CanvasProps {
   onControlUpdate: (controls: ControlMapping[]) => void;
   onScreenUpdate: (screens: ScreenMapping[]) => void;
   onInteractionChange?: (isInteracting: boolean) => void;
+  thumbstickImages?: { [controlId: string]: string }; // URLs for thumbstick images
+  onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
 }
 
 interface DragState {
@@ -53,7 +55,9 @@ const Canvas: React.FC<CanvasProps> = ({
   menuInsetsBottom = 0,
   onControlUpdate,
   onScreenUpdate,
-  onInteractionChange
+  onInteractionChange,
+  thumbstickImages = {},
+  onThumbstickImageUpload
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
@@ -851,6 +855,11 @@ const Canvas: React.FC<CanvasProps> = ({
               const label = control.label || (Array.isArray(control.inputs) 
                 ? control.inputs.join('+') || 'Control'
                 : control.inputs || 'Control');
+              
+              // Check if this is a thumbstick control
+              const isThumbstick = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+                'up' in control.inputs && control.inputs.up === 'analogStickUp';
+              const thumbstickImageUrl = control.id && thumbstickImages[control.id];
 
               return (
                 <div
@@ -881,11 +890,25 @@ const Canvas: React.FC<CanvasProps> = ({
                     setHasDragged(false); // Reset for next interaction
                   }}
                 >
-                  {/* Control label */}
+                  {/* Control label or thumbstick image */}
                   <div id={`control-label-${index}`} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
-                      {label}
-                    </span>
+                    {isThumbstick && thumbstickImageUrl && control.thumbstick ? (
+                      <img 
+                        src={thumbstickImageUrl} 
+                        alt="Thumbstick"
+                        className="object-contain"
+                        style={{
+                          width: `${control.thumbstick.width}px`,
+                          height: `${control.thumbstick.height}px`,
+                          maxWidth: '100%',
+                          maxHeight: '100%'
+                        }}
+                      />
+                    ) : (
+                      <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
+                        {isThumbstick ? 'Thumbstick' : label}
+                      </span>
+                    )}
                   </div>
 
                   {/* Extended edges visualization (always visible) */}
@@ -1029,6 +1052,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 controlIndex={selectedControl}
                 onUpdate={handleControlPropertiesUpdate}
                 onClose={() => setShowPropertiesPanel(false)}
+                onThumbstickImageUpload={onThumbstickImageUpload}
               />
             </div>
           </div>

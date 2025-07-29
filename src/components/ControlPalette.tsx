@@ -34,7 +34,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
           const buttons = data[consoleType].map((btnId: string) => ({
             key: btnId,
             label: btnId.charAt(0).toUpperCase() + btnId.slice(1), // Capitalize first letter
-            type: btnId === 'dpad' ? 'dpad' : btnId === 'leftThumbstick' || btnId === 'rightThumbstick' ? 'thumbstick' : undefined
+            type: btnId === 'dpad' ? 'dpad' : btnId === 'thumbstick' ? 'thumbstick' : undefined
           }));
           setAvailableButtons(buttons);
         } else {
@@ -55,12 +55,19 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
     // Create a control object with default properties
     const control: ControlMapping = {
       id: `control-${button.key}-${Date.now()}`,
-      inputs: [button.key],
+      inputs: button.key === 'thumbstick' 
+        ? {
+            up: 'analogStickUp',
+            down: 'analogStickDown',
+            left: 'analogStickLeft',
+            right: 'analogStickRight'
+          }
+        : [button.key],
       frame: {
         x: 50, // Default position
         y: 50,
-        width: 50, // Default size
-        height: 50
+        width: button.key === 'thumbstick' ? 100 : 50, // Larger size for thumbstick
+        height: button.key === 'thumbstick' ? 100 : 50
       },
       extendedEdges: {
         top: 0,
@@ -75,7 +82,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
 
   const renderButton = (button: Button) => {
     const isDpad = button.key === 'dpad';
-    const isThumbstick = button.type === 'thumbstick';
+    const isThumbstick = button.key === 'thumbstick';
     
     return (
       <button

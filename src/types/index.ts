@@ -40,6 +40,11 @@ export interface ControlMapping {
     right: number;
   };
   label?: string; // For custom buttons
+  thumbstick?: {
+    name: string;
+    width: number;
+    height: number;
+  };
 }
 
 export interface SkinConfig {
