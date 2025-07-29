@@ -114,6 +114,8 @@
 - [x] Fix stale closure issues in Canvas component
 - [x] Make settings cog only show on hover
 - [x] Update assets format to use "medium" as key
+- [x] Add "control" class to all control elements
+- [x] Fix "0" appearing in controls with conditional rendering
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

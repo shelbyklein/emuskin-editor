@@ -52,6 +52,8 @@
 - ✅ Fixed stale closure issues causing position jumping
 - ✅ Made settings cog only visible on hover
 - ✅ Updated assets format to use object with "medium" key
+- ✅ Added "control" class to all control elements
+- ✅ Fixed "0" appearing in controls by fixing conditional rendering
 
 ## Next Steps
 1. Create import functionality for existing .deltaskin/.gammaskin files

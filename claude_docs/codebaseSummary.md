@@ -180,6 +180,8 @@ emuskin-generator/
 - ✅ Fixed stale closure issues using refs in Canvas
 - ✅ Made settings cog only visible on hover
 - ✅ Updated assets format to use object with "medium" key
+- ✅ Added "control" class to all control elements for better CSS targeting
+- ✅ Fixed "0" appearing in controls by using ternary operator with null
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)
