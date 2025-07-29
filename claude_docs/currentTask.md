@@ -7,7 +7,7 @@
 - ✅ Fix properties panel and drag interactions
 - ✅ Implement localStorage persistence for settings
 - ✅ Complete export functionality with validation
-- 🚧 Create import functionality for existing skins
+- ✅ Create import functionality for existing skins
 - 🚧 Implement custom button creator with multi-action support
 - Add landscape orientation support
 - Implement undo/redo functionality
@@ -56,14 +56,26 @@
 - ✅ Fixed "0" appearing in controls by fixing conditional rendering
 - ✅ Made grid size dropdown wider to accommodate caret
 - ✅ Fixed console selection by changing to select dropdown
+- ✅ Created Home page with project cards view:
+  - Displays all saved projects in responsive grid
+  - Shows preview images loaded from IndexedDB
+  - Includes project metadata and delete functionality
+  - Empty state for new users
+  - Made Home the default landing page
+- ✅ Fixed create new skin button functionality
+- ✅ Created import functionality for existing .deltaskin/.gammaskin files:
+  - Created ImportButton component with ZIP file parsing
+  - Extracts JSON configuration and images from skin files
+  - Maps console identifiers to shortnames
+  - Converts control and screen data to internal format
+  - Handles both standard and edgeToEdge representations
+  - Supports portrait orientation (landscape to be added later)
+  - Auto-detects device based on mappingSize dimensions
+  - Import button available in both Editor and Home pages
+  - Imported skins create new projects automatically
 
 ## Next Steps
-1. Create import functionality for existing .deltaskin/.gammaskin files
-   - Parse ZIP file and extract JSON/images
-   - Load controls and screens from imported data
-   - Handle legacy format differences
-   
-2. Complete custom button creator
+1. Complete custom button creator
    - Implement multi-action button support
    - Add timing configuration options
    - Custom identifiers and labels

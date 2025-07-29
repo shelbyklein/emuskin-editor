@@ -21,12 +21,14 @@ emuskin-generator/
 │   │   ├── ExportButton.tsx     # Export to .deltaskin/.gammaskin with validation
 │   │   ├── GridControls.tsx     # Grid snapping controls
 │   │   ├── ImageUploader.tsx    # Background image upload
+│   │   ├── ImportButton.tsx     # Import existing .deltaskin/.gammaskin files
 │   │   ├── JsonPreview.tsx      # JSON output display with screens support
 │   │   ├── Layout.tsx           # Main app layout with ID system
 │   │   ├── ProjectManager.tsx   # Project save/load management
 │   │   ├── ScreenPalette.tsx    # Screen selection for game display
 │   │   └── ScreenPropertiesPanel.tsx # Bottom-sliding editor for screens
 │   ├── pages/          # Page components
+│   │   ├── Home.tsx    # Project cards view and landing page
 │   │   ├── Editor.tsx  # Main editor interface
 │   │   ├── Settings.tsx
 │   │   └── About.tsx
@@ -184,6 +186,8 @@ emuskin-generator/
 - ✅ Fixed "0" appearing in controls by using ternary operator with null
 - ✅ Widened grid size dropdown to accommodate caret with pr-8
 - ✅ Fixed console selection by converting from datalist to select dropdown
+- ✅ Created Home page with project cards view
+- ✅ Implemented import functionality for existing skin files
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

@@ -1,5 +1,6 @@
 // Main editor page for creating emulator skins
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
@@ -9,10 +10,12 @@ import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
 import ExportButton from '../components/ExportButton';
+import ImportButton from '../components/ImportButton';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
 
 const Editor: React.FC = () => {
+  const location = useLocation();
   const [consoles, setConsoles] = useState<Console[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedConsole, setSelectedConsole] = useState<string>('');
@@ -265,6 +268,67 @@ const Editor: React.FC = () => {
     setScreens([...screens, screen]);
   };
 
+  const handleImport = async (
+    importedName: string,
+    importedIdentifier: string,
+    importedConsole: string,
+    importedControls: ControlMapping[],
+    importedScreens: ScreenMapping[],
+    importedImage: { file: File; url: string } | null,
+    deviceDimensions?: { width: number; height: number }
+  ) => {
+    // Set basic info
+    setSkinName(importedName);
+    setSkinIdentifier(importedIdentifier);
+    setSelectedConsole(importedConsole);
+    
+    // Try to find matching device based on dimensions
+    if (deviceDimensions && devices.length > 0) {
+      const matchingDevice = devices.find(d => 
+        d.logical.width === deviceDimensions.width && 
+        d.logical.height === deviceDimensions.height
+      );
+      if (matchingDevice) {
+        setSelectedDevice(matchingDevice.model);
+      }
+    }
+    
+    // Set controls and screens
+    setControls(importedControls);
+    setScreens(importedScreens);
+    
+    // Set background image
+    if (importedImage) {
+      setUploadedImage(importedImage);
+      // Save to IndexedDB if we have a project
+      if (currentProject) {
+        try {
+          await saveProjectImage(importedImage.file);
+        } catch (error) {
+          console.error('Failed to save imported image:', error);
+        }
+      }
+    }
+  };
+
+  // Handle imported data from navigation state
+  useEffect(() => {
+    const importedData = location.state?.importedData;
+    if (importedData && devices.length > 0) {
+      handleImport(
+        importedData.name,
+        importedData.identifier,
+        importedData.console,
+        importedData.controls,
+        importedData.screens,
+        importedData.image,
+        importedData.deviceDimensions
+      );
+      // Clear the state to prevent re-importing on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, devices]);
+
   return (
     <div id="editor-container">
       {/* Project Manager - Top Right */}
@@ -400,6 +464,7 @@ const Editor: React.FC = () => {
                       Change Image
                     </button>
                   )}
+                  <ImportButton onImport={handleImport} />
                   <ExportButton
                     skinName={skinName}
                     skinIdentifier={skinIdentifier}

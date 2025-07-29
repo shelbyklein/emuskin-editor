@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContext';
 import { indexedDBManager } from '../utils/indexedDB';
+import ImportButton from '../components/ImportButton';
+import { ControlMapping, ScreenMapping } from '../types';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -77,6 +79,35 @@ const Home: React.FC = () => {
     return consoleNames[shortName] || shortName.toUpperCase();
   };
 
+  const handleImport = async (
+    importedName: string,
+    importedIdentifier: string,
+    importedConsole: string,
+    importedControls: ControlMapping[],
+    importedScreens: ScreenMapping[],
+    importedImage: { file: File; url: string } | null,
+    deviceDimensions?: { width: number; height: number }
+  ) => {
+    // Create a new project with imported data
+    clearProject();
+    const projectId = createProject(importedName);
+    
+    // Navigate to editor with the imported data
+    navigate('/editor', { 
+      state: { 
+        importedData: {
+          name: importedName,
+          identifier: importedIdentifier,
+          console: importedConsole,
+          controls: importedControls,
+          screens: importedScreens,
+          image: importedImage,
+          deviceDimensions
+        }
+      }
+    });
+  };
+
   return (
     <div id="home-container" className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -91,16 +122,19 @@ const Home: React.FC = () => {
                 Create custom skins for Delta and Gamma emulators
               </p>
             </div>
-            <button
-              id="create-new-skin-button"
-              onClick={handleCreateNew}
-              className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span>Create New Skin</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <ImportButton onImport={handleImport} />
+              <button
+                id="create-new-skin-button"
+                onClick={handleCreateNew}
+                className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create New Skin</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

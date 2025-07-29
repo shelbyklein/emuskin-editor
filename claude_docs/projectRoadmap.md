@@ -118,11 +118,16 @@
 - [x] Fix "0" appearing in controls with conditional rendering
 - [x] Widen grid size dropdown to accommodate caret
 - [x] Fix console selection issue with select dropdown
+- [x] Create Home page with project cards view
+- [x] Update routing to make Home the default page
+- [x] Implement import functionality for .deltaskin/.gammaskin files
+- [x] Add ImportButton component with ZIP parsing
+- [x] Handle legacy format differences and console mapping
+- [x] Support automatic device detection from mappingSize
 
 ## Future Scalability Considerations
 - User accounts and cloud storage
 - iPad support
 - Landscape orientation support
 - Community template sharing
-- Import existing skin files
 - Collaborative editing features

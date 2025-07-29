@@ -2,16 +2,18 @@
 
 ## Immediate Priorities (Next Session)
 
-### 1. Import Functionality for Existing Skins
+### 1. ✅ Import Functionality for Existing Skins [COMPLETED]
 - **Purpose**: Allow users to load and edit existing .deltaskin/.gammaskin files
 - **Implementation**:
-  - Add import button to ProjectManager or main toolbar
-  - Use JSZip to parse uploaded skin files
-  - Extract info.json and parse controls/screens
-  - Load background images from ZIP
-  - Handle format differences between legacy skins
-  - Validate imported data before loading
-- **Time Estimate**: 2-3 hours
+  - ✅ Added ImportButton component to Editor and Home pages
+  - ✅ Uses JSZip to parse uploaded skin files
+  - ✅ Extracts info.json and parses controls/screens
+  - ✅ Loads background images from ZIP
+  - ✅ Handles format differences (standard/edgeToEdge representations)
+  - ✅ Validates imported data before loading
+  - ✅ Auto-detects device model from mappingSize
+  - ✅ Maps console identifiers to internal shortnames
+- **Completed**: Import button now available on both Home and Editor pages
 
 ### 2. Complete Custom Button Creator
 - **Current State**: Modal exists but doesn't create functional custom buttons
@@ -118,9 +120,10 @@
 
 ## Recommended Next Session Plan
 
-1. **Start with Import Functionality** - This is a highly requested feature that complements the export system
-2. **Fix Custom Button Creator** - Quick win that completes an existing feature
+1. **Complete Custom Button Creator** - Finish the existing modal to support multi-button combinations
+2. **Add Landscape Orientation Support** - Essential for many games that require landscape layouts
 3. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
 4. **Implement Success/Error Toasts** - Better UX than current alert() calls
+5. **Add Undo/Redo Functionality** - Critical for a visual editor
 
-These priorities balance new features with polishing existing functionality, ensuring the app remains stable while adding value for users.
+These priorities focus on completing partially implemented features and adding essential editor functionality.
