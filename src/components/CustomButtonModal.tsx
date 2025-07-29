@@ -17,7 +17,6 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
 }) => {
   const [buttonName, setButtonName] = useState('');
   const [selectedButtons, setSelectedButtons] = useState<string[]>([]);
-  const [timing, setTiming] = useState<'simultaneous' | 'sequential'>('simultaneous');
 
   if (!isOpen) return null;
 
@@ -57,7 +56,6 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
   const handleClose = () => {
     setButtonName('');
     setSelectedButtons([]);
-    setTiming('simultaneous');
     onClose();
   };
 
@@ -109,49 +107,12 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
           </div>
         </div>
 
-        {/* Timing Option */}
-        <div id="timing-section" className="mb-6">
-          <label id="timing-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Button Press Timing
-          </label>
-          <div id="timing-options" className="space-y-2">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                id="timing-simultaneous"
-                type="radio"
-                name="timing"
-                value="simultaneous"
-                checked={timing === 'simultaneous'}
-                onChange={(e) => setTiming(e.target.value as 'simultaneous')}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Simultaneous (all buttons pressed together)
-              </span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer opacity-50">
-              <input
-                id="timing-sequential"
-                type="radio"
-                name="timing"
-                value="sequential"
-                checked={timing === 'sequential'}
-                onChange={(e) => setTiming(e.target.value as 'sequential')}
-                disabled
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Sequential (buttons pressed in order) - Coming soon
-              </span>
-            </label>
-          </div>
-        </div>
 
         {/* Selected Buttons Preview */}
         {selectedButtons.length > 0 && (
           <div id="button-preview" className="mb-6 p-3 bg-gray-100 dark:bg-gray-700 rounded">
             <p id="button-preview-text" className="text-sm text-gray-700 dark:text-gray-300">
-              <strong>Preview:</strong> {buttonName || 'Custom Button'} = {selectedButtons.join(' + ')}
+              <strong>Preview:</strong> {buttonName || 'Custom Button'} will trigger: {selectedButtons.map(b => b.toUpperCase()).join(' + ')}
             </p>
           </div>
         )}
