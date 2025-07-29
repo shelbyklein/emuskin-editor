@@ -453,7 +453,7 @@ const Editor: React.FC = () => {
   return (
     <div id="editor-container">
       {/* Project Manager - Top Right */}
-      <div className="flex justify-end mb-4">
+      <div id="editor-header" className="flex justify-end mb-4">
         <ProjectManager />
       </div>
 
