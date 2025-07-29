@@ -115,3 +115,11 @@ input[type="range"].slider::-moz-range-thumb {
 .dark input[type="range"].slider {
   background: linear-gradient(to right, #3B82F6 0%, #3B82F6 var(--value, 0%), #374151 var(--value, 0%), #374151 100%);
 }
+
+/* Touch interaction styles */
+.touch-interactive {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

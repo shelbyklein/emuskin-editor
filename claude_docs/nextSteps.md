@@ -2,6 +2,35 @@
 
 ## Immediate Priorities (Next Session)
 
+### 1. Landscape Orientation Support
+- **Purpose**: Enable skin creation for landscape mode
+- **Implementation**:
+  - Add orientation selector in device panel
+  - Swap width/height when landscape selected
+  - Update canvas dimensions appropriately
+  - Ensure controls/screens adapt to rotated view
+  - Update export to include orientation in JSON
+
+### 2. Undo/Redo Functionality
+- **Purpose**: Allow users to undo mistakes and redo actions
+- **Implementation**:
+  - Create history stack for all actions
+  - Track control/screen changes
+  - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
+  - Visual undo/redo buttons in toolbar
+  - Limit history to reasonable number of states
+
+### 3. Keyboard Shortcuts
+- **Purpose**: Improve productivity for power users
+- **Implementation**:
+  - Delete key for removing selected items
+  - Arrow keys for fine positioning
+  - Cmd/Ctrl+C/V for copy/paste
+  - Cmd/Ctrl+S for quick save
+  - Escape to deselect
+
+## Completed Features (Reference)
+
 ### 1. ✅ Import Functionality for Existing Skins [COMPLETED]
 - **Purpose**: Allow users to load and edit existing .deltaskin/.gammaskin files
 - **Implementation**:
@@ -47,7 +76,18 @@
   - ✅ Proper input mapping to analogStick directions
 - **Completed**: Full thumbstick support with custom images
 
-### 5. Landscape Orientation Support
+### 5. ✅ Touch Support for Mobile Devices [COMPLETED]
+- **Purpose**: Enable skin editing on iPads and other touch devices
+- **Implementation**:
+  - ✅ Added touch event handlers (touchstart, touchmove, touchend)
+  - ✅ Parallel implementation to mouse events
+  - ✅ Fixed passive event listener errors with CSS approach
+  - ✅ Added touch-interactive CSS class for proper touch handling
+  - ✅ Full drag and resize support on touch devices
+  - ✅ Maintains all existing mouse functionality
+- **Completed**: Full touch support for all canvas interactions
+
+### 6. Landscape Orientation Support
 - **Purpose**: Many skins need both portrait and landscape layouts
 - **Implementation**:
   - Add orientation toggle in Editor

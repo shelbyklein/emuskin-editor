@@ -161,6 +161,36 @@ const Canvas: React.FC<CanvasProps> = ({
     }
   }, []);
 
+  // Handle touch start (for touch devices)
+  const handleTouchStart = useCallback((e: React.TouchEvent, index: number, itemType: 'control' | 'screen') => {
+    // Don't prevent default here - let the element handle it
+    e.stopPropagation();
+    
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+    
+    // Reset drag flag at start of new interaction
+    setHasDragged(false);
+    
+    setDragState({
+      isDragging: true,
+      itemType,
+      itemIndex: index,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      offsetX: touch.clientX - rect.left,
+      offsetY: touch.clientY - rect.top
+    });
+    
+    if (itemType === 'control') {
+      setSelectedControl(index);
+      setSelectedScreen(null);
+    } else {
+      setSelectedScreen(index);
+      setSelectedControl(null);
+    }
+  }, []);
+
   // Handle resize start
   const handleResizeStart = useCallback((e: React.MouseEvent, index: number, handle: string, itemType: 'control' | 'screen') => {
     e.preventDefault();
@@ -178,6 +208,39 @@ const Canvas: React.FC<CanvasProps> = ({
       handle,
       startX: e.clientX,
       startY: e.clientY,
+      startWidth: frame?.width || 50,
+      startHeight: frame?.height || 50,
+      startLeft: frame?.x || 0,
+      startTop: frame?.y || 0
+    });
+    
+    if (itemType === 'control') {
+      setSelectedControl(index);
+      setSelectedScreen(null);
+    } else {
+      setSelectedScreen(index);
+      setSelectedControl(null);
+    }
+  }, [controls, screens]);
+
+  // Handle resize touch start
+  const handleResizeTouchStart = useCallback((e: React.TouchEvent, index: number, handle: string, itemType: 'control' | 'screen') => {
+    // Don't prevent default here - let the element handle it
+    e.stopPropagation();
+    
+    const touch = e.touches[0];
+    const item = itemType === 'control' ? controls[index] : screens[index];
+    const frame = itemType === 'control' ? item.frame : (item as ScreenMapping).outputFrame;
+    
+    setHasResized(true); // Set flag when resize starts
+    
+    setResizeState({
+      isResizing: true,
+      itemType,
+      itemIndex: index,
+      handle,
+      startX: touch.clientX,
+      startY: touch.clientY,
       startWidth: frame?.width || 50,
       startHeight: frame?.height || 50,
       startLeft: frame?.x || 0,
@@ -577,25 +640,410 @@ const Canvas: React.FC<CanvasProps> = ({
     }, 100);
   }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
 
-  // Add global mouse event listeners
+  // Handle touch move (dragging)
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (dragState.isDragging && dragState.itemIndex !== null && dragState.itemType && !resizeState.isResizing) {
+      const touch = e.touches[0];
+      
+      // Mark that we've actually dragged (not just clicked)
+      const dragDistance = Math.abs(touch.clientX - dragState.startX) + Math.abs(touch.clientY - dragState.startY);
+      if (dragDistance > 5) { // Threshold to distinguish between click and drag
+        setHasDragged(true);
+      }
+
+      const container = containerRef.current?.querySelector('.canvas-area');
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      
+      const newX = touch.clientX - rect.left - dragState.offsetX;
+      const newY = touch.clientY - rect.top - dragState.offsetY;
+      
+      let width, height;
+      if (dragState.itemType === 'control') {
+        const control = controlsRef.current[dragState.itemIndex];
+        width = control.frame?.width || 50;
+        height = control.frame?.height || 50;
+      } else {
+        const screen = screensRef.current[dragState.itemIndex];
+        width = screen.outputFrame?.width || 200;
+        height = screen.outputFrame?.height || 150;
+      }
+      
+      const maxX = (device?.logicalWidth || 390) - width;
+      const maxY = (device?.logicalHeight || 844) - height;
+      
+      let clampedX = Math.max(0, Math.min(newX, maxX));
+      let clampedY = Math.max(0, Math.min(newY, maxY));
+      
+      // Apply grid snapping if enabled
+      if (settings.snapToGrid) {
+        clampedX = snapToGrid(clampedX, settings.gridSize);
+        clampedY = snapToGrid(clampedY, settings.gridSize);
+      }
+      
+      const newPosition = {
+        x: Math.round(clampedX),
+        y: Math.round(clampedY),
+        width: Math.round(width),
+        height: Math.round(height)
+      };
+      
+      if (dragState.itemType === 'control') {
+        const updatedControls = [...controlsRef.current];
+        updatedControls[dragState.itemIndex] = {
+          ...controlsRef.current[dragState.itemIndex],
+          frame: newPosition
+        };
+        onControlUpdate(updatedControls);
+      } else {
+        const updatedScreens = [...screensRef.current];
+        updatedScreens[dragState.itemIndex] = {
+          ...screensRef.current[dragState.itemIndex],
+          outputFrame: newPosition
+        };
+        onScreenUpdate(updatedScreens);
+      }
+    }
+  }, [dragState, controls, screens, device, onControlUpdate, onScreenUpdate, resizeState.isResizing, settings]);
+
+  // Handle touch resize
+  const handleTouchResize = useCallback((e: TouchEvent) => {
+    if (!resizeState.isResizing || resizeState.itemIndex === null || !resizeState.itemType) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - resizeState.startX;
+    const deltaY = touch.clientY - resizeState.startY;
+    
+    let newX = resizeState.startLeft;
+    let newY = resizeState.startTop;
+    let newWidth = resizeState.startWidth;
+    let newHeight = resizeState.startHeight;
+
+    // Check if we need to maintain aspect ratio for screens
+    const shouldMaintainAspectRatio = resizeState.itemType === 'screen' && 
+      screensRef.current[resizeState.itemIndex]?.maintainAspectRatio;
+    
+    let aspectRatio = 1;
+    if (shouldMaintainAspectRatio) {
+      const screen = screensRef.current[resizeState.itemIndex];
+      if (screen.inputFrame) {
+        aspectRatio = screen.inputFrame.width / screen.inputFrame.height;
+      } else {
+        // Default aspect ratios based on console type
+        const aspectRatios: { [key: string]: number } = {
+          'gbc': 160 / 144,
+          'gba': 240 / 160,
+          'nds': 256 / 192,
+          'nes': 256 / 240,
+          'snes': 256 / 224,
+          'n64': 256 / 224,
+          'sg': 4 / 3,
+          'ps1': 4 / 3
+        };
+        aspectRatio = aspectRatios[consoleType] || 1.333;
+      }
+    }
+
+    // Handle different resize handles (same logic as mouse resize)
+    if (shouldMaintainAspectRatio) {
+      switch (resizeState.handle) {
+        case 'nw':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            newX = resizeState.startLeft + resizeState.startWidth - newWidth;
+            newY = resizeState.startTop + resizeState.startHeight - newHeight;
+          } else {
+            newHeight = resizeState.startHeight - deltaY;
+            newWidth = newHeight * aspectRatio;
+            newX = resizeState.startLeft + resizeState.startWidth - newWidth;
+            newY = resizeState.startTop + resizeState.startHeight - newHeight;
+          }
+          break;
+        case 'ne':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+            newY = resizeState.startTop + resizeState.startHeight - newHeight;
+          } else {
+            newHeight = resizeState.startHeight - deltaY;
+            newWidth = newHeight * aspectRatio;
+            newY = resizeState.startTop + resizeState.startHeight - newHeight;
+          }
+          break;
+        case 'sw':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            newX = resizeState.startLeft + resizeState.startWidth - newWidth;
+          } else {
+            newHeight = resizeState.startHeight + deltaY;
+            newWidth = newHeight * aspectRatio;
+            newX = resizeState.startLeft + resizeState.startWidth - newWidth;
+          }
+          break;
+        case 'se':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+          } else {
+            newHeight = resizeState.startHeight + deltaY;
+            newWidth = newHeight * aspectRatio;
+          }
+          break;
+        case 'n':
+          newHeight = resizeState.startHeight - deltaY;
+          newWidth = newHeight * aspectRatio;
+          newX = resizeState.startLeft + (resizeState.startWidth - newWidth) / 2;
+          newY = resizeState.startTop + resizeState.startHeight - newHeight;
+          break;
+        case 's':
+          newHeight = resizeState.startHeight + deltaY;
+          newWidth = newHeight * aspectRatio;
+          newX = resizeState.startLeft + (resizeState.startWidth - newWidth) / 2;
+          break;
+        case 'w':
+          newWidth = resizeState.startWidth - deltaX;
+          newHeight = newWidth / aspectRatio;
+          newX = resizeState.startLeft + resizeState.startWidth - newWidth;
+          newY = resizeState.startTop + (resizeState.startHeight - newHeight) / 2;
+          break;
+        case 'e':
+          newWidth = resizeState.startWidth + deltaX;
+          newHeight = newWidth / aspectRatio;
+          newY = resizeState.startTop + (resizeState.startHeight - newHeight) / 2;
+          break;
+      }
+    } else {
+      // Non-aspect ratio resize (same as mouse)
+      switch (resizeState.handle) {
+        case 'nw':
+          newWidth = resizeState.startWidth - deltaX;
+          newHeight = resizeState.startHeight - deltaY;
+          newX = resizeState.startLeft + deltaX;
+          newY = resizeState.startTop + deltaY;
+          break;
+        case 'ne':
+          newWidth = resizeState.startWidth + deltaX;
+          newHeight = resizeState.startHeight - deltaY;
+          newY = resizeState.startTop + deltaY;
+          break;
+        case 'sw':
+          newWidth = resizeState.startWidth - deltaX;
+          newHeight = resizeState.startHeight + deltaY;
+          newX = resizeState.startLeft + deltaX;
+          break;
+        case 'se':
+          newWidth = resizeState.startWidth + deltaX;
+          newHeight = resizeState.startHeight + deltaY;
+          break;
+        case 'n':
+          newHeight = resizeState.startHeight - deltaY;
+          newY = resizeState.startTop + deltaY;
+          break;
+        case 's':
+          newHeight = resizeState.startHeight + deltaY;
+          break;
+        case 'w':
+          newWidth = resizeState.startWidth - deltaX;
+          newX = resizeState.startLeft + deltaX;
+          break;
+        case 'e':
+          newWidth = resizeState.startWidth + deltaX;
+          break;
+      }
+    }
+
+    // Apply minimum size constraints
+    const minSize = 20;
+    if (newWidth < minSize) {
+      if (resizeState.handle.includes('w')) {
+        newX = resizeState.startLeft + resizeState.startWidth - minSize;
+      }
+      newWidth = minSize;
+    }
+    if (newHeight < minSize) {
+      if (resizeState.handle.includes('n')) {
+        newY = resizeState.startTop + resizeState.startHeight - minSize;
+      }
+      newHeight = minSize;
+    }
+
+    // Boundary constraints
+    newX = Math.max(0, newX);
+    newY = Math.max(0, newY);
+    const maxWidth = (device?.logicalWidth || 390) - newX;
+    const maxHeight = (device?.logicalHeight || 844) - newY;
+    newWidth = Math.min(newWidth, maxWidth);
+    newHeight = Math.min(newHeight, maxHeight);
+
+    // Apply grid snapping if enabled
+    if (settings.snapToGrid) {
+      newX = snapToGrid(newX, settings.gridSize);
+      newY = snapToGrid(newY, settings.gridSize);
+      newWidth = snapToGrid(newWidth, settings.gridSize);
+      newHeight = snapToGrid(newHeight, settings.gridSize);
+    }
+
+    // Store position in ref for visual updates
+    resizePositionRef.current = {
+      x: Math.round(newX),
+      y: Math.round(newY),
+      width: Math.round(newWidth),
+      height: Math.round(newHeight)
+    };
+
+    // Throttle state updates to 60fps (16ms)
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastResizeUpdateRef.current;
+    
+    if (timeSinceLastUpdate >= 16) {
+      lastResizeUpdateRef.current = now;
+      
+      // Cancel any pending throttled update
+      if (resizeThrottleRef.current) {
+        cancelAnimationFrame(resizeThrottleRef.current);
+        resizeThrottleRef.current = null;
+      }
+      
+      // Update the appropriate item
+      if (resizeState.itemType === 'control') {
+        const updatedControls = [...controlsRef.current];
+        updatedControls[resizeState.itemIndex] = {
+          ...controlsRef.current[resizeState.itemIndex],
+          frame: resizePositionRef.current
+        };
+        onControlUpdate(updatedControls);
+      } else {
+        const updatedScreens = [...screensRef.current];
+        updatedScreens[resizeState.itemIndex] = {
+          ...screensRef.current[resizeState.itemIndex],
+          outputFrame: resizePositionRef.current
+        };
+        onScreenUpdate(updatedScreens);
+      }
+    } else {
+      // Schedule a throttled update using requestAnimationFrame
+      if (!resizeThrottleRef.current) {
+        resizeThrottleRef.current = requestAnimationFrame(() => {
+          if (resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
+            if (resizeState.itemType === 'control') {
+              const updatedControls = [...controlsRef.current];
+              updatedControls[resizeState.itemIndex] = {
+                ...controlsRef.current[resizeState.itemIndex],
+                frame: resizePositionRef.current
+              };
+              onControlUpdate(updatedControls);
+            } else {
+              const updatedScreens = [...screensRef.current];
+              updatedScreens[resizeState.itemIndex] = {
+                ...screensRef.current[resizeState.itemIndex],
+                outputFrame: resizePositionRef.current
+              };
+              onScreenUpdate(updatedScreens);
+            }
+          }
+          resizeThrottleRef.current = null;
+        });
+      }
+    }
+  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings, consoleType]);
+
+  // Handle touch end
+  const handleTouchEnd = useCallback(() => {
+    // Apply final resize position if we were resizing
+    if (resizeState.isResizing && resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
+      // Cancel any pending throttled update
+      if (resizeThrottleRef.current) {
+        cancelAnimationFrame(resizeThrottleRef.current);
+        resizeThrottleRef.current = null;
+      }
+      
+      // Apply final position
+      if (resizeState.itemType === 'control') {
+        const updatedControls = [...controlsRef.current];
+        updatedControls[resizeState.itemIndex] = {
+          ...controlsRef.current[resizeState.itemIndex],
+          frame: resizePositionRef.current
+        };
+        onControlUpdate(updatedControls);
+      } else {
+        const updatedScreens = [...screensRef.current];
+        updatedScreens[resizeState.itemIndex] = {
+          ...screensRef.current[resizeState.itemIndex],
+          outputFrame: resizePositionRef.current
+        };
+        onScreenUpdate(updatedScreens);
+      }
+    }
+    
+    // Reset resize position ref
+    resizePositionRef.current = null;
+    lastResizeUpdateRef.current = 0;
+    
+    // Don't reset hasDragged here - let the click handler deal with it
+    setDragState({
+      isDragging: false,
+      itemType: null,
+      itemIndex: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0
+    });
+    setResizeState({
+      isResizing: false,
+      itemType: null,
+      itemIndex: null,
+      handle: '',
+      startX: 0,
+      startY: 0,
+      startWidth: 0,
+      startHeight: 0,
+      startLeft: 0,
+      startTop: 0
+    });
+    
+    // Reset resize flag after a short delay
+    setTimeout(() => {
+      setHasResized(false);
+    }, 100);
+  }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
+
+  // Add global mouse and touch event listeners
   useEffect(() => {
     if (dragState.isDragging || resizeState.isResizing) {
       // Notify parent that interaction has started
       onInteractionChange?.(true);
       
       const moveHandler = resizeState.isResizing ? handleResize : handleMouseMove;
+      const touchMoveHandler = resizeState.isResizing ? handleTouchResize : handleTouchMove;
+      
+      // Mouse events
       window.addEventListener('mousemove', moveHandler);
       window.addEventListener('mouseup', handleMouseUp);
       
+      // Touch events
+      window.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+      window.addEventListener('touchcancel', handleTouchEnd);
+      
       return () => {
+        // Remove mouse events
         window.removeEventListener('mousemove', moveHandler);
         window.removeEventListener('mouseup', handleMouseUp);
+        
+        // Remove touch events
+        window.removeEventListener('touchmove', touchMoveHandler);
+        window.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('touchcancel', handleTouchEnd);
       };
     } else {
       // Notify parent that interaction has ended
       onInteractionChange?.(false);
     }
-  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp, onInteractionChange]);
+  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp, handleTouchMove, handleTouchResize, handleTouchEnd, onInteractionChange]);
 
   // Handle control deletion
   const handleDeleteControl = useCallback((index: number) => {
@@ -665,7 +1113,7 @@ const Canvas: React.FC<CanvasProps> = ({
         <div id="canvas-wrapper" className="inline-flex flex-col items-start">
           <div 
             id="canvas-drawing-area"
-            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto [&>*]:box-border"
+            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto [&>*]:box-border touch-interactive"
             style={{
               boxSizing: 'content-box',
               width: canvasSize.width,
@@ -743,7 +1191,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`screen-${index}`}
                   key={`screen-${index}`}
-                  className={`absolute border-2 rounded group ${
+                  className={`absolute border-2 rounded group touch-interactive ${
                     isSelected 
                       ? 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50' 
                       : 'border-green-400 bg-green-400/10 hover:border-green-500 hover:bg-green-500/20'
@@ -759,6 +1207,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                 ? 'none' : 'all 75ms'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, index, 'screen')}
+                  onTouchStart={(e) => handleTouchStart(e, index, 'screen')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the screen (don't open properties panel - use settings button for that)
@@ -800,38 +1249,46 @@ const Canvas: React.FC<CanvasProps> = ({
                     <>
                       {/* Corner handles */}
                       <div 
-                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-nw-resize hover:bg-green-100"
+                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-nw-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'nw', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'nw', 'screen')}
                       />
                       <div 
-                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-ne-resize hover:bg-green-100"
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-ne-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'ne', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'ne', 'screen')}
                       />
                       <div 
-                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-sw-resize hover:bg-green-100"
+                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-sw-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'sw', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'sw', 'screen')}
                       />
                       <div 
-                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-se-resize hover:bg-green-100"
+                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-se-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'se', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'se', 'screen')}
                       />
                       
                       {/* Edge handles */}
                       <div 
-                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-n-resize hover:bg-green-100"
+                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-n-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'n', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'n', 'screen')}
                       />
                       <div 
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-s-resize hover:bg-green-100"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-s-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 's', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 's', 'screen')}
                       />
                       <div 
-                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-w-resize hover:bg-green-100"
+                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-w-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'w', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'w', 'screen')}
                       />
                       <div 
-                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-e-resize hover:bg-green-100"
+                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-green-500 rounded-full cursor-e-resize hover:bg-green-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'e', 'screen')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'e', 'screen')}
                       />
                       
                       {/* Delete button */}
@@ -873,7 +1330,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`control-${index}`}
                   key={index}
-                  className={`control absolute border-2 rounded group ${
+                  className={`control absolute border-2 rounded group touch-interactive ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
                       : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
@@ -889,6 +1346,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                 ? 'none' : 'all 75ms'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, index, 'control')}
+                  onTouchStart={(e) => handleTouchStart(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the control (don't open properties panel - use settings button for that)
@@ -959,41 +1417,49 @@ const Canvas: React.FC<CanvasProps> = ({
                       {/* Corner handles */}
                       <div 
                         id={`resize-handle-nw-${index}`}
-                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-nw-resize hover:bg-blue-100"
+                        className="absolute -top-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-nw-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'nw', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'nw', 'control')}
                       />
                       <div 
                         id={`resize-handle-ne-${index}`}
-                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ne-resize hover:bg-blue-100"
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-ne-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'ne', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'ne', 'control')}
                       />
                       <div 
                         id={`resize-handle-sw-${index}`}
-                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-sw-resize hover:bg-blue-100"
+                        className="absolute -bottom-1 -left-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-sw-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'sw', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'sw', 'control')}
                       />
                       <div 
                         id={`resize-handle-se-${index}`}
-                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize hover:bg-blue-100"
+                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'se', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'se', 'control')}
                       />
                       
                       {/* Edge handles */}
                       <div 
-                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-n-resize hover:bg-blue-100"
+                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-n-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'n', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'n', 'control')}
                       />
                       <div 
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-s-resize hover:bg-blue-100"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-s-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 's', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 's', 'control')}
                       />
                       <div 
-                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-w-resize hover:bg-blue-100"
+                        className="absolute top-1/2 -left-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-w-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'w', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'w', 'control')}
                       />
                       <div 
-                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-e-resize hover:bg-blue-100"
+                        className="absolute top-1/2 -right-1 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-e-resize hover:bg-blue-100 touch-interactive"
                         onMouseDown={(e) => handleResizeStart(e, index, 'e', 'control')}
+                        onTouchStart={(e) => handleResizeTouchStart(e, index, 'e', 'control')}
                       />
                       
                       {/* Delete button */}
