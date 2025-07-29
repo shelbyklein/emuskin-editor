@@ -79,7 +79,7 @@ const MenuInsetsPanel: React.FC<MenuInsetsPanelProps> = ({
               </div>
             </div>
             
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-4">
               Menu insets define the area reserved for system UI elements. The bottom inset is typically used for the iPhone home indicator.
             </p>
           </div>
