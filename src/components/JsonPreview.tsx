@@ -108,7 +108,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
     };
 
     return config;
-  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, backgroundImageFile]);
+  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, screens, backgroundImageFile, menuInsetsEnabled, menuInsetsBottom]);
 
   // Format JSON with indentation
   const formattedJson = jsonConfig ? JSON.stringify(jsonConfig, null, 2) : '';
