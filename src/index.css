@@ -77,3 +77,41 @@
     @apply shadow-lg shadow-primary-500/25 dark:shadow-primary-400/25;
   }
 }
+
+/* Custom range slider styles */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].slider::-webkit-slider-track {
+  background: transparent;
+  border: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #3B82F6;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #3B82F6;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Dark mode adjustments */
+.dark input[type="range"].slider {
+  background: linear-gradient(to right, #3B82F6 0%, #3B82F6 var(--value, 0%), #374151 var(--value, 0%), #374151 100%);
+}

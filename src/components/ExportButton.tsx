@@ -13,6 +13,8 @@ interface ExportButtonProps {
   controls: ControlMapping[];
   screens: ScreenMapping[];
   backgroundImage: { file: File; url: string } | null;
+  menuInsetsEnabled?: boolean;
+  menuInsetsBottom?: number;
 }
 
 const ExportButton: React.FC<ExportButtonProps> = ({
@@ -22,7 +24,9 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   selectedDevice,
   controls,
   screens,
-  backgroundImage
+  backgroundImage,
+  menuInsetsEnabled = false,
+  menuInsetsBottom = 0
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'deltaskin' | 'gammaskin'>('deltaskin');
@@ -89,7 +93,12 @@ const ExportButton: React.FC<ExportButtonProps> = ({
                 bottom: 0,
                 left: 0,
                 right: 0
-              }
+              },
+              ...(menuInsetsEnabled && {
+                menuInsets: {
+                  bottom: menuInsetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
+                }
+              })
             }
           }
         }

@@ -10,6 +10,8 @@ interface JsonPreviewProps {
   controls: ControlMapping[];
   screens: ScreenMapping[];
   backgroundImageFile?: File | null;
+  menuInsetsEnabled?: boolean;
+  menuInsetsBottom?: number;
 }
 
 const JsonPreview: React.FC<JsonPreviewProps> = ({
@@ -19,7 +21,9 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
   selectedDevice,
   controls,
   screens,
-  backgroundImageFile
+  backgroundImageFile,
+  menuInsetsEnabled = false,
+  menuInsetsBottom = 0
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -85,7 +89,12 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
                 bottom: 0,
                 left: 0,
                 right: 0
-              }
+              },
+              ...(menuInsetsEnabled && {
+                menuInsets: {
+                  bottom: menuInsetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
+                }
+              })
             }
           }
         }

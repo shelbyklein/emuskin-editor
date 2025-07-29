@@ -11,6 +11,7 @@ import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
 import ExportButton from '../components/ExportButton';
 import ImportButton from '../components/ImportButton';
+import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
 
@@ -27,6 +28,8 @@ const Editor: React.FC = () => {
   const [screens, setScreens] = useState<ScreenMapping[]>([]);
   const [selectedDeviceData, setSelectedDeviceData] = useState<Device | null>(null);
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
+  const [menuInsetsEnabled, setMenuInsetsEnabled] = useState<boolean>(false);
+  const [menuInsetsBottom, setMenuInsetsBottom] = useState<number>(0);
   const { settings } = useEditor();
   const { currentProject, saveProject, saveProjectImage } = useProject();
 
@@ -37,6 +40,8 @@ const Editor: React.FC = () => {
       setSkinIdentifier(currentProject.identifier);
       setControls(currentProject.controls);
       setScreens(currentProject.screens || []);
+      setMenuInsetsEnabled(currentProject.menuInsetsEnabled || false);
+      setMenuInsetsBottom(currentProject.menuInsetsBottom || 0);
       if (currentProject.console) {
         setSelectedConsole(currentProject.console.shortName);
       }
@@ -68,6 +73,8 @@ const Editor: React.FC = () => {
           device: selectedDeviceData,
           controls,
           screens,
+          menuInsetsEnabled,
+          menuInsetsBottom,
           // Don't save the blob URL, just mark that we have an image
           backgroundImage: currentProject.backgroundImage ? {
             fileName: currentProject.backgroundImage.fileName,
@@ -79,7 +86,7 @@ const Editor: React.FC = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, currentProject, saveProject, isInteracting]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, currentProject, saveProject, isInteracting]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -445,6 +452,16 @@ const Editor: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Menu Insets Panel */}
+          {selectedConsole && selectedDevice && (
+            <MenuInsetsPanel
+              menuInsetsEnabled={menuInsetsEnabled}
+              menuInsetsBottom={menuInsetsBottom}
+              onToggle={setMenuInsetsEnabled}
+              onBottomChange={setMenuInsetsBottom}
+            />
+          )}
         </div>
 
         {/* Right Column - Canvas and JSON Preview */}
@@ -473,6 +490,8 @@ const Editor: React.FC = () => {
                     controls={controls}
                     screens={screens}
                     backgroundImage={uploadedImage}
+                    menuInsetsEnabled={menuInsetsEnabled}
+                    menuInsetsBottom={menuInsetsBottom}
                   />
                 </div>
               </div>
@@ -504,6 +523,8 @@ const Editor: React.FC = () => {
                 controls={controls}
                 screens={screens}
                 backgroundImageFile={uploadedImage?.file}
+                menuInsetsEnabled={menuInsetsEnabled}
+                menuInsetsBottom={menuInsetsBottom}
               />
             </div>
           )}

@@ -17,6 +17,8 @@ interface Project {
     url: string | null;
     hasStoredImage?: boolean; // Flag to indicate if image is in IndexedDB
   } | null;
+  menuInsetsEnabled?: boolean;
+  menuInsetsBottom?: number;
   lastModified: number;
 }
 
