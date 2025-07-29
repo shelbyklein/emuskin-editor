@@ -868,7 +868,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
                   {/* Extended edges visualization (always visible) */}
                   {(control.extendedEdges?.top || control.extendedEdges?.bottom || 
-                    control.extendedEdges?.left || control.extendedEdges?.right) && (
+                    control.extendedEdges?.left || control.extendedEdges?.right) ? (
                     <div 
                       className="absolute pointer-events-none border-2 border-dashed border-purple-400 opacity-30"
                       style={{
@@ -878,7 +878,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         right: `${-(control.extendedEdges?.right || 0)}px`,
                       }}
                     />
-                  )}
+                  ) : null}
 
                   {/* Settings cog icon - visible on hover */}
                   <button
