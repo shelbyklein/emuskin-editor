@@ -182,6 +182,8 @@ emuskin-generator/
 - ✅ Updated assets format to use object with "medium" key
 - ✅ Added "control" class to all control elements for better CSS targeting
 - ✅ Fixed "0" appearing in controls by using ternary operator with null
+- ✅ Widened grid size dropdown to accommodate caret with pr-8
+- ✅ Fixed console selection by converting from datalist to select dropdown
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

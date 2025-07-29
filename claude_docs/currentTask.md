@@ -54,6 +54,8 @@
 - ✅ Updated assets format to use object with "medium" key
 - ✅ Added "control" class to all control elements
 - ✅ Fixed "0" appearing in controls by fixing conditional rendering
+- ✅ Made grid size dropdown wider to accommodate caret
+- ✅ Fixed console selection by changing to select dropdown
 
 ## Next Steps
 1. Create import functionality for existing .deltaskin/.gammaskin files
