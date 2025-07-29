@@ -883,9 +883,10 @@ const Canvas: React.FC<CanvasProps> = ({
                   onMouseDown={(e) => handleMouseDown(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Just select the control, don't open properties panel
+                    // Select the control and open properties panel
                     if (!hasDragged) {
                       setSelectedControl(index);
+                      setShowPropertiesPanel(true);
                     }
                     setHasDragged(false); // Reset for next interaction
                   }}
