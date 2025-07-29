@@ -28,7 +28,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     extendedTop: 0,
     extendedBottom: 0,
     extendedLeft: 0,
-    extendedRight: 0
+    extendedRight: 0,
+    label: ''
   });
 
   // Update form when control changes (but not when we're actively editing)
@@ -42,7 +43,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         extendedTop: control.extendedEdges?.top || 0,
         extendedBottom: control.extendedEdges?.bottom || 0,
         extendedLeft: control.extendedEdges?.left || 0,
-        extendedRight: control.extendedEdges?.right || 0
+        extendedRight: control.extendedEdges?.right || 0,
+        label: control.label || ''
       });
     }
   }, [control, isEditing]);
@@ -53,8 +55,12 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setIsEditing(true);
-    const numValue = parseInt(value) || 0;
-    setFormData(prev => ({ ...prev, [field]: numValue }));
+    if (field === 'label') {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    } else {
+      const numValue = parseInt(value) || 0;
+      setFormData(prev => ({ ...prev, [field]: numValue }));
+    }
   };
 
   const handleApply = () => {
@@ -90,7 +96,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         bottom: formData.extendedBottom,
         left: formData.extendedLeft,
         right: formData.extendedRight
-      }
+      },
+      label: formData.label || undefined
     };
 
     onUpdate(controlIndex, updatedControl);
@@ -138,6 +145,23 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
       <div id="control-label-display" className="mb-4 text-sm text-gray-600 dark:text-gray-400">
         <strong>Editing: {label}</strong>
       </div>
+
+      {/* Custom Button Label (only show for custom buttons) */}
+      {control.label && (
+        <div id="custom-label-section" className="mb-4">
+          <label htmlFor="control-custom-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Custom Button Label
+          </label>
+          <input
+            id="control-custom-label"
+            type="text"
+            value={formData.label}
+            onChange={(e) => handleInputChange('label', e.target.value)}
+            placeholder="e.g., Turbo Fire"
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      )}
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

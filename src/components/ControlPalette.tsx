@@ -54,6 +54,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
   const handleButtonClick = (button: Button) => {
     // Create a control object with default properties
     const control: ControlMapping = {
+      id: `control-${button.key}-${Date.now()}`,
       inputs: [button.key],
       frame: {
         x: 50, // Default position

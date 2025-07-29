@@ -25,6 +25,7 @@ export interface Button {
 }
 
 export interface ControlMapping {
+  id?: string;
   inputs: string | string[];
   frame: {
     x: number;
@@ -38,6 +39,7 @@ export interface ControlMapping {
     left: number;
     right: number;
   };
+  label?: string; // For custom buttons
 }
 
 export interface SkinConfig {

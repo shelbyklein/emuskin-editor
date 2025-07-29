@@ -826,9 +826,9 @@ const Canvas: React.FC<CanvasProps> = ({
               const width = control.frame?.width || 50;
               const height = control.frame?.height || 50;
               const isSelected = selectedControl === index;
-              const label = Array.isArray(control.inputs) 
-                ? control.inputs[0] || 'Control'
-                : control.inputs || 'Control';
+              const label = control.label || (Array.isArray(control.inputs) 
+                ? control.inputs.join('+') || 'Control'
+                : control.inputs || 'Control');
 
               return (
                 <div

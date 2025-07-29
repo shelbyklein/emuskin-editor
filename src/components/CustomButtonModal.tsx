@@ -33,13 +33,21 @@ const CustomButtonModal: React.FC<CustomButtonModalProps> = ({
   const handleConfirm = () => {
     if (buttonName && selectedButtons.length > 0) {
       const customControl: ControlMapping = {
+        id: `custom-${Date.now()}`,
         inputs: selectedButtons,
         frame: {
           x: 50,
           y: 50,
           width: 60,
           height: 60
-        }
+        },
+        extendedEdges: {
+          top: 5,
+          bottom: 5,
+          left: 5,
+          right: 5
+        },
+        label: buttonName
       };
       onConfirm(customControl);
       handleClose();
