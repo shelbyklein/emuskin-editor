@@ -40,7 +40,7 @@ const GridControls: React.FC = () => {
           id="gridSize"
           value={settings.gridSize}
           onChange={(e) => updateSettings({ gridSize: parseInt(e.target.value) })}
-          className="px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+          className="px-2 py-1 pr-8 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="5">5px</option>
           <option value="10">10px</option>
