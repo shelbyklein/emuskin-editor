@@ -506,6 +506,8 @@ const Editor: React.FC = () => {
               controls={controls}
               screens={screens}
               consoleType={selectedConsole}
+              menuInsetsEnabled={menuInsetsEnabled}
+              menuInsetsBottom={menuInsetsBottom}
               onControlUpdate={handleControlsUpdate}
               onScreenUpdate={handleScreensUpdate}
               onInteractionChange={setIsInteracting}

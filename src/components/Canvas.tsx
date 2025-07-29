@@ -13,6 +13,8 @@ interface CanvasProps {
   controls: ControlMapping[];
   screens: ScreenMapping[];
   consoleType: string;
+  menuInsetsEnabled?: boolean;
+  menuInsetsBottom?: number;
   onControlUpdate: (controls: ControlMapping[]) => void;
   onScreenUpdate: (screens: ScreenMapping[]) => void;
   onInteractionChange?: (isInteracting: boolean) => void;
@@ -47,6 +49,8 @@ const Canvas: React.FC<CanvasProps> = ({
   controls,
   screens,
   consoleType,
+  menuInsetsEnabled = false,
+  menuInsetsBottom = 0,
   onControlUpdate,
   onScreenUpdate,
   onInteractionChange
@@ -695,6 +699,24 @@ const Canvas: React.FC<CanvasProps> = ({
                   backgroundSize: `${settings.gridSize}px ${settings.gridSize}px`
                 }}
               />
+            )}
+
+            {/* Menu insets visual overlay */}
+            {menuInsetsEnabled && menuInsetsBottom > 0 && device && (
+              <div 
+                id="menu-insets-overlay"
+                className="absolute left-0 right-0 pointer-events-none"
+                style={{
+                  top: `${(1 - menuInsetsBottom / 100) * device.logicalHeight}px`,
+                  height: `${(menuInsetsBottom / 100) * device.logicalHeight}px`,
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  borderTop: '1px dashed rgba(255, 255, 255, 0.5)'
+                }}
+              >
+                <div className="absolute top-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                  Menu Inset: {menuInsetsBottom}%
+                </div>
+              </div>
             )}
 
             {/* Render screens (behind controls) */}
