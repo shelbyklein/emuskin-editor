@@ -79,34 +79,6 @@ const MenuInsetsPanel: React.FC<MenuInsetsPanelProps> = ({
               </div>
             </div>
             
-            {/* Common presets */}
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => onBottomChange(0)}
-                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors"
-              >
-                None
-              </button>
-              <button
-                onClick={() => onBottomChange(15)}
-                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors"
-              >
-                15%
-              </button>
-              <button
-                onClick={() => onBottomChange(30)}
-                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors"
-              >
-                30%
-              </button>
-              <button
-                onClick={() => onBottomChange(43)}
-                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors"
-              >
-                43%
-              </button>
-            </div>
-            
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Menu insets define the area reserved for system UI elements. The bottom inset is typically used for the iPhone home indicator.
             </p>
