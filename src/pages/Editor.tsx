@@ -67,8 +67,32 @@ const Editor: React.FC = () => {
           url: currentProject.backgroundImage.url
         });
       }
+      
+      // Load thumbstick images from IndexedDB
+      loadThumbstickImages(currentProject.id);
     }
   }, [currentProject]);
+  
+  // Load thumbstick images for a project
+  const loadThumbstickImages = async (projectId: string) => {
+    try {
+      const thumbstickImages = await indexedDBManager.getAllThumbstickImages(projectId);
+      const imageMap: { [controlId: string]: string } = {};
+      const fileMap: { [controlId: string]: File } = {};
+      
+      for (const image of thumbstickImages) {
+        if (image.controlId) {
+          imageMap[image.controlId] = image.url;
+          fileMap[image.controlId] = new File([image.data], image.fileName, { type: image.data.type });
+        }
+      }
+      
+      setThumbstickImages(imageMap);
+      setThumbstickFiles(fileMap);
+    } catch (error) {
+      console.error('Failed to load thumbstick images:', error);
+    }
+  };
 
   // Track if we're actively interacting
   const [isInteracting, setIsInteracting] = useState(false);
@@ -286,35 +310,54 @@ const Editor: React.FC = () => {
     setScreens([...screens, screen]);
   };
   
-  const handleThumbstickImageUpload = (file: File, controlIndex: number) => {
+  const handleThumbstickImageUpload = async (file: File, controlIndex: number) => {
     const control = controls[controlIndex];
-    if (control && control.id) {
-      // Create object URL for the image
-      const url = URL.createObjectURL(file);
-      
-      // Update thumbstick images state
-      setThumbstickImages(prev => ({
-        ...prev,
-        [control.id!]: url
-      }));
-      
-      // Store the file for export
-      setThumbstickFiles(prev => ({
-        ...prev,
-        [control.id!]: file
-      }));
-      
-      // Update the control with thumbstick info
-      const updatedControls = [...controls];
-      updatedControls[controlIndex] = {
-        ...control,
-        thumbstick: {
-          name: file.name,
-          width: control.thumbstick?.width || 85,
-          height: control.thumbstick?.height || 87
-        }
-      };
-      setControls(updatedControls);
+    if (control && control.id && currentProject) {
+      try {
+        // Store in IndexedDB
+        const url = await indexedDBManager.storeImage(
+          currentProject.id, 
+          file, 
+          'thumbstick', 
+          control.id
+        );
+        
+        // Update thumbstick images state
+        setThumbstickImages(prev => ({
+          ...prev,
+          [control.id!]: url
+        }));
+        
+        // Store the file for export
+        setThumbstickFiles(prev => ({
+          ...prev,
+          [control.id!]: file
+        }));
+        
+        // Update the control with thumbstick info
+        const updatedControls = [...controls];
+        updatedControls[controlIndex] = {
+          ...control,
+          thumbstick: {
+            name: file.name,
+            width: control.thumbstick?.width || 85,
+            height: control.thumbstick?.height || 87
+          }
+        };
+        setControls(updatedControls);
+      } catch (error) {
+        console.error('Failed to store thumbstick image:', error);
+        // Still allow the image to be used even if storage fails
+        const url = URL.createObjectURL(file);
+        setThumbstickImages(prev => ({
+          ...prev,
+          [control.id!]: url
+        }));
+        setThumbstickFiles(prev => ({
+          ...prev,
+          [control.id!]: file
+        }));
+      }
     }
   };
 
@@ -325,7 +368,8 @@ const Editor: React.FC = () => {
     importedControls: ControlMapping[],
     importedScreens: ScreenMapping[],
     importedImage: { file: File; url: string } | null,
-    deviceDimensions?: { width: number; height: number }
+    deviceDimensions?: { width: number; height: number },
+    importedThumbstickImages?: { controlId: string; file: File; url: string }[]
   ) => {
     // Set basic info
     setSkinName(importedName);
@@ -358,6 +402,32 @@ const Editor: React.FC = () => {
           console.error('Failed to save imported image:', error);
         }
       }
+    }
+    
+    // Set thumbstick images
+    if (importedThumbstickImages && currentProject) {
+      const imageMap: { [controlId: string]: string } = {};
+      const fileMap: { [controlId: string]: File } = {};
+      
+      for (const thumbstickData of importedThumbstickImages) {
+        imageMap[thumbstickData.controlId] = thumbstickData.url;
+        fileMap[thumbstickData.controlId] = thumbstickData.file;
+        
+        // Save to IndexedDB
+        try {
+          await indexedDBManager.storeImage(
+            currentProject.id,
+            thumbstickData.file,
+            'thumbstick',
+            thumbstickData.controlId
+          );
+        } catch (error) {
+          console.error(`Failed to save thumbstick image for control ${thumbstickData.controlId}:`, error);
+        }
+      }
+      
+      setThumbstickImages(imageMap);
+      setThumbstickFiles(fileMap);
     }
   };
 

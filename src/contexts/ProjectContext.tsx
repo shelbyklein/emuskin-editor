@@ -136,7 +136,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     
     try {
       // Store image in IndexedDB
-      const url = await indexedDBManager.storeImage(currentProjectId, file);
+      const url = await indexedDBManager.storeImage(currentProjectId, file, 'background');
       
       // Update project with new image info
       setProjects(prev => prev.map(project => {

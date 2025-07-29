@@ -50,7 +50,8 @@ interface ImportButtonProps {
     controls: ControlMapping[],
     screens: ScreenMapping[],
     backgroundImage: { file: File; url: string } | null,
-    deviceDimensions?: { width: number; height: number }
+    deviceDimensions?: { width: number; height: number },
+    thumbstickImages?: { controlId: string; file: File; url: string }[]
   ) => void;
 }
 
@@ -118,9 +119,9 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
           inputs = Object.keys(item.inputs);
         }
 
-        return {
+        const control: ControlMapping = {
           id: `control-${Date.now()}-${index}`,
-          inputs: inputs,
+          inputs: inputs.length === 1 ? inputs[0] : inputs,
           frame: {
             x: item.frame?.x || 0,
             y: item.frame?.y || 0,
@@ -134,6 +135,23 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
             right: item.extendedEdges?.right || 0
           }
         };
+        
+        // Add thumbstick data if present
+        if (item.thumbstick) {
+          control.thumbstick = {
+            name: item.thumbstick.name,
+            width: item.thumbstick.width || 85,
+            height: item.thumbstick.height || 87
+          };
+        }
+        
+        // Handle thumbstick inputs object format
+        if (item.inputs && typeof item.inputs === 'object' && !Array.isArray(item.inputs) &&
+            'up' in item.inputs && 'down' in item.inputs && 'left' in item.inputs && 'right' in item.inputs) {
+          control.inputs = item.inputs;
+        }
+        
+        return control;
       });
 
       // Convert screens to ScreenMapping format
@@ -175,6 +193,27 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
           }
         }
       }
+      
+      // Extract thumbstick images
+      const thumbstickImages: { controlId: string; file: File; url: string }[] = [];
+      
+      for (const control of controls) {
+        if (control.thumbstick && control.id) {
+          const thumbstickFile = contents.file(control.thumbstick.name);
+          if (thumbstickFile) {
+            const thumbstickBlob = await thumbstickFile.async('blob');
+            const thumbstickFileObj = new File([thumbstickBlob], control.thumbstick.name, {
+              type: thumbstickBlob.type || 'image/png'
+            });
+            const thumbstickUrl = URL.createObjectURL(thumbstickBlob);
+            thumbstickImages.push({
+              controlId: control.id,
+              file: thumbstickFileObj,
+              url: thumbstickUrl
+            });
+          }
+        }
+      }
 
       // Map console shortname
       const consoleMap: { [key: string]: string } = {
@@ -198,7 +237,8 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
         controls,
         screens,
         backgroundImage,
-        deviceDimensions
+        deviceDimensions,
+        thumbstickImages
       );
 
       // Reset file input

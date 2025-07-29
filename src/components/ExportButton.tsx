@@ -210,9 +210,31 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       
       // Add thumbstick images
       for (const control of controls) {
-        if (control.thumbstick && control.id && thumbstickFiles[control.id]) {
-          const thumbstickFile = thumbstickFiles[control.id];
-          zip.file(control.thumbstick.name, thumbstickFile);
+        if (control.thumbstick && control.id) {
+          let thumbstickFile: File | null = null;
+          
+          // First try to use the provided file
+          if (thumbstickFiles[control.id]) {
+            thumbstickFile = thumbstickFiles[control.id];
+          } else if (currentProject?.id) {
+            // Try to retrieve from IndexedDB
+            try {
+              const storedImage = await indexedDBManager.getImage(
+                currentProject.id, 
+                'thumbstick', 
+                control.id
+              );
+              if (storedImage) {
+                thumbstickFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+              }
+            } catch (error) {
+              console.error(`Failed to retrieve thumbstick image for control ${control.id}:`, error);
+            }
+          }
+          
+          if (thumbstickFile) {
+            zip.file(control.thumbstick.name, thumbstickFile);
+          }
         }
       }
 
