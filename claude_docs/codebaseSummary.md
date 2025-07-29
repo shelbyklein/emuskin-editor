@@ -14,6 +14,7 @@ emuskin-generator/
 ├── src/
 │   ├── components/     # Reusable UI components
 │   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize for controls and screens
+│   │   ├── ConsoleIcon.tsx      # Console system icon component
 │   │   ├── ControlPalette.tsx   # Button selection palette
 │   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
@@ -27,7 +28,8 @@ emuskin-generator/
 │   │   ├── Layout.tsx           # Main app layout with ID system
 │   │   ├── ProjectManager.tsx   # Project save/load management
 │   │   ├── ScreenPalette.tsx    # Screen selection for game display
-│   │   └── ScreenPropertiesPanel.tsx # Bottom-sliding editor for screens
+│   │   ├── ScreenPropertiesPanel.tsx # Bottom-sliding editor for screens
+│   │   └── SkinEditPanel.tsx    # Slide-out panel for skin configuration
 │   ├── pages/          # Page components
 │   │   ├── Home.tsx    # Project cards view and landing page
 │   │   ├── Editor.tsx  # Main editor interface
@@ -196,6 +198,9 @@ emuskin-generator/
 - ✅ Fixed property panel trigger - now only opens on settings button click
 - ✅ Fixed missing indexedDBManager import error in Editor component
 - ✅ Implemented full touch support for mobile devices and tablets
+- ✅ Reorganized UI to display skin title in header with console icon
+- ✅ Created SkinEditPanel component for skin configuration
+- ✅ Added ConsoleIcon component using actual console image assets
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

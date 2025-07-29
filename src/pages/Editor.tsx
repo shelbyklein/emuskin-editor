@@ -12,6 +12,8 @@ import ProjectManager from '../components/ProjectManager';
 import ExportButton from '../components/ExportButton';
 import ImportButton from '../components/ImportButton';
 import MenuInsetsPanel from '../components/MenuInsetsPanel';
+import ConsoleIcon from '../components/ConsoleIcon';
+import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
 import { indexedDBManager } from '../utils/indexedDB';
@@ -33,6 +35,7 @@ const Editor: React.FC = () => {
   const [menuInsetsBottom, setMenuInsetsBottom] = useState<number>(0);
   const [thumbstickImages, setThumbstickImages] = useState<{ [controlId: string]: string }>({});
   const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState<boolean>(false);
   
   // Clean up thumbstick URLs on unmount
   useEffect(() => {
@@ -452,8 +455,37 @@ const Editor: React.FC = () => {
 
   return (
     <div id="editor-container">
-      {/* Project Manager - Top Right */}
-      <div id="editor-header" className="flex justify-end mb-4">
+      {/* Header with Title and Project Manager */}
+      <div id="editor-header" className="flex justify-between items-center mb-4">
+        {/* Left side - Title and Edit button */}
+        <div className="flex items-center space-x-3">
+          {/* Console Icon or Placeholder */}
+          {selectedConsole ? (
+            <ConsoleIcon console={selectedConsole} className="w-8 h-8" />
+          ) : (
+            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">?</span>
+            </div>
+          )}
+          
+          {/* Skin Title */}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {skinName || 'Untitled Skin'}
+          </h1>
+          
+          {/* Edit Button */}
+          <button
+            onClick={() => setIsEditPanelOpen(true)}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            title="Edit skin settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Right side - Project Manager */}
         <ProjectManager />
       </div>
 
@@ -461,82 +493,6 @@ const Editor: React.FC = () => {
       <div id="editor-layout" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Form, Controls and Image Upload */}
         <div id="editor-left-column" className="space-y-6">
-          {/* Header Section */}
-          <div id="editor-header" className="card animate-fade-in">
-            <h2 id="editor-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Create New Skin</h2>
-            
-            <div id="editor-form-grid" className="grid grid-cols-1 gap-4">
-              {/* Skin Name Input */}
-              <div id="skin-name-container">
-                <label htmlFor="skinName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Skin Name
-                </label>
-                <input
-                  type="text"
-                  id="skinName"
-                  value={skinName}
-                  onChange={(e) => setSkinName(e.target.value)}
-                  className="mt-1 input-field"
-                  placeholder="My Custom Skin"
-                />
-              </div>
-
-              {/* Skin Identifier Input */}
-              <div id="skin-identifier-container">
-                <label htmlFor="skinIdentifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Skin Identifier
-                </label>
-                <input
-                  type="text"
-                  id="skinIdentifier"
-                  value={skinIdentifier}
-                  onChange={(e) => setSkinIdentifier(e.target.value)}
-                  className="mt-1 input-field"
-                  placeholder="com.playcase.default.skin"
-                />
-              </div>
-
-              {/* Console Selection */}
-              <div id="console-selection-container">
-                <label htmlFor="console" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Console System
-                </label>
-                <select
-                  id="console"
-                  value={selectedConsole}
-                  onChange={(e) => setSelectedConsole(e.target.value)}
-                  className="mt-1 input-field"
-                >
-                  <option value="">Select a console...</option>
-                  {consoles.map((console) => (
-                    <option key={console.shortName} value={console.shortName}>
-                      {console.console}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Device Selection */}
-              <div id="device-selection-container">
-                <label htmlFor="device" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  iPhone Model
-                </label>
-                <select
-                  id="device"
-                  value={selectedDevice}
-                  onChange={(e) => setSelectedDevice(e.target.value)}
-                  className="mt-1 input-field"
-                >
-                  <option value="">Select an iPhone model...</option>
-                  {devices.map((device) => (
-                    <option key={device.model} value={device.model}>
-                      {device.model}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
           {/* Image Upload Section */}
           {selectedConsole && selectedDevice && !uploadedImage && (
             <div id="image-upload-section" className="card animate-slide-up">
@@ -650,6 +606,22 @@ const Editor: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* Edit Panel */}
+      <SkinEditPanel
+        isOpen={isEditPanelOpen}
+        onClose={() => setIsEditPanelOpen(false)}
+        skinName={skinName}
+        skinIdentifier={skinIdentifier}
+        selectedConsole={selectedConsole}
+        selectedDevice={selectedDevice}
+        consoles={consoles}
+        devices={devices}
+        onSkinNameChange={setSkinName}
+        onSkinIdentifierChange={setSkinIdentifier}
+        onConsoleChange={setSelectedConsole}
+        onDeviceChange={setSelectedDevice}
+      />
     </div>
   );
 };

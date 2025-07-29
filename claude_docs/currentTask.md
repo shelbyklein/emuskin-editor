@@ -28,6 +28,12 @@
 - Screens use green theme to distinguish from blue controls
 
 ## Recent Accomplishments
+- ✅ Reorganized UI to display skin title in header with console icon
+  - Moved skin title from form section to main header
+  - Added console icon display (or placeholder when no console selected)
+  - Added edit button next to title to access configuration
+  - Created SkinEditPanel component with all configuration options
+  - Fixed duplicate ID issues in the layout
 - ✅ Fixed property panel trigger behavior - now only opens on settings button click
 - ✅ Fixed missing indexedDBManager import error in Editor component
 - ✅ Implemented comprehensive touch support for mobile devices:

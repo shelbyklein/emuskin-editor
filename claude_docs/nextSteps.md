@@ -2,16 +2,24 @@
 
 ## Immediate Priorities (Next Session)
 
-### 1. Landscape Orientation Support
+### 1. Polish Header UI
+- **Purpose**: Complete the header reorganization
+- **Implementation**:
+  - Add hover effects to edit button
+  - Consider adding skin identifier subtitle below name
+  - Add visual feedback when edit panel is open
+  - Ensure responsive behavior on mobile devices
+
+### 2. Landscape Orientation Support
 - **Purpose**: Enable skin creation for landscape mode
 - **Implementation**:
-  - Add orientation selector in device panel
+  - Add orientation selector in device panel or edit panel
   - Swap width/height when landscape selected
   - Update canvas dimensions appropriately
   - Ensure controls/screens adapt to rotated view
   - Update export to include orientation in JSON
 
-### 2. Undo/Redo Functionality
+### 3. Undo/Redo Functionality
 - **Purpose**: Allow users to undo mistakes and redo actions
 - **Implementation**:
   - Create history stack for all actions
@@ -20,7 +28,7 @@
   - Visual undo/redo buttons in toolbar
   - Limit history to reasonable number of states
 
-### 3. Keyboard Shortcuts
+### 4. Keyboard Shortcuts
 - **Purpose**: Improve productivity for power users
 - **Implementation**:
   - Delete key for removing selected items
