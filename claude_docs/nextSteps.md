@@ -25,7 +25,29 @@
   - ✅ Buttons persist with projects and export correctly
 - **Completed**: Custom buttons now fully operational
 
-### 3. Landscape Orientation Support
+### 3. ✅ Menu Insets Panel [COMPLETED]
+- **Purpose**: Allow configuration of system UI safe areas
+- **Implemented**:
+  - ✅ Created MenuInsetsPanel component with toggle and slider
+  - ✅ Bottom value configurable from 0-100%
+  - ✅ Visual overlay on canvas showing inset area
+  - ✅ JSON structure includes menuInsets after extendedEdges
+  - ✅ Real-time preview updates
+- **Completed**: Menu insets fully operational for iPhone home indicator
+
+### 4. ✅ Thumbstick Support [COMPLETED]
+- **Purpose**: Support custom thumbstick images for N64, NDS, and SG
+- **Implemented**:
+  - ✅ Added thumbstick property to ControlMapping type
+  - ✅ Image upload in ControlPropertiesPanel
+  - ✅ Width/height dimension controls
+  - ✅ Canvas renders thumbstick images centered
+  - ✅ JSON includes thumbstick data before inputs
+  - ✅ Thumbstick images included in exports
+  - ✅ Proper input mapping to analogStick directions
+- **Completed**: Full thumbstick support with custom images
+
+### 5. Landscape Orientation Support
 - **Purpose**: Many skins need both portrait and landscape layouts
 - **Implementation**:
   - Add orientation toggle in Editor
@@ -121,10 +143,11 @@
 
 ## Recommended Next Session Plan
 
-1. **Complete Custom Button Creator** - Finish the existing modal to support multi-button combinations
+1. **Add Thumbstick Image Storage to IndexedDB** - Store thumbstick images alongside background images for project persistence
 2. **Add Landscape Orientation Support** - Essential for many games that require landscape layouts
 3. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
 4. **Implement Success/Error Toasts** - Better UX than current alert() calls
 5. **Add Undo/Redo Functionality** - Critical for a visual editor
+6. **Control Alignment Tools** - Help users create precise layouts
 
-These priorities focus on completing partially implemented features and adding essential editor functionality.
+These priorities focus on completing the thumbstick feature and adding essential editor functionality.

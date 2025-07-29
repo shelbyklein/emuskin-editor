@@ -17,6 +17,7 @@ emuskin-generator/
 │   │   ├── ControlPalette.tsx   # Button selection palette
 │   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
+│   │   ├── MenuInsetsPanel.tsx  # Menu insets configuration
 │   │   ├── DeviceInfo.tsx       # Device metrics display
 │   │   ├── ExportButton.tsx     # Export to .deltaskin/.gammaskin with validation
 │   │   ├── GridControls.tsx     # Grid snapping controls
@@ -188,6 +189,10 @@ emuskin-generator/
 - ✅ Fixed console selection by converting from datalist to select dropdown
 - ✅ Created Home page with project cards view
 - ✅ Implemented import functionality for existing skin files
+- ✅ Completed custom button creator with multi-action support
+- ✅ Added menu insets panel with visual overlay
+- ✅ Implemented comprehensive thumbstick support with custom images
+- ✅ Fixed control click behavior to open properties panel
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

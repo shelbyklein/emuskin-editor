@@ -37,10 +37,10 @@
 - [x] Control properties panel with live editing
 
 ### Custom Controls
-- [ ] Custom button creator
-- [ ] Multi-action button support
-- [ ] Custom identifiers and labels
-- [ ] Timing configuration
+- [x] Custom button creator
+- [x] Multi-action button support
+- [x] Custom identifiers and labels
+- [x] Timing configuration (removed as not needed)
 
 ### File Management
 - [x] Image upload with validation
@@ -124,6 +124,15 @@
 - [x] Add ImportButton component with ZIP parsing
 - [x] Handle legacy format differences and console mapping
 - [x] Support automatic device detection from mappingSize
+- [x] Complete custom button creator with modal UI
+- [x] Add label editing for custom buttons in properties panel
+- [x] Implement menu insets panel with bottom value configuration
+- [x] Add visual overlay for menu insets on canvas
+- [x] Move canvas actions to bottom of panel
+- [x] Implement thumbstick support with custom images
+- [x] Add thumbstick image upload and dimension controls
+- [x] Update JSON generation to include thumbstick data
+- [x] Fix control click behavior to open properties panel
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

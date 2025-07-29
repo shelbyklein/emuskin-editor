@@ -9,9 +9,12 @@
 - ✅ Complete export functionality with validation
 - ✅ Create import functionality for existing skins
 - ✅ Implement custom button creator with multi-action support
+- ✅ Add menu insets panel with visual overlay
+- ✅ Implement thumbstick support with custom images
 - Add landscape orientation support
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
+- Add thumbstick image storage to IndexedDB
 
 ## Context
 - Full-featured skin editor with visual control and screen placement
@@ -82,6 +85,23 @@
   - ControlPropertiesPanel allows editing custom button labels
   - Multi-button combinations display properly (e.g., 'a+b' for simultaneous press)
   - Custom buttons persist with projects and export correctly
+- ✅ Added menu insets panel functionality:
+  - Created MenuInsetsPanel component with toggle and slider
+  - Bottom value configurable from 0-100% for system UI accommodation
+  - Visual overlay shows menu inset area on canvas with transparency
+  - JSON structure updated to include menuInsets after extendedEdges
+  - Real-time JSON preview updates when adjusting slider
+  - Typically used for iPhone home indicator area
+- ✅ Implemented comprehensive thumbstick support:
+  - Added thumbstick property to ControlMapping interface
+  - Thumbsticks support custom PNG image uploads
+  - Width and height dimensions configurable (default: 85x87)
+  - Images render centered within control bounds
+  - Proper JSON structure with thumbstick data before inputs
+  - Thumbstick images included in .deltaskin/.gammaskin exports
+  - Automatic input mapping to analogStickUp/Down/Left/Right
+  - Properties panel opens on thumbstick click for easy configuration
+  - Memory management with URL cleanup for blob URLs
 
 ## Next Steps
 1. Add landscape orientation support
