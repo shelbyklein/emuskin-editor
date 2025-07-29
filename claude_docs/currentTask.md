@@ -42,6 +42,16 @@
   - Automatic screen setup based on console type
   - Special Nintendo DS dual-screen handling
   - Screens persist with projects
+- ✅ Fixed resizing performance issues:
+  - Added requestAnimationFrame throttling
+  - Implemented position refs to avoid state updates
+  - Removed CSS transitions during active resize
+- ✅ Added settings cog icons to controls and screens
+- ✅ Implemented aspect ratio maintenance for screen resizing
+- ✅ Created screen alignment panel with immediate positioning
+- ✅ Fixed stale closure issues causing position jumping
+- ✅ Made settings cog only visible on hover
+- ✅ Updated assets format to use object with "medium" key
 
 ## Next Steps
 1. Create import functionality for existing .deltaskin/.gammaskin files

@@ -107,6 +107,13 @@
 - [x] Implement automatic dual-screen for Nintendo DS
 - [x] Add export validation and error messages
 - [x] Support both .deltaskin and .gammaskin formats
+- [x] Fix resizing lag with performance optimizations
+- [x] Add settings cog icon to controls and screens
+- [x] Implement aspect ratio maintenance for screen resizing
+- [x] Create screen alignment panel with positioning buttons
+- [x] Fix stale closure issues in Canvas component
+- [x] Make settings cog only show on hover
+- [x] Update assets format to use "medium" as key
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

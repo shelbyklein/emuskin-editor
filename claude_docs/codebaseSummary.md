@@ -173,6 +173,13 @@ emuskin-generator/
 - ✅ Automatic dual-screen setup for Nintendo DS
 - ✅ Screens included in JSON export with validation
 - ✅ Green theme for screens vs blue for controls
+- ✅ Fixed resizing lag with requestAnimationFrame throttling
+- ✅ Added settings cog icons to controls and screens
+- ✅ Implemented aspect ratio maintenance for screen resizing
+- ✅ Created screen alignment panel with positioning buttons
+- ✅ Fixed stale closure issues using refs in Canvas
+- ✅ Made settings cog only visible on hover
+- ✅ Updated assets format to use object with "medium" key
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

@@ -15,6 +15,7 @@ interface CanvasProps {
   consoleType: string;
   onControlUpdate: (controls: ControlMapping[]) => void;
   onScreenUpdate: (screens: ScreenMapping[]) => void;
+  onInteractionChange?: (isInteracting: boolean) => void;
 }
 
 interface DragState {
@@ -47,7 +48,8 @@ const Canvas: React.FC<CanvasProps> = ({
   screens,
   consoleType,
   onControlUpdate,
-  onScreenUpdate
+  onScreenUpdate,
+  onInteractionChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
@@ -59,6 +61,24 @@ const Canvas: React.FC<CanvasProps> = ({
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [showScreenPropertiesPanel, setShowScreenPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
+  
+  // Performance optimization refs
+  const resizePositionRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const resizeThrottleRef = useRef<number | null>(null);
+  const lastResizeUpdateRef = useRef<number>(0);
+  
+  // Refs to always have latest values in callbacks
+  const controlsRef = useRef(controls);
+  const screensRef = useRef(screens);
+  
+  // Update refs when props change
+  useEffect(() => {
+    controlsRef.current = controls;
+  }, [controls]);
+  
+  useEffect(() => {
+    screensRef.current = screens;
+  }, [screens]);
 
   // Helper function to snap value to grid
   const snapToGrid = (value: number, gridSize: number): number => {
@@ -181,11 +201,11 @@ const Canvas: React.FC<CanvasProps> = ({
       
       let width, height;
       if (dragState.itemType === 'control') {
-        const control = controls[dragState.itemIndex];
+        const control = controlsRef.current[dragState.itemIndex];
         width = control.frame?.width || 50;
         height = control.frame?.height || 50;
       } else {
-        const screen = screens[dragState.itemIndex];
+        const screen = screensRef.current[dragState.itemIndex];
         width = screen.outputFrame?.width || 200;
         height = screen.outputFrame?.height || 150;
       }
@@ -208,9 +228,9 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Update the appropriate item
       if (dragState.itemType === 'control') {
-        const control = controls[dragState.itemIndex];
+        const control = controlsRef.current[dragState.itemIndex];
         if (clampedX !== control.frame?.x || clampedY !== control.frame?.y) {
-          const updatedControls = [...controls];
+          const updatedControls = [...controlsRef.current];
           updatedControls[dragState.itemIndex] = {
             ...control,
             frame: {
@@ -222,9 +242,9 @@ const Canvas: React.FC<CanvasProps> = ({
           onControlUpdate(updatedControls);
         }
       } else {
-        const screen = screens[dragState.itemIndex];
+        const screen = screensRef.current[dragState.itemIndex];
         if (clampedX !== screen.outputFrame?.x || clampedY !== screen.outputFrame?.y) {
-          const updatedScreens = [...screens];
+          const updatedScreens = [...screensRef.current];
           updatedScreens[dragState.itemIndex] = {
             ...screen,
             outputFrame: {
@@ -251,42 +271,145 @@ const Canvas: React.FC<CanvasProps> = ({
     let newWidth = resizeState.startWidth;
     let newHeight = resizeState.startHeight;
 
+    // Check if we need to maintain aspect ratio for screens
+    const shouldMaintainAspectRatio = resizeState.itemType === 'screen' && 
+      screensRef.current[resizeState.itemIndex]?.maintainAspectRatio;
+    
+    let aspectRatio = 1;
+    if (shouldMaintainAspectRatio) {
+      const screen = screensRef.current[resizeState.itemIndex];
+      if (screen.inputFrame) {
+        aspectRatio = screen.inputFrame.width / screen.inputFrame.height;
+      } else {
+        // Default aspect ratios based on console type
+        const aspectRatios: { [key: string]: number } = {
+          'gbc': 160 / 144,
+          'gba': 240 / 160,
+          'nds': 256 / 192,
+          'nes': 256 / 240,
+          'snes': 256 / 224,
+          'n64': 256 / 224,
+          'sg': 4 / 3,
+          'ps1': 4 / 3
+        };
+        aspectRatio = aspectRatios[consoleType] || 1.333;
+      }
+    }
+
     // Handle different resize handles
-    switch (resizeState.handle) {
-      case 'nw':
-        newX = resizeState.startLeft + deltaX;
-        newY = resizeState.startTop + deltaY;
-        newWidth = resizeState.startWidth - deltaX;
-        newHeight = resizeState.startHeight - deltaY;
-        break;
-      case 'ne':
-        newY = resizeState.startTop + deltaY;
-        newWidth = resizeState.startWidth + deltaX;
-        newHeight = resizeState.startHeight - deltaY;
-        break;
-      case 'sw':
-        newX = resizeState.startLeft + deltaX;
-        newWidth = resizeState.startWidth - deltaX;
-        newHeight = resizeState.startHeight + deltaY;
-        break;
-      case 'se':
-        newWidth = resizeState.startWidth + deltaX;
-        newHeight = resizeState.startHeight + deltaY;
-        break;
-      case 'n':
-        newY = resizeState.startTop + deltaY;
-        newHeight = resizeState.startHeight - deltaY;
-        break;
-      case 's':
-        newHeight = resizeState.startHeight + deltaY;
-        break;
-      case 'w':
-        newX = resizeState.startLeft + deltaX;
-        newWidth = resizeState.startWidth - deltaX;
-        break;
-      case 'e':
-        newWidth = resizeState.startWidth + deltaX;
-        break;
+    if (shouldMaintainAspectRatio) {
+      // For aspect ratio maintenance, we'll use the dominant axis of movement
+      switch (resizeState.handle) {
+        case 'nw':
+          // Use the larger delta to determine primary resize direction
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            newX = resizeState.startLeft + deltaX;
+            newY = resizeState.startTop - (newHeight - resizeState.startHeight);
+          } else {
+            newHeight = resizeState.startHeight - deltaY;
+            newWidth = newHeight * aspectRatio;
+            newY = resizeState.startTop + deltaY;
+            newX = resizeState.startLeft - (newWidth - resizeState.startWidth);
+          }
+          break;
+        case 'ne':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+            newY = resizeState.startTop - (newHeight - resizeState.startHeight);
+          } else {
+            newHeight = resizeState.startHeight - deltaY;
+            newWidth = newHeight * aspectRatio;
+            newY = resizeState.startTop + deltaY;
+          }
+          break;
+        case 'sw':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            newX = resizeState.startLeft + deltaX;
+          } else {
+            newHeight = resizeState.startHeight + deltaY;
+            newWidth = newHeight * aspectRatio;
+            newX = resizeState.startLeft - (newWidth - resizeState.startWidth);
+          }
+          break;
+        case 'se':
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            newWidth = resizeState.startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+          } else {
+            newHeight = resizeState.startHeight + deltaY;
+            newWidth = newHeight * aspectRatio;
+          }
+          break;
+        case 'n':
+        case 's':
+          // Vertical resize - adjust width to maintain ratio
+          newHeight = resizeState.handle === 'n' 
+            ? resizeState.startHeight - deltaY 
+            : resizeState.startHeight + deltaY;
+          newWidth = newHeight * aspectRatio;
+          // Center horizontally
+          newX = resizeState.startLeft - (newWidth - resizeState.startWidth) / 2;
+          if (resizeState.handle === 'n') {
+            newY = resizeState.startTop + deltaY;
+          }
+          break;
+        case 'w':
+        case 'e':
+          // Horizontal resize - adjust height to maintain ratio
+          newWidth = resizeState.handle === 'w'
+            ? resizeState.startWidth - deltaX
+            : resizeState.startWidth + deltaX;
+          newHeight = newWidth / aspectRatio;
+          // Center vertically
+          newY = resizeState.startTop - (newHeight - resizeState.startHeight) / 2;
+          if (resizeState.handle === 'w') {
+            newX = resizeState.startLeft + deltaX;
+          }
+          break;
+      }
+    } else {
+      // Normal resize without aspect ratio constraint
+      switch (resizeState.handle) {
+        case 'nw':
+          newX = resizeState.startLeft + deltaX;
+          newY = resizeState.startTop + deltaY;
+          newWidth = resizeState.startWidth - deltaX;
+          newHeight = resizeState.startHeight - deltaY;
+          break;
+        case 'ne':
+          newY = resizeState.startTop + deltaY;
+          newWidth = resizeState.startWidth + deltaX;
+          newHeight = resizeState.startHeight - deltaY;
+          break;
+        case 'sw':
+          newX = resizeState.startLeft + deltaX;
+          newWidth = resizeState.startWidth - deltaX;
+          newHeight = resizeState.startHeight + deltaY;
+          break;
+        case 'se':
+          newWidth = resizeState.startWidth + deltaX;
+          newHeight = resizeState.startHeight + deltaY;
+          break;
+        case 'n':
+          newY = resizeState.startTop + deltaY;
+          newHeight = resizeState.startHeight - deltaY;
+          break;
+        case 's':
+          newHeight = resizeState.startHeight + deltaY;
+          break;
+        case 'w':
+          newX = resizeState.startLeft + deltaX;
+          newWidth = resizeState.startWidth - deltaX;
+          break;
+        case 'e':
+          newWidth = resizeState.startWidth + deltaX;
+          break;
+      }
     }
 
     // Minimum size constraints
@@ -320,36 +443,100 @@ const Canvas: React.FC<CanvasProps> = ({
       newHeight = snapToGrid(newHeight, settings.gridSize);
     }
 
-    // Update the appropriate item
-    if (resizeState.itemType === 'control') {
-      const updatedControls = [...controls];
-      updatedControls[resizeState.itemIndex] = {
-        ...controls[resizeState.itemIndex],
-        frame: {
-          x: Math.round(newX),
-          y: Math.round(newY),
-          width: Math.round(newWidth),
-          height: Math.round(newHeight)
+    // Store position in ref for visual updates
+    resizePositionRef.current = {
+      x: Math.round(newX),
+      y: Math.round(newY),
+      width: Math.round(newWidth),
+      height: Math.round(newHeight)
+    };
+
+    // Throttle state updates to 60fps (16ms)
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastResizeUpdateRef.current;
+    
+    if (timeSinceLastUpdate >= 16) {
+      lastResizeUpdateRef.current = now;
+      
+      // Cancel any pending throttled update
+      if (resizeThrottleRef.current) {
+        cancelAnimationFrame(resizeThrottleRef.current);
+        resizeThrottleRef.current = null;
+      }
+      
+      // Update the appropriate item
+      if (resizeState.itemType === 'control') {
+        const updatedControls = [...controlsRef.current];
+        updatedControls[resizeState.itemIndex] = {
+          ...controlsRef.current[resizeState.itemIndex],
+          frame: resizePositionRef.current
+        };
+        onControlUpdate(updatedControls);
+      } else {
+        const updatedScreens = [...screensRef.current];
+        updatedScreens[resizeState.itemIndex] = {
+          ...screensRef.current[resizeState.itemIndex],
+          outputFrame: resizePositionRef.current
+        };
+        onScreenUpdate(updatedScreens);
+      }
+    } else if (!resizeThrottleRef.current) {
+      // Schedule an update for the next frame if we haven't already
+      resizeThrottleRef.current = requestAnimationFrame(() => {
+        if (resizePositionRef.current && resizeState.itemIndex !== null) {
+          if (resizeState.itemType === 'control') {
+            const updatedControls = [...controlsRef.current];
+            updatedControls[resizeState.itemIndex] = {
+              ...controlsRef.current[resizeState.itemIndex],
+              frame: resizePositionRef.current
+            };
+            onControlUpdate(updatedControls);
+          } else {
+            const updatedScreens = [...screensRef.current];
+            updatedScreens[resizeState.itemIndex] = {
+              ...screensRef.current[resizeState.itemIndex],
+              outputFrame: resizePositionRef.current
+            };
+            onScreenUpdate(updatedScreens);
+          }
         }
-      };
-      onControlUpdate(updatedControls);
-    } else {
-      const updatedScreens = [...screens];
-      updatedScreens[resizeState.itemIndex] = {
-        ...screens[resizeState.itemIndex],
-        outputFrame: {
-          x: Math.round(newX),
-          y: Math.round(newY),
-          width: Math.round(newWidth),
-          height: Math.round(newHeight)
-        }
-      };
-      onScreenUpdate(updatedScreens);
+        resizeThrottleRef.current = null;
+      });
     }
-  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings]);
+  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings, consoleType]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
+    // Apply final resize position if we were resizing
+    if (resizeState.isResizing && resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
+      // Cancel any pending throttled update
+      if (resizeThrottleRef.current) {
+        cancelAnimationFrame(resizeThrottleRef.current);
+        resizeThrottleRef.current = null;
+      }
+      
+      // Apply final position
+      if (resizeState.itemType === 'control') {
+        const updatedControls = [...controlsRef.current];
+        updatedControls[resizeState.itemIndex] = {
+          ...controlsRef.current[resizeState.itemIndex],
+          frame: resizePositionRef.current
+        };
+        onControlUpdate(updatedControls);
+      } else {
+        const updatedScreens = [...screensRef.current];
+        updatedScreens[resizeState.itemIndex] = {
+          ...screensRef.current[resizeState.itemIndex],
+          outputFrame: resizePositionRef.current
+        };
+        onScreenUpdate(updatedScreens);
+      }
+    }
+    
+    // Reset resize position ref
+    resizePositionRef.current = null;
+    lastResizeUpdateRef.current = 0;
+    
     // Don't reset hasDragged here - let the click handler deal with it
     setDragState({
       isDragging: false,
@@ -372,11 +559,14 @@ const Canvas: React.FC<CanvasProps> = ({
       startLeft: 0,
       startTop: 0
     });
-  }, []);
+  }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
 
   // Add global mouse event listeners
   useEffect(() => {
     if (dragState.isDragging || resizeState.isResizing) {
+      // Notify parent that interaction has started
+      onInteractionChange?.(true);
+      
       const moveHandler = resizeState.isResizing ? handleResize : handleMouseMove;
       window.addEventListener('mousemove', moveHandler);
       window.addEventListener('mouseup', handleMouseUp);
@@ -385,28 +575,31 @@ const Canvas: React.FC<CanvasProps> = ({
         window.removeEventListener('mousemove', moveHandler);
         window.removeEventListener('mouseup', handleMouseUp);
       };
+    } else {
+      // Notify parent that interaction has ended
+      onInteractionChange?.(false);
     }
-  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp]);
+  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp, onInteractionChange]);
 
   // Handle control deletion
   const handleDeleteControl = useCallback((index: number) => {
-    const updatedControls = controls.filter((_, i) => i !== index);
+    const updatedControls = controlsRef.current.filter((_, i) => i !== index);
     onControlUpdate(updatedControls);
     setSelectedControl(null);
     setShowPropertiesPanel(false);
-  }, [controls, onControlUpdate]);
+  }, [onControlUpdate]);
 
   // Handle screen deletion
   const handleDeleteScreen = useCallback((index: number) => {
-    const updatedScreens = screens.filter((_, i) => i !== index);
+    const updatedScreens = screensRef.current.filter((_, i) => i !== index);
     onScreenUpdate(updatedScreens);
     setSelectedScreen(null);
     setShowScreenPropertiesPanel(false);
-  }, [screens, onScreenUpdate]);
+  }, [onScreenUpdate]);
 
   // Handle control properties update
   const handleControlPropertiesUpdate = useCallback((index: number, updates: ControlMapping) => {
-    const updatedControls = controls.map((control, i) => {
+    const updatedControls = controlsRef.current.map((control, i) => {
       if (i === index) {
         return { ...updates };
       }
@@ -414,19 +607,19 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     onControlUpdate(updatedControls);
-  }, [controls, onControlUpdate]);
+  }, [onControlUpdate]);
 
   // Handle screen properties update
   const handleScreenPropertiesUpdate = useCallback((index: number, updates: ScreenMapping) => {
-    const updatedScreens = screens.map((screen, i) => {
+    const updatedScreens = screensRef.current.map((screen, i) => {
       if (i === index) {
-        return { ...updates };
+        return updates; // Use the updates directly, as they should already be complete
       }
       return screen;
     });
     
     onScreenUpdate(updatedScreens);
-  }, [screens, onScreenUpdate]);
+  }, [onScreenUpdate]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -445,17 +638,20 @@ const Canvas: React.FC<CanvasProps> = ({
   }, [selectedControl, selectedScreen, handleDeleteControl, handleDeleteScreen]);
 
   return (
-    <div 
-      id="canvas-container"
-      ref={containerRef}
-      className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center"
-    >
+    <>
+      <div 
+        id="canvas-container"
+        ref={containerRef}
+        className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center box-border"
+        style={{ boxSizing: 'border-box' }}
+      >
       {device ? (
         <div id="canvas-wrapper" className="inline-flex flex-col items-start">
           <div 
             id="canvas-drawing-area"
-            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto"
+            className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto [&>*]:box-border"
             style={{
+              boxSizing: 'content-box',
               width: canvasSize.width,
               height: canvasSize.height,
               cursor: resizeState.isResizing ? 'grabbing' : 'auto'
@@ -513,7 +709,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`screen-${index}`}
                   key={`screen-${index}`}
-                  className={`absolute border-2 rounded ${
+                  className={`absolute border-2 rounded group ${
                     isSelected 
                       ? 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50' 
                       : 'border-green-400 bg-green-400/10 hover:border-green-500 hover:bg-green-500/20'
@@ -524,11 +720,14 @@ const Canvas: React.FC<CanvasProps> = ({
                     width: `${width}px`,
                     height: `${height}px`,
                     cursor: dragState.isDragging ? 'grabbing' : 'move',
-                    transition: dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen' ? 'none' : 'all 75ms'
+                    transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen') || 
+                                (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'screen') 
+                                ? 'none' : 'all 75ms'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, index, 'screen')}
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Select the screen and open properties panel
                     if (!hasDragged) {
                       setSelectedScreen(index);
                       setShowScreenPropertiesPanel(true);
@@ -542,6 +741,25 @@ const Canvas: React.FC<CanvasProps> = ({
                       {screen.label || 'Game Screen'}
                     </span>
                   </div>
+
+                  {/* Settings cog icon - visible on hover */}
+                  <button
+                    id={`screen-settings-${index}`}
+                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                    style={{ bottom: '3px', left: '3px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScreen(index);
+                      setShowScreenPropertiesPanel(true);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`Settings for ${screen.label || 'screen'}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
 
                   {/* Resize handles (visible when selected) */}
                   {isSelected && (
@@ -616,7 +834,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 <div
                   id={`control-${index}`}
                   key={index}
-                  className={`absolute border-2 rounded ${
+                  className={`absolute border-2 rounded group ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
                       : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
@@ -627,15 +845,16 @@ const Canvas: React.FC<CanvasProps> = ({
                     width: `${width}px`,
                     height: `${height}px`,
                     cursor: dragState.isDragging ? 'grabbing' : 'move',
-                    transition: dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control' ? 'none' : 'all 75ms'
+                    transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control') || 
+                                (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'control') 
+                                ? 'none' : 'all 75ms'
                   }}
                   onMouseDown={(e) => handleMouseDown(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Only show properties panel if we didn't just drag
+                    // Just select the control, don't open properties panel
                     if (!hasDragged) {
                       setSelectedControl(index);
-                      setShowPropertiesPanel(true);
                     }
                     setHasDragged(false); // Reset for next interaction
                   }}
@@ -660,6 +879,25 @@ const Canvas: React.FC<CanvasProps> = ({
                       }}
                     />
                   )}
+
+                  {/* Settings cog icon - visible on hover */}
+                  <button
+                    id={`control-settings-${index}`}
+                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                    style={{ bottom: '3px', left: '3px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedControl(index);
+                      setShowPropertiesPanel(true);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`Settings for ${label} control`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
 
                   {/* Resize handles (visible when selected) */}
                   {isSelected && (
@@ -733,6 +971,7 @@ const Canvas: React.FC<CanvasProps> = ({
           {/* Info panel */}
           <div id="canvas-help-text" className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>• Click and drag controls/screens to reposition</p>
+            <p>• Click the cog icon to open properties panel</p>
             <p>• Drag corner/edge handles to resize</p>
             <p>• Click an item to select, then press Delete to remove</p>
             <p>• Click empty space to deselect</p>
@@ -743,6 +982,7 @@ const Canvas: React.FC<CanvasProps> = ({
           Select a device to begin
         </p>
       )}
+      </div>
       
       {/* Control Properties Panel - Fixed Position */}
       {showPropertiesPanel && selectedControl !== null && device && (
@@ -795,6 +1035,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 screen={screens[selectedScreen] || null}
                 screenIndex={selectedScreen}
                 consoleType={consoleType}
+                deviceWidth={device?.logicalWidth || 390}
+                deviceHeight={device?.logicalHeight || 844}
                 onUpdate={handleScreenPropertiesUpdate}
                 onClose={() => setShowScreenPropertiesPanel(false)}
               />
@@ -802,7 +1044,7 @@ const Canvas: React.FC<CanvasProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

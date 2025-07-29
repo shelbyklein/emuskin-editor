@@ -51,9 +51,12 @@ const Editor: React.FC = () => {
     }
   }, [currentProject]);
 
+  // Track if we're actively interacting
+  const [isInteracting, setIsInteracting] = useState(false);
+
   // Auto-save when data changes (except image which is saved separately)
   useEffect(() => {
-    if (currentProject) {
+    if (currentProject && !isInteracting) {
       const timer = setTimeout(() => {
         saveProject({
           name: skinName,
@@ -73,7 +76,7 @@ const Editor: React.FC = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, currentProject, saveProject]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, currentProject, saveProject, isInteracting]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -150,12 +153,14 @@ const Editor: React.FC = () => {
             {
               label: 'Top Screen',
               inputFrame: { x: 0, y: 0, width: 256, height: 192 },
-              outputFrame: { x: 67, y: 50, width: 256, height: 192 }
+              outputFrame: { x: 67, y: 50, width: 256, height: 192 },
+              maintainAspectRatio: true
             },
             {
               label: 'Bottom Screen',
               inputFrame: { x: 0, y: 192, width: 256, height: 192 },
-              outputFrame: { x: 67, y: 262, width: 256, height: 192 }
+              outputFrame: { x: 67, y: 262, width: 256, height: 192 },
+              maintainAspectRatio: true
             }
           ]);
         } else if (selectedConsole === 'sg') {
@@ -163,7 +168,8 @@ const Editor: React.FC = () => {
           setScreens([
             {
               label: 'Game Screen',
-              outputFrame: { x: 50, y: 100, width: 290, height: 218 }
+              outputFrame: { x: 50, y: 100, width: 290, height: 218 },
+              maintainAspectRatio: true
             }
           ]);
         } else {
@@ -194,7 +200,8 @@ const Editor: React.FC = () => {
                         selectedConsole === 'nes' ? 240 :
                         selectedConsole === 'ps1' ? 240 : 224
               },
-              outputFrame: { x: 50, y: 100, width: defaultWidth, height: defaultHeight }
+              outputFrame: { x: 50, y: 100, width: defaultWidth, height: defaultHeight },
+              maintainAspectRatio: true
             }
           ]);
         }
@@ -419,6 +426,7 @@ const Editor: React.FC = () => {
               consoleType={selectedConsole}
               onControlUpdate={handleControlsUpdate}
               onScreenUpdate={handleScreensUpdate}
+              onInteractionChange={setIsInteracting}
             />
           </div>
 

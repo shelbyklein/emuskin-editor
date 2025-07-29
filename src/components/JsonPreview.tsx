@@ -38,7 +38,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
         iphone: {
           edgeToEdge: {
             portrait: {
-              assets: backgroundImageFile ? [backgroundImageFile.name] : [],
+              assets: backgroundImageFile ? { medium: backgroundImageFile.name } : {},
               items: controls.map(control => ({
                 inputs: control.inputs,
                 frame: {

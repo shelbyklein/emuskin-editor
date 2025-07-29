@@ -104,7 +104,8 @@ const ScreenPalette: React.FC<ScreenPaletteProps> = ({
         y: defaultY,
         width: defaultWidth,
         height: defaultHeight
-      }
+      },
+      maintainAspectRatio: true
     };
 
     // Add inputFrame if it exists (not for SEGA Genesis)

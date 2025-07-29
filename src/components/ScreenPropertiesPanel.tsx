@@ -7,6 +7,8 @@ interface ScreenPropertiesPanelProps {
   screen: ScreenMapping | null;
   screenIndex: number | null;
   consoleType: string;
+  deviceWidth?: number;
+  deviceHeight?: number;
   onUpdate: (index: number, updates: ScreenMapping) => void;
   onClose: () => void;
 }
@@ -15,12 +17,13 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
   screen,
   screenIndex,
   consoleType,
+  deviceWidth = 390,
+  deviceHeight = 844,
   onUpdate,
   onClose
 }) => {
   const { settings } = useEditor();
-  const [isEditing, setIsEditing] = useState(false);
-  const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(screen?.maintainAspectRatio ?? true);
   
   // Local state for form inputs
   const [formData, setFormData] = useState({
@@ -51,22 +54,22 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
 
   // Update form when screen changes
   useEffect(() => {
-    if (screen && !isEditing) {
+    if (screen) {
       setFormData({
         x: screen.outputFrame?.x || 0,
         y: screen.outputFrame?.y || 0,
         width: screen.outputFrame?.width || 200,
         height: screen.outputFrame?.height || 150
       });
+      setMaintainAspectRatio(screen.maintainAspectRatio ?? true);
     }
-  }, [screen, isEditing]);
+  }, [screen?.outputFrame?.x, screen?.outputFrame?.y, screen?.outputFrame?.width, screen?.outputFrame?.height, screen?.maintainAspectRatio]);
 
   if (!screen || screenIndex === null) {
     return null;
   }
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setIsEditing(true);
     const numValue = parseInt(value) || 0;
     
     if (maintainAspectRatio && (field === 'width' || field === 'height')) {
@@ -117,11 +120,11 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
         y: Math.max(0, finalY),
         width: Math.max(20, finalWidth),
         height: Math.max(20, finalHeight)
-      }
+      },
+      maintainAspectRatio
     };
 
     onUpdate(screenIndex, updatedScreen);
-    setIsEditing(false);
     onClose();
   };
 
@@ -198,6 +201,227 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
           </p>
         </div>
       )}
+
+      {/* Alignment Buttons */}
+      <div id="alignment-buttons" className="mb-4 grid grid-cols-4 gap-2">
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Scale
+            const aspectRatio = getAspectRatio();
+            
+            let newWidth = deviceWidth;
+            let newHeight = newWidth / aspectRatio;
+            
+            if (newHeight > deviceHeight) {
+              newHeight = deviceHeight;
+              newWidth = newHeight * aspectRatio;
+            }
+            
+            if (settings.snapToGrid) {
+              newWidth = Math.round(newWidth / settings.gridSize) * settings.gridSize;
+              newHeight = Math.round(newHeight / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                width: Math.round(newWidth),
+                height: Math.round(newHeight)
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({
+              ...prev,
+              width: Math.round(newWidth),
+              height: Math.round(newHeight)
+            }));
+          }}
+          className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+        >
+          Scale
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Align Left
+            let newX = 20;
+            if (settings.snapToGrid) {
+              newX = Math.round(newX / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                x: newX
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, x: newX }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Align Left
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Center Horizontally
+            let newX = (deviceWidth - screen.outputFrame.width) / 2;
+            if (settings.snapToGrid) {
+              newX = Math.round(newX / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                x: Math.round(newX)
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, x: Math.round(newX) }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Center H
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Align Right
+            let newX = deviceWidth - screen.outputFrame.width - 20;
+            if (settings.snapToGrid) {
+              newX = Math.round(newX / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                x: Math.max(0, newX)
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, x: Math.max(0, newX) }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Align Right
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Align Top
+            let newY = 20;
+            if (settings.snapToGrid) {
+              newY = Math.round(newY / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                y: newY
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, y: newY }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Align Top
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Center Vertically
+            let newY = (deviceHeight - screen.outputFrame.height) / 2;
+            if (settings.snapToGrid) {
+              newY = Math.round(newY / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                y: Math.round(newY)
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, y: Math.round(newY) }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Center V
+        </button>
+        
+        <button
+          onClick={() => {
+            if (!screen || screenIndex === null) return;
+            
+            // Align Bottom
+            let newY = deviceHeight - screen.outputFrame.height - 20;
+            if (settings.snapToGrid) {
+              newY = Math.round(newY / settings.gridSize) * settings.gridSize;
+            }
+            
+            // Update immediately
+            const updatedScreen: ScreenMapping = {
+              ...screen,
+              outputFrame: {
+                ...screen.outputFrame,
+                y: Math.max(0, newY)
+              }
+            };
+            
+            onUpdate(screenIndex, updatedScreen);
+            
+            // Update form to reflect changes
+            setFormData(prev => ({ ...prev, y: Math.max(0, newY) }));
+          }}
+          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+        >
+          Align Bottom
+        </button>
+      </div>
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

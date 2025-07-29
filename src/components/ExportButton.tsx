@@ -42,7 +42,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
         iphone: {
           edgeToEdge: {
             portrait: {
-              assets: backgroundImage ? [backgroundImage.file.name] : [],
+              assets: backgroundImage ? { medium: backgroundImage.file.name } : {},
               items: controls.map(control => ({
                 inputs: control.inputs,
                 frame: {

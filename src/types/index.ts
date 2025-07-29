@@ -68,6 +68,7 @@ export interface ScreenMapping {
     height: number;
   };
   label?: string; // For DS: "Top Screen" or "Bottom Screen"
+  maintainAspectRatio?: boolean; // Lock aspect ratio during resize
 }
 
 export interface SkinOrientation {
