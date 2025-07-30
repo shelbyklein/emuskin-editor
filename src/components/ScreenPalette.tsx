@@ -98,6 +98,7 @@ const ScreenPalette: React.FC<ScreenPaletteProps> = ({
     const defaultHeight = Math.round(defaultWidth / aspectRatio);
 
     const newScreen: ScreenMapping = {
+      id: `screen-${screenData.label.toLowerCase().replace(' ', '-')}-${Date.now()}`,
       label: screenData.label,
       outputFrame: {
         x: defaultX,

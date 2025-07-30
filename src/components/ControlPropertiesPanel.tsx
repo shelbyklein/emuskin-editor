@@ -1,6 +1,6 @@
 // Control properties panel for editing control position, size, and extended edges
 import React, { useState, useEffect } from 'react';
-import { ControlMapping } from '../types';
+import { ControlMapping, ScreenMapping } from '../types';
 import { useEditor } from '../contexts/EditorContext';
 
 interface ControlPropertiesPanelProps {
@@ -9,6 +9,7 @@ interface ControlPropertiesPanelProps {
   onUpdate: (index: number, updates: ControlMapping) => void;
   onClose: () => void;
   onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
+  screens?: ScreenMapping[];
 }
 
 const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
@@ -16,7 +17,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
   controlIndex,
   onUpdate,
   onClose,
-  onThumbstickImageUpload
+  onThumbstickImageUpload,
+  screens = []
 }) => {
   const { settings } = useEditor();
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +37,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     thumbstickWidth: 85,
     thumbstickHeight: 87
   });
+  
+  const [mirrorBottomScreen, setMirrorBottomScreen] = useState(false);
   
   const [thumbstickImage, setThumbstickImage] = useState<File | null>(null);
   const [thumbstickImageUrl, setThumbstickImageUrl] = useState<string | null>(null);
@@ -64,12 +68,37 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         thumbstickWidth: control.thumbstick?.width || 85,
         thumbstickHeight: control.thumbstick?.height || 87
       });
+      // Set mirror state from control
+      if (control.mirrorBottomScreen !== undefined) {
+        setMirrorBottomScreen(control.mirrorBottomScreen);
+      }
     }
   }, [control, isEditing]);
 
   if (!control || controlIndex === null) {
     return null;
   }
+  
+  // Check if this is a touchscreen control (moved here to be available earlier)
+  const isTouchscreen = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+    'x' in control.inputs && 'y' in control.inputs;
+
+  // Mirror bottom screen dimensions for touchscreen
+  useEffect(() => {
+    if (mirrorBottomScreen && isTouchscreen) {
+      const bottomScreen = screens.find(s => s.label === 'Bottom Screen');
+      if (bottomScreen && bottomScreen.outputFrame) {
+        setFormData(prev => ({
+          ...prev,
+          x: bottomScreen.outputFrame.x,
+          y: bottomScreen.outputFrame.y,
+          width: bottomScreen.outputFrame.width,
+          height: bottomScreen.outputFrame.height
+        }));
+        setIsEditing(true);
+      }
+    }
+  }, [mirrorBottomScreen, screens, isTouchscreen]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setIsEditing(true);
@@ -115,7 +144,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
         left: formData.extendedLeft,
         right: formData.extendedRight
       },
-      label: formData.label || undefined
+      label: formData.label || undefined,
+      mirrorBottomScreen: isTouchscreen ? mirrorBottomScreen : undefined
     };
     
     // Add thumbstick data if this is a thumbstick control with an image
@@ -150,7 +180,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
   const label = Array.isArray(control.inputs) 
     ? control.inputs.join(' + ')
     : typeof control.inputs === 'object' && !Array.isArray(control.inputs)
-    ? 'Thumbstick'
+    ? ('x' in control.inputs && 'y' in control.inputs ? 'Touchscreen' : 'Thumbstick')
     : control.inputs || 'Control';
     
   // Check if this is a thumbstick control
@@ -267,6 +297,46 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
           </p>
         </div>
       )}
+      
+      {/* Touchscreen Properties (only show for touchscreen controls) */}
+      {isTouchscreen && (
+        <div id="touchscreen-section" className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Touchscreen Properties</h4>
+          
+          {/* Mirror Bottom Screen Toggle */}
+          <div className="flex items-center justify-between">
+            <label htmlFor="mirror-bottom-screen" className="text-sm text-gray-700 dark:text-gray-300">
+              Mirror Bottom Screen Dimensions
+            </label>
+            <button
+              id="mirror-bottom-screen"
+              type="button"
+              onClick={() => setMirrorBottomScreen(!mirrorBottomScreen)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                mirrorBottomScreen ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+              aria-pressed={mirrorBottomScreen}
+            >
+              <span className="sr-only">Mirror bottom screen dimensions</span>
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  mirrorBottomScreen ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            When enabled, the touchscreen will automatically match the position and size of the bottom DS screen.
+          </p>
+          
+          {mirrorBottomScreen && !screens.find(s => s.label === 'Bottom Screen') && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              ⚠️ No bottom screen found. Add a bottom screen to use this feature.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -282,7 +352,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               value={formData.x}
               onChange={(e) => handleInputChange('x', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'x')}
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              disabled={isTouchscreen && mirrorBottomScreen}
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -293,7 +364,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               value={formData.y}
               onChange={(e) => handleInputChange('y', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'y')}
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              disabled={isTouchscreen && mirrorBottomScreen}
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
           </div>
@@ -312,7 +384,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               onChange={(e) => handleInputChange('width', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'width')}
               min="20"
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              disabled={isTouchscreen && mirrorBottomScreen}
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -324,7 +397,8 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               onChange={(e) => handleInputChange('height', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'height')}
               min="20"
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              disabled={isTouchscreen && mirrorBottomScreen}
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
           </div>

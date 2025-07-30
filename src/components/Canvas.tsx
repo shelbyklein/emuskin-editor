@@ -20,6 +20,8 @@ interface CanvasProps {
   onInteractionChange?: (isInteracting: boolean) => void;
   thumbstickImages?: { [controlId: string]: string }; // URLs for thumbstick images
   onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
+  selectedControlIndex?: number | null;
+  onControlSelectionChange?: (index: number | null) => void;
 }
 
 interface DragState {
@@ -57,15 +59,37 @@ const Canvas: React.FC<CanvasProps> = ({
   onScreenUpdate,
   onInteractionChange,
   thumbstickImages = {},
-  onThumbstickImageUpload
+  onThumbstickImageUpload,
+  selectedControlIndex,
+  onControlSelectionChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [canvasSize, setCanvasSize] = useState({ width: 390, height: 844 });
   const [scale, setScale] = useState(1);
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
   const [selectedScreen, setSelectedScreen] = useState<number | null>(null);
   const { settings } = useEditor();
   const { isDark } = useTheme();
+
+  // Sync external selection with internal state
+  useEffect(() => {
+    if (selectedControlIndex !== undefined && selectedControlIndex !== selectedControl) {
+      setSelectedControl(selectedControlIndex);
+      // Show properties panel when control is selected from list
+      if (selectedControlIndex !== null) {
+        setShowPropertiesPanel(true);
+      }
+    }
+  }, [selectedControlIndex, selectedControl]);
+
+  // Update control selection and notify parent
+  const updateControlSelection = useCallback((index: number | null, showProperties: boolean = false) => {
+    setSelectedControl(index);
+    onControlSelectionChange?.(index);
+    if (showProperties && index !== null) {
+      setShowPropertiesPanel(true);
+    }
+  }, [onControlSelectionChange]);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [showScreenPropertiesPanel, setShowScreenPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
@@ -88,6 +112,48 @@ const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     screensRef.current = screens;
   }, [screens]);
+
+  // Function to update screens and sync mirrored touchscreen controls
+  const updateScreensWithMirroredControls = useCallback((updatedScreens: ScreenMapping[]) => {
+    // Update screens first
+    onScreenUpdate(updatedScreens);
+    
+    // Find bottom screen
+    const bottomScreen = updatedScreens.find(s => s.label === 'Bottom Screen');
+    
+    if (bottomScreen && bottomScreen.outputFrame) {
+      // Check if any controls need to be updated
+      const updatedControls = controlsRef.current.map(control => {
+        if (control.mirrorBottomScreen && control.inputs && 
+            typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+            'x' in control.inputs && 'y' in control.inputs) {
+          // Update touchscreen control to match bottom screen
+          return {
+            ...control,
+            frame: {
+              x: bottomScreen.outputFrame.x,
+              y: bottomScreen.outputFrame.y,
+              width: bottomScreen.outputFrame.width,
+              height: bottomScreen.outputFrame.height
+            }
+          };
+        }
+        return control;
+      });
+      
+      // Check if any controls were actually updated
+      const controlsChanged = updatedControls.some((control, index) => 
+        control.frame?.x !== controlsRef.current[index].frame?.x ||
+        control.frame?.y !== controlsRef.current[index].frame?.y ||
+        control.frame?.width !== controlsRef.current[index].frame?.width ||
+        control.frame?.height !== controlsRef.current[index].frame?.height
+      );
+      
+      if (controlsChanged) {
+        onControlUpdate(updatedControls);
+      }
+    }
+  }, [onControlUpdate, onScreenUpdate]);
 
   // Helper function to snap value to grid
   const snapToGrid = (value: number, gridSize: number): number => {
@@ -119,7 +185,11 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Set canvas dimensions to 1:1 pixel representation
   useEffect(() => {
-    if (!device) return;
+    if (!device) {
+      // Set default size when no device is selected
+      setCanvasSize({ width: 390, height: 844 });
+      return;
+    }
 
     const deviceWidth = device.logicalWidth || 390;
     const deviceHeight = device.logicalHeight || 844;
@@ -153,11 +223,11 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     if (itemType === 'control') {
-      setSelectedControl(index);
+      updateControlSelection(index);
       setSelectedScreen(null);
     } else {
       setSelectedScreen(index);
-      setSelectedControl(null);
+      updateControlSelection(null);
     }
   }, []);
 
@@ -183,11 +253,11 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     if (itemType === 'control') {
-      setSelectedControl(index);
+      updateControlSelection(index);
       setSelectedScreen(null);
     } else {
       setSelectedScreen(index);
-      setSelectedControl(null);
+      updateControlSelection(null);
     }
   }, []);
 
@@ -215,11 +285,11 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     if (itemType === 'control') {
-      setSelectedControl(index);
+      updateControlSelection(index);
       setSelectedScreen(null);
     } else {
       setSelectedScreen(index);
-      setSelectedControl(null);
+      updateControlSelection(null);
     }
   }, [controls, screens]);
 
@@ -248,11 +318,11 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     if (itemType === 'control') {
-      setSelectedControl(index);
+      updateControlSelection(index);
       setSelectedScreen(null);
     } else {
       setSelectedScreen(index);
-      setSelectedControl(null);
+      updateControlSelection(null);
     }
   }, [controls, screens]);
 
@@ -327,11 +397,11 @@ const Canvas: React.FC<CanvasProps> = ({
               y: clampedY
             }
           };
-          onScreenUpdate(updatedScreens);
+          updateScreensWithMirroredControls(updatedScreens);
         }
       }
     }
-  }, [dragState, controls, screens, device, onControlUpdate, onScreenUpdate, resizeState.isResizing, settings]);
+  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings]);
 
   // Handle resize
   const handleResize = useCallback((e: MouseEvent) => {
@@ -552,7 +622,7 @@ const Canvas: React.FC<CanvasProps> = ({
           ...screensRef.current[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
-        onScreenUpdate(updatedScreens);
+        updateScreensWithMirroredControls(updatedScreens);
       }
     } else if (!resizeThrottleRef.current) {
       // Schedule an update for the next frame if we haven't already
@@ -571,13 +641,13 @@ const Canvas: React.FC<CanvasProps> = ({
               ...screensRef.current[resizeState.itemIndex],
               outputFrame: resizePositionRef.current
             };
-            onScreenUpdate(updatedScreens);
+            updateScreensWithMirroredControls(updatedScreens);
           }
         }
         resizeThrottleRef.current = null;
       });
     }
-  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings, consoleType]);
+  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
@@ -603,7 +673,7 @@ const Canvas: React.FC<CanvasProps> = ({
           ...screensRef.current[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
-        onScreenUpdate(updatedScreens);
+        updateScreensWithMirroredControls(updatedScreens);
       }
     }
     
@@ -638,7 +708,7 @@ const Canvas: React.FC<CanvasProps> = ({
     setTimeout(() => {
       setHasResized(false);
     }, 100);
-  }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
+  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls]);
 
   // Handle touch move (dragging)
   const handleTouchMove = useCallback((e: TouchEvent) => {
@@ -702,10 +772,10 @@ const Canvas: React.FC<CanvasProps> = ({
           ...screensRef.current[dragState.itemIndex],
           outputFrame: newPosition
         };
-        onScreenUpdate(updatedScreens);
+        updateScreensWithMirroredControls(updatedScreens);
       }
     }
-  }, [dragState, controls, screens, device, onControlUpdate, onScreenUpdate, resizeState.isResizing, settings]);
+  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings]);
 
   // Handle touch resize
   const handleTouchResize = useCallback((e: TouchEvent) => {
@@ -921,7 +991,7 @@ const Canvas: React.FC<CanvasProps> = ({
           ...screensRef.current[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
-        onScreenUpdate(updatedScreens);
+        updateScreensWithMirroredControls(updatedScreens);
       }
     } else {
       // Schedule a throttled update using requestAnimationFrame
@@ -941,14 +1011,14 @@ const Canvas: React.FC<CanvasProps> = ({
                 ...screensRef.current[resizeState.itemIndex],
                 outputFrame: resizePositionRef.current
               };
-              onScreenUpdate(updatedScreens);
+              updateScreensWithMirroredControls(updatedScreens);
             }
           }
           resizeThrottleRef.current = null;
         });
       }
     }
-  }, [resizeState, controls, screens, device, onControlUpdate, onScreenUpdate, settings, consoleType]);
+  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType]);
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
@@ -974,7 +1044,7 @@ const Canvas: React.FC<CanvasProps> = ({
           ...screensRef.current[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
-        onScreenUpdate(updatedScreens);
+        updateScreensWithMirroredControls(updatedScreens);
       }
     }
     
@@ -1009,7 +1079,7 @@ const Canvas: React.FC<CanvasProps> = ({
     setTimeout(() => {
       setHasResized(false);
     }, 100);
-  }, [resizeState, controls, screens, onControlUpdate, onScreenUpdate]);
+  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls]);
 
   // Add global mouse and touch event listeners
   useEffect(() => {
@@ -1049,17 +1119,17 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleDeleteControl = useCallback((index: number) => {
     const updatedControls = controlsRef.current.filter((_, i) => i !== index);
     onControlUpdate(updatedControls);
-    setSelectedControl(null);
+    updateControlSelection(null);
     setShowPropertiesPanel(false);
   }, [onControlUpdate]);
 
   // Handle screen deletion
   const handleDeleteScreen = useCallback((index: number) => {
     const updatedScreens = screensRef.current.filter((_, i) => i !== index);
-    onScreenUpdate(updatedScreens);
+    updateScreensWithMirroredControls(updatedScreens);
     setSelectedScreen(null);
     setShowScreenPropertiesPanel(false);
-  }, [onScreenUpdate]);
+  }, [updateScreensWithMirroredControls]);
 
   // Handle control properties update
   const handleControlPropertiesUpdate = useCallback((index: number, updates: ControlMapping) => {
@@ -1082,8 +1152,8 @@ const Canvas: React.FC<CanvasProps> = ({
       return screen;
     });
     
-    onScreenUpdate(updatedScreens);
-  }, [onScreenUpdate]);
+    updateScreensWithMirroredControls(updatedScreens);
+  }, [updateScreensWithMirroredControls]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -1121,7 +1191,7 @@ const Canvas: React.FC<CanvasProps> = ({
               cursor: resizeState.isResizing ? 'grabbing' : 'auto'
             }}
             onClick={() => {
-              setSelectedControl(null);
+              updateControlSelection(null);
               setSelectedScreen(null);
               setShowPropertiesPanel(false);
               setShowScreenPropertiesPanel(false);
@@ -1179,18 +1249,27 @@ const Canvas: React.FC<CanvasProps> = ({
               </div>
             )}
 
-            {/* Render screens (behind controls) */}
+            {/* Render screens (lower in DOM but higher z-index than controls) */}
             {screens.map((screen, index) => {
               const x = screen.outputFrame?.x || 0;
               const y = screen.outputFrame?.y || 0;
               const width = screen.outputFrame?.width || 200;
               const height = screen.outputFrame?.height || 150;
               const isSelected = selectedScreen === index;
+              
+              // Check if this is the bottom screen and if any touchscreen is mirroring it
+              const isBottomScreen = screen.label === 'Bottom Screen';
+              const hasMirroredTouchscreen = isBottomScreen && controls.some(control => {
+                const isTouchscreen = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+                  'x' in control.inputs && 'y' in control.inputs && 
+                  control.inputs.x === 'touchScreenX' && control.inputs.y === 'touchScreenY';
+                return isTouchscreen && control.mirrorBottomScreen === true;
+              });
 
               return (
                 <div
                   id={`screen-${index}`}
-                  key={`screen-${index}`}
+                  key={screen.id || `screen-${index}`}
                   className={`absolute border-2 rounded group touch-interactive ${
                     isSelected 
                       ? 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50' 
@@ -1201,6 +1280,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     top: `${y}px`,
                     width: `${width}px`,
                     height: `${height}px`,
+                    zIndex: isSelected ? 40 : 30, // Screens have higher z-index than controls
                     cursor: dragState.isDragging ? 'grabbing' : 'move',
                     transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen') || 
                                 (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'screen') 
@@ -1213,7 +1293,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     // Select the screen (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
                       setSelectedScreen(index);
-                      setSelectedControl(null);
+                      updateControlSelection(null);
                     }
                     setHasDragged(false);
                   }}
@@ -1224,6 +1304,15 @@ const Canvas: React.FC<CanvasProps> = ({
                       {screen.label || 'Game Screen'}
                     </span>
                   </div>
+
+                  {/* Touchscreen indicator - shows when touchscreen is mirroring this screen */}
+                  {hasMirroredTouchscreen && (
+                    <div className="absolute top-2 right-2 w-8 h-8 bg-purple-500/90 rounded-full flex items-center justify-center shadow-md" title="Touchscreen mirroring active">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2z" />
+                      </svg>
+                    </div>
+                  )}
 
                   {/* Settings cog icon - visible on hover */}
                   <button
@@ -1312,18 +1401,44 @@ const Canvas: React.FC<CanvasProps> = ({
 
             {/* Render controls */}
             {controls.map((control, index) => {
+              // Check if this is a touchscreen control
+              const isTouchscreen = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
+                'x' in control.inputs && 'y' in control.inputs && 
+                control.inputs.x === 'touchScreenX' && control.inputs.y === 'touchScreenY';
+                
+              // Skip rendering if this is a locked touchscreen
+              if (isTouchscreen && control.mirrorBottomScreen === true) {
+                return null;
+              }
               const x = control.frame?.x || 0;
               const y = control.frame?.y || 0;
               const width = control.frame?.width || 50;
               const height = control.frame?.height || 50;
               const isSelected = selectedControl === index;
-              const label = control.label || (Array.isArray(control.inputs) 
-                ? control.inputs.join('+') || 'Control'
-                : control.inputs || 'Control');
+              const label = control.label || (() => {
+                if (Array.isArray(control.inputs)) {
+                  return control.inputs.map(i => i.toUpperCase()).join('+') || 'Control';
+                } else if (typeof control.inputs === 'object') {
+                  // Handle object inputs (thumbstick, touchscreen)
+                  if ('up' in control.inputs && 'down' in control.inputs) {
+                    return 'Thumbstick';
+                  } else if ('x' in control.inputs && 'y' in control.inputs) {
+                    return 'Touchscreen';
+                  }
+                  return 'Control';
+                } else if (typeof control.inputs === 'string') {
+                  return control.inputs.toUpperCase() || 'Control';
+                } else {
+                  return 'Control';
+                }
+              })();
               
               // Check if this is a thumbstick control
               const isThumbstick = control.inputs && typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
                 'up' in control.inputs && control.inputs.up === 'analogStickUp';
+                
+              // Check if this touchscreen is locked (mirroring bottom screen)
+              const isLocked = isTouchscreen && control.mirrorBottomScreen === true;
               const thumbstickImageUrl = control.id && thumbstickImages[control.id];
 
               return (
@@ -1332,26 +1447,27 @@ const Canvas: React.FC<CanvasProps> = ({
                   key={index}
                   className={`control absolute border-2 rounded group touch-interactive ${
                     isSelected 
-                      ? 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50' 
-                      : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40'
+                      ? (isLocked ? 'border-purple-500 bg-purple-500/40 ring-2 ring-purple-500/50' : 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50')
+                      : (isLocked ? 'border-purple-400 bg-purple-400/30' : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40')
                   } ${dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control' ? 'opacity-75' : ''}`}
                   style={{
                     left: `${x}px`,
                     top: `${y}px`,
                     width: `${width}px`,
                     height: `${height}px`,
-                    cursor: dragState.isDragging ? 'grabbing' : 'move',
+                    zIndex: isSelected ? 20 : 10, // Controls have lower z-index than screens
+                    cursor: isLocked ? 'default' : (dragState.isDragging ? 'grabbing' : 'move'),
                     transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control') || 
                                 (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'control') 
                                 ? 'none' : 'all 75ms'
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, index, 'control')}
-                  onTouchStart={(e) => handleTouchStart(e, index, 'control')}
+                  onMouseDown={(e) => !isLocked && handleMouseDown(e, index, 'control')}
+                  onTouchStart={(e) => !isLocked && handleTouchStart(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the control (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
-                      setSelectedControl(index);
+                      updateControlSelection(index);
                       setSelectedScreen(null);
                     }
                     setHasDragged(false); // Reset for next interaction
@@ -1372,8 +1488,13 @@ const Canvas: React.FC<CanvasProps> = ({
                         }}
                       />
                     ) : (
-                      <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none">
+                      <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none flex items-center gap-1">
                         {isThumbstick ? 'Thumbstick' : label}
+                        {isLocked && (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Mirroring bottom screen">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        )}
                       </span>
                     )}
                   </div>
@@ -1399,8 +1520,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     style={{ bottom: '3px', left: '3px' }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedControl(index);
-                      setShowPropertiesPanel(true);
+                      updateControlSelection(index, true);
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     aria-label={`Settings for ${label} control`}
@@ -1411,8 +1531,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     </svg>
                   </button>
 
-                  {/* Resize handles (visible when selected) */}
-                  {isSelected && (
+                  {/* Resize handles (visible when selected and not locked) */}
+                  {isSelected && !isLocked && (
                     <>
                       {/* Corner handles */}
                       <div 
@@ -1528,6 +1648,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 onUpdate={handleControlPropertiesUpdate}
                 onClose={() => setShowPropertiesPanel(false)}
                 onThumbstickImageUpload={onThumbstickImageUpload}
+                screens={screens}
               />
             </div>
           </div>

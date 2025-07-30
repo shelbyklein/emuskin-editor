@@ -26,7 +26,7 @@ export interface Button {
 
 export interface ControlMapping {
   id?: string;
-  inputs: string | string[];
+  inputs: string | string[] | { [key: string]: string };
   frame: {
     x: number;
     y: number;
@@ -45,6 +45,7 @@ export interface ControlMapping {
     width: number;
     height: number;
   };
+  mirrorBottomScreen?: boolean; // For touchscreen controls
 }
 
 export interface SkinConfig {
@@ -62,6 +63,7 @@ export interface SkinConfig {
 }
 
 export interface ScreenMapping {
+  id?: string;
   inputFrame?: {
     x: number;
     y: number;

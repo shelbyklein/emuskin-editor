@@ -62,12 +62,17 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
             left: 'analogStickLeft',
             right: 'analogStickRight'
           }
+        : button.key === 'touchscreen'
+        ? {
+            x: 'touchScreenX',
+            y: 'touchScreenY'
+          }
         : [button.key],
       frame: {
         x: 50, // Default position
         y: 50,
-        width: button.key === 'thumbstick' ? 100 : 50, // Larger size for thumbstick
-        height: button.key === 'thumbstick' ? 100 : 50
+        width: button.key === 'thumbstick' ? 100 : button.key === 'touchscreen' ? 256 : 50, // Touchscreen matches DS screen width
+        height: button.key === 'thumbstick' ? 100 : button.key === 'touchscreen' ? 192 : 50 // Touchscreen matches DS screen height
       },
       extendedEdges: {
         top: 0,
@@ -83,6 +88,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
   const renderButton = (button: Button) => {
     const isDpad = button.key === 'dpad';
     const isThumbstick = button.key === 'thumbstick';
+    const isTouchscreen = button.key === 'touchscreen';
     
     return (
       <button
@@ -104,6 +110,13 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
               <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
               <circle cx="12" cy="12" r="3" />
+            </svg>
+          ) : isTouchscreen ? (
+            // Touchscreen icon - finger touching screen
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
+              <rect x="5" y="3" width="14" height="18" fill="none" stroke="currentColor" strokeWidth="2" rx="1" />
+              <circle cx="12" cy="15" r="2" />
+              <path d="M12 13v-3" stroke="currentColor" strokeWidth="2" />
             </svg>
           ) : (
             // Regular button

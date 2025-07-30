@@ -5,6 +5,7 @@ import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
+import ControlList from '../components/ControlList';
 import ScreenPalette from '../components/ScreenPalette';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
@@ -36,6 +37,7 @@ const Editor: React.FC = () => {
   const [thumbstickImages, setThumbstickImages] = useState<{ [controlId: string]: string }>({});
   const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
   const [isEditPanelOpen, setIsEditPanelOpen] = useState<boolean>(false);
+  const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
   
   // Clean up thumbstick URLs on unmount
   useEffect(() => {
@@ -165,6 +167,11 @@ const Editor: React.FC = () => {
         
         setConsoles(consolesData);
         setDevices(devicesData);
+        
+        // Set default device if none selected
+        if (!selectedDevice && devicesData.length > 0) {
+          setSelectedDevice(devicesData[0].model);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -198,24 +205,28 @@ const Editor: React.FC = () => {
       if (console && screens.length === 0 && !currentProject) {
         if (selectedConsole === 'nds') {
           // Nintendo DS needs two screens
-          setScreens([
+          const newScreens = [
             {
+              id: `screen-top-${Date.now()}`,
               label: 'Top Screen',
               inputFrame: { x: 0, y: 0, width: 256, height: 192 },
-              outputFrame: { x: 67, y: 50, width: 256, height: 192 },
+              outputFrame: { x: 100, y: 100, width: 200, height: 150 },
               maintainAspectRatio: true
             },
             {
+              id: `screen-bottom-${Date.now() + 1}`,
               label: 'Bottom Screen',
               inputFrame: { x: 0, y: 192, width: 256, height: 192 },
-              outputFrame: { x: 67, y: 262, width: 256, height: 192 },
+              outputFrame: { x: 100, y: 270, width: 200, height: 150 },
               maintainAspectRatio: true
             }
-          ]);
+          ];
+          setScreens(newScreens);
         } else if (selectedConsole === 'sg') {
           // SEGA Genesis - no inputFrame
           setScreens([
             {
+              id: `screen-${Date.now()}`,
               label: 'Game Screen',
               outputFrame: { x: 50, y: 100, width: 290, height: 218 },
               maintainAspectRatio: true
@@ -237,6 +248,7 @@ const Editor: React.FC = () => {
           
           setScreens([
             {
+              id: `screen-${Date.now()}`,
               label: 'Game Screen',
               inputFrame: {
                 x: 0,
@@ -262,7 +274,7 @@ const Editor: React.FC = () => {
         setScreens([]);
       }
     }
-  }, [selectedConsole, consoles, screens.length, currentProject]);
+  }, [selectedConsole, consoles, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
     setUploadedImage({ file, url: previewUrl });
@@ -299,6 +311,22 @@ const Editor: React.FC = () => {
     }
     // Add new control to the list
     setControls([...controls, control]);
+  };
+
+  const handleControlDelete = (index: number) => {
+    const newControls = controls.filter((_, i) => i !== index);
+    setControls(newControls);
+    // Clear selection if deleted control was selected
+    if (selectedControlIndex === index) {
+      setSelectedControlIndex(null);
+    } else if (selectedControlIndex !== null && selectedControlIndex > index) {
+      // Adjust selection index if needed
+      setSelectedControlIndex(selectedControlIndex - 1);
+    }
+  };
+
+  const handleControlSelectFromList = (index: number) => {
+    setSelectedControlIndex(index);
   };
 
   const handleScreenAdd = (screen: ScreenMapping) => {
@@ -469,14 +497,25 @@ const Editor: React.FC = () => {
           )}
           
           {/* Skin Title */}
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {skinName || 'Untitled Skin'}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {skinName || 'Untitled Skin'}
+            </h1>
+            {skinIdentifier && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {skinIdentifier}
+              </p>
+            )}
+          </div>
           
           {/* Edit Button */}
           <button
             onClick={() => setIsEditPanelOpen(true)}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className={`p-2 transition-all duration-200 rounded-lg ${
+              isEditPanelOpen 
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' 
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
             title="Edit skin settings"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -507,6 +546,17 @@ const Editor: React.FC = () => {
               <ControlPalette 
                 consoleType={selectedConsole}
                 onControlSelect={handleControlSelect}
+              />
+            </div>
+          )}
+          {/* Control List */}
+          {selectedConsole && selectedDevice && controls.length > 0 && (
+            <div id="control-list-section" className="card animate-slide-up">
+              <ControlList 
+                controls={controls}
+                onControlDelete={handleControlDelete}
+                onControlSelect={handleControlSelectFromList}
+                selectedControl={selectedControlIndex}
               />
             </div>
           )}
@@ -560,6 +610,8 @@ const Editor: React.FC = () => {
               onInteractionChange={setIsInteracting}
               thumbstickImages={thumbstickImages}
               onThumbstickImageUpload={handleThumbstickImageUpload}
+              selectedControlIndex={selectedControlIndex}
+              onControlSelectionChange={setSelectedControlIndex}
             />
             {/* Canvas Actions - Moved to bottom */}
             <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
@@ -617,10 +669,23 @@ const Editor: React.FC = () => {
         selectedDevice={selectedDevice}
         consoles={consoles}
         devices={devices}
+        controls={controls}
         onSkinNameChange={setSkinName}
         onSkinIdentifierChange={setSkinIdentifier}
-        onConsoleChange={setSelectedConsole}
-        onDeviceChange={setSelectedDevice}
+        onConsoleChange={(newConsole) => {
+          setSelectedConsole(newConsole);
+          // Clear controls when console changes
+          if (newConsole !== selectedConsole) {
+            setControls([]);
+          }
+        }}
+        onDeviceChange={(newDevice) => {
+          setSelectedDevice(newDevice);
+          // Clear controls when device changes
+          if (newDevice !== selectedDevice) {
+            setControls([]);
+          }
+        }}
       />
     </div>
   );
