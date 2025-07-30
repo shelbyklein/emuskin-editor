@@ -136,6 +136,8 @@
 - [x] Implement touch support for mobile devices
 - [x] Reorganize UI with skin title in header
 - [x] Create ControlList component for control management
+- [x] Create ScreenList component for screen management
+- [x] Add clickable screen pills in Game Screens panel
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

@@ -46,6 +46,7 @@ export interface ControlMapping {
     height: number;
   };
   mirrorBottomScreen?: boolean; // For touchscreen controls
+  locked?: boolean; // Prevents moving/resizing when true
 }
 
 export interface SkinConfig {
@@ -78,6 +79,7 @@ export interface ScreenMapping {
   };
   label?: string; // For DS: "Top Screen" or "Bottom Screen"
   maintainAspectRatio?: boolean; // Lock aspect ratio during resize
+  locked?: boolean; // Prevents moving/resizing when true
 }
 
 export interface SkinOrientation {

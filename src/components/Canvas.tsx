@@ -13,6 +13,7 @@ interface CanvasProps {
   controls: ControlMapping[];
   screens: ScreenMapping[];
   consoleType: string;
+  orientation?: 'portrait' | 'landscape';
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
   onControlUpdate: (controls: ControlMapping[]) => void;
@@ -55,6 +56,7 @@ const Canvas: React.FC<CanvasProps> = ({
   controls,
   screens,
   consoleType,
+  orientation = 'portrait',
   menuInsetsEnabled = false,
   menuInsetsBottom = 0,
   onControlUpdate,
@@ -220,16 +222,37 @@ const Canvas: React.FC<CanvasProps> = ({
     
     // Always use scale of 1 for 1:1 pixel representation
     setScale(1);
-    setCanvasSize({
-      width: deviceWidth,
-      height: deviceHeight
-    });
-  }, [device]);
+    
+    // Swap dimensions for landscape orientation
+    if (orientation === 'landscape') {
+      setCanvasSize({
+        width: deviceHeight,
+        height: deviceWidth
+      });
+    } else {
+      setCanvasSize({
+        width: deviceWidth,
+        height: deviceHeight
+      });
+    }
+  }, [device, orientation]);
 
   // Handle mouse down on item (control or screen)
   const handleMouseDown = useCallback((e: React.MouseEvent, index: number, itemType: 'control' | 'screen') => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if item is locked
+    const item = itemType === 'control' ? controls[index] : screens[index];
+    if (item?.locked) {
+      // If locked, only allow selection but not dragging
+      if (itemType === 'control') {
+        updateControlSelection(index, false);
+      } else {
+        updateScreenSelection(index, false);
+      }
+      return;
+    }
     
     const rect = e.currentTarget.getBoundingClientRect();
     
@@ -259,6 +282,18 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleTouchStart = useCallback((e: React.TouchEvent, index: number, itemType: 'control' | 'screen') => {
     // Don't prevent default here - let the element handle it
     e.stopPropagation();
+    
+    // Check if item is locked
+    const item = itemType === 'control' ? controls[index] : screens[index];
+    if (item?.locked) {
+      // If locked, only allow selection but not dragging
+      if (itemType === 'control') {
+        updateControlSelection(index, false);
+      } else {
+        updateScreenSelection(index, false);
+      }
+      return;
+    }
     
     const touch = e.touches[0];
     const rect = e.currentTarget.getBoundingClientRect();
@@ -378,8 +413,10 @@ const Canvas: React.FC<CanvasProps> = ({
         height = screen.outputFrame?.height || 150;
       }
       
-      const maxX = (device?.logicalWidth || 390) - width;
-      const maxY = (device?.logicalHeight || 844) - height;
+      const canvasWidth = orientation === 'landscape' ? (device?.logicalHeight || 844) : (device?.logicalWidth || 390);
+      const canvasHeight = orientation === 'landscape' ? (device?.logicalWidth || 390) : (device?.logicalHeight || 844);
+      const maxX = canvasWidth - width;
+      const maxY = canvasHeight - height;
       
       let clampedX = Math.max(0, Math.min(newX, maxX));
       let clampedY = Math.max(0, Math.min(newY, maxY));
@@ -598,8 +635,10 @@ const Canvas: React.FC<CanvasProps> = ({
     // Boundary constraints
     newX = Math.max(0, newX);
     newY = Math.max(0, newY);
-    const maxWidth = (device?.logicalWidth || 390) - newX;
-    const maxHeight = (device?.logicalHeight || 844) - newY;
+    const canvasWidth = orientation === 'landscape' ? (device?.logicalHeight || 844) : (device?.logicalWidth || 390);
+    const canvasHeight = orientation === 'landscape' ? (device?.logicalWidth || 390) : (device?.logicalHeight || 844);
+    const maxWidth = canvasWidth - newX;
+    const maxHeight = canvasHeight - newY;
     newWidth = Math.min(newWidth, maxWidth);
     newHeight = Math.min(newHeight, maxHeight);
 
@@ -764,8 +803,10 @@ const Canvas: React.FC<CanvasProps> = ({
         height = screen.outputFrame?.height || 150;
       }
       
-      const maxX = (device?.logicalWidth || 390) - width;
-      const maxY = (device?.logicalHeight || 844) - height;
+      const canvasWidth = orientation === 'landscape' ? (device?.logicalHeight || 844) : (device?.logicalWidth || 390);
+      const canvasHeight = orientation === 'landscape' ? (device?.logicalWidth || 390) : (device?.logicalHeight || 844);
+      const maxX = canvasWidth - width;
+      const maxY = canvasHeight - height;
       
       let clampedX = Math.max(0, Math.min(newX, maxX));
       let clampedY = Math.max(0, Math.min(newY, maxY));
@@ -967,8 +1008,10 @@ const Canvas: React.FC<CanvasProps> = ({
     // Boundary constraints
     newX = Math.max(0, newX);
     newY = Math.max(0, newY);
-    const maxWidth = (device?.logicalWidth || 390) - newX;
-    const maxHeight = (device?.logicalHeight || 844) - newY;
+    const canvasWidth = orientation === 'landscape' ? (device?.logicalHeight || 844) : (device?.logicalWidth || 390);
+    const canvasHeight = orientation === 'landscape' ? (device?.logicalWidth || 390) : (device?.logicalHeight || 844);
+    const maxWidth = canvasWidth - newX;
+    const maxHeight = canvasHeight - newY;
     newWidth = Math.min(newWidth, maxWidth);
     newHeight = Math.min(newHeight, maxHeight);
 
@@ -1261,8 +1304,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 id="menu-insets-overlay"
                 className="absolute left-0 right-0 pointer-events-none"
                 style={{
-                  top: `${(1 - menuInsetsBottom / 100) * device.logicalHeight}px`,
-                  height: `${(menuInsetsBottom / 100) * device.logicalHeight}px`,
+                  top: `${(1 - menuInsetsBottom / 100) * canvasSize.height}px`,
+                  height: `${(menuInsetsBottom / 100) * canvasSize.height}px`,
                   backgroundColor: 'rgba(0, 0, 0, 0.2)',
                   borderTop: '1px dashed rgba(255, 255, 255, 0.5)'
                 }}
@@ -1305,7 +1348,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     width: `${width}px`,
                     height: `${height}px`,
                     zIndex: isSelected ? 40 : 30, // Screens have higher z-index than controls
-                    cursor: dragState.isDragging ? 'grabbing' : 'move',
+                    cursor: screen.locked ? 'default' : (dragState.isDragging ? 'grabbing' : 'move'),
                     transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen') || 
                                 (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'screen') 
                                 ? 'none' : 'all 75ms'
@@ -1338,6 +1381,29 @@ const Canvas: React.FC<CanvasProps> = ({
                     </div>
                   )}
 
+                  {/* Lock icon - visible on hover */}
+                  <button
+                    id={`screen-lock-${index}`}
+                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                    style={{ bottom: '3px', left: '33px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const updatedScreens = [...screens];
+                      updatedScreens[index] = { ...screen, locked: !screen.locked };
+                      onScreenUpdate(updatedScreens);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`${screen.locked ? 'Unlock' : 'Lock'} ${screen.label || 'screen'}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {screen.locked ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      )}
+                    </svg>
+                  </button>
+
                   {/* Settings cog icon - visible on hover */}
                   <button
                     id={`screen-settings-${index}`}
@@ -1356,8 +1422,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     </svg>
                   </button>
 
-                  {/* Resize handles (visible when selected) */}
-                  {isSelected && (
+                  {/* Resize handles (visible when selected and not locked) */}
+                  {isSelected && !screen.locked && (
                     <>
                       {/* Corner handles */}
                       <div 
@@ -1514,7 +1580,7 @@ const Canvas: React.FC<CanvasProps> = ({
                       <span id={`control-text-${index}`} className="text-gray-800 dark:text-gray-200 font-medium text-sm select-none flex items-center gap-1">
                         {isThumbstick ? 'Thumbstick' : label}
                         {isLocked && (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Mirroring bottom screen">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
                         )}
@@ -1535,6 +1601,29 @@ const Canvas: React.FC<CanvasProps> = ({
                       }}
                     />
                   ) : null}
+
+                  {/* Lock icon - visible on hover */}
+                  <button
+                    id={`control-lock-${index}`}
+                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                    style={{ bottom: '3px', left: '33px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const updatedControls = [...controls];
+                      updatedControls[index] = { ...control, locked: !control.locked };
+                      onControlUpdate(updatedControls);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`${control.locked ? 'Unlock' : 'Lock'} ${label} control`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {control.locked ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      )}
+                    </svg>
+                  </button>
 
                   {/* Settings cog icon - visible on hover */}
                   <button
@@ -1628,7 +1717,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
           {/* Device info */}
           <div id="device-info-section" className="mt-4">
-            <DeviceInfo device={device} scale={scale} />
+            <DeviceInfo device={device} scale={scale} orientation={orientation} />
           </div>
         </div>
       ) : (
@@ -1691,8 +1780,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 screen={screens[selectedScreen] || null}
                 screenIndex={selectedScreen}
                 consoleType={consoleType}
-                deviceWidth={device?.logicalWidth || 390}
-                deviceHeight={device?.logicalHeight || 844}
+                deviceWidth={canvasSize.width}
+                deviceHeight={canvasSize.height}
                 onUpdate={handleScreenPropertiesUpdate}
                 onClose={() => setShowScreenPropertiesPanel(false)}
               />

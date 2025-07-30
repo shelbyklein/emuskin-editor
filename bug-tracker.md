@@ -19,6 +19,11 @@ Each bug entry should include:
 
 ## Active Bugs
 
+
+---
+
+## Fixed Bugs
+
 ### BUG-001: Nintendo DS Screen Management Issues
 - **Date Reported**: 2024-01-29
 - **Status**: Open
@@ -43,9 +48,6 @@ Each bug entry should include:
   - Add special handling for DS in the ScreenPalette component
   - May need to store DS screens separately from other console screens
 
----
-
-## Fixed Bugs
 
 ### BUG-000: Example Bug (Template)
 - **Date Reported**: YYYY-MM-DD

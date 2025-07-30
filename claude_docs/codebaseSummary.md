@@ -28,6 +28,7 @@ emuskin-generator/
 │   │   ├── JsonPreview.tsx      # JSON output display with screens support
 │   │   ├── Layout.tsx           # Main app layout with ID system
 │   │   ├── ProjectManager.tsx   # Project save/load management
+│   │   ├── ScreenList.tsx       # Screen list panel with clickable pills
 │   │   ├── ScreenPalette.tsx    # Screen selection for game display
 │   │   ├── ScreenPropertiesPanel.tsx # Bottom-sliding editor for screens
 │   │   └── SkinEditPanel.tsx    # Slide-out panel for skin configuration
@@ -203,7 +204,19 @@ emuskin-generator/
 - ✅ Created SkinEditPanel component for skin configuration
 - ✅ Added ConsoleIcon component using actual console image assets
 - ✅ Created ControlList component for visual control management
+- ✅ Created ScreenList component for clickable screen pills
+- ✅ Updated Canvas to support external screen selection
+- ✅ Implemented landscape orientation support with separate data storage
+- ✅ Added orientation toggle button with real-time switching
+- ✅ Updated ProjectContext to support orientation-specific data
+- ✅ Modified Canvas to swap dimensions based on orientation
+- ✅ Updated JSON export to include both portrait and landscape data
+- ✅ Enhanced import to handle legacy single-orientation files
+- ✅ Fixed uploaded images disappearing after upload issue
+- ✅ Changed "Change Image" to "Remove Image" button
+- ✅ Implemented lock feature for controls and screens preventing movement
 - 🐛 Identified Nintendo DS screen management bug (BUG-001)
+- 🐛 TypeScript build errors need fixing
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

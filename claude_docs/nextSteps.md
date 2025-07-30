@@ -28,7 +28,7 @@
   - Ensure controls/screens adapt to rotated view
   - Update export to include orientation in JSON
 
-### 3. Undo/Redo Functionality
+### 4. Undo/Redo Functionality
 - **Purpose**: Allow users to undo mistakes and redo actions
 - **Implementation**:
   - Create history stack for all actions
@@ -37,7 +37,7 @@
   - Visual undo/redo buttons in toolbar
   - Limit history to reasonable number of states
 
-### 4. Keyboard Shortcuts
+### 5. Keyboard Shortcuts
 - **Purpose**: Improve productivity for power users
 - **Implementation**:
   - Delete key for removing selected items
@@ -104,7 +104,19 @@
   - ✅ Maintains all existing mouse functionality
 - **Completed**: Full touch support for all canvas interactions
 
-### 6. Landscape Orientation Support
+### 6. ✅ Screen Pills in Game Screens Panel [COMPLETED]
+- **Purpose**: Provide clickable screen management similar to control pills
+- **Implementation**:
+  - ✅ Created ScreenList component with green theme
+  - ✅ Displays screens as clickable pills
+  - ✅ Hover state shows delete button
+  - ✅ Delete confirmation dialog for safety
+  - ✅ Click pills to select and open properties panel
+  - ✅ Updated Canvas to support external screen selection
+  - ✅ Integrated below ScreenPalette in Editor
+- **Completed**: Full screen pill functionality matching control pills
+
+### 7. Landscape Orientation Support
 - **Purpose**: Many skins need both portrait and landscape layouts
 - **Implementation**:
   - Add orientation toggle in Editor

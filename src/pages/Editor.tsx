@@ -50,36 +50,60 @@ const Editor: React.FC = () => {
     };
   }, []);
   const { settings } = useEditor();
-  const { currentProject, saveProject, saveProjectImage } = useProject();
+  const { 
+    currentProject, 
+    saveProject, 
+    saveProjectImage, 
+    getCurrentOrientation, 
+    setOrientation, 
+    getOrientationData, 
+    saveOrientationData,
+    createProject 
+  } = useProject();
 
-  // Load project data when current project changes
+  // Load project data when current project changes or orientation changes
   useEffect(() => {
     if (currentProject) {
       setSkinName(currentProject.name);
       setSkinIdentifier(currentProject.identifier);
-      setControls(currentProject.controls);
-      setScreens(currentProject.screens || []);
-      setMenuInsetsEnabled(currentProject.menuInsetsEnabled || false);
-      setMenuInsetsBottom(currentProject.menuInsetsBottom || 0);
+      
+      // Load orientation-specific data
+      const orientationData = getOrientationData();
+      console.log('Loading orientation data for', getCurrentOrientation(), ':', orientationData);
+      
+      if (orientationData) {
+        setControls(orientationData.controls || []);
+        setScreens(orientationData.screens || []);
+        setMenuInsetsEnabled(orientationData.menuInsetsEnabled || false);
+        setMenuInsetsBottom(orientationData.menuInsetsBottom || 0);
+        
+        // Handle background image
+        if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
+          console.log('Setting uploaded image from orientation data:', orientationData.backgroundImage);
+          setUploadedImage({
+            file: new File([], orientationData.backgroundImage.fileName || 'image'),
+            url: orientationData.backgroundImage.url
+          });
+        } else if (!orientationData.backgroundImage || !orientationData.backgroundImage.hasStoredImage) {
+          // Only clear if there's truly no image for this orientation
+          console.log('No background image for this orientation, clearing uploadedImage');
+          setUploadedImage(null);
+        }
+        // If hasStoredImage is true but URL is null, keep the current uploadedImage
+        // This happens during auto-save when we don't save blob URLs
+      }
+      
       if (currentProject.console) {
         setSelectedConsole(currentProject.console.shortName);
       }
       if (currentProject.device) {
         setSelectedDevice(currentProject.device.model);
       }
-      if (currentProject.backgroundImage && currentProject.backgroundImage.url) {
-        // Note: We can't restore the File object from localStorage, only the URL
-        // The user will need to re-upload if they want to change the image
-        setUploadedImage({
-          file: new File([], currentProject.backgroundImage.fileName || 'image'),
-          url: currentProject.backgroundImage.url
-        });
-      }
       
       // Load thumbstick images from IndexedDB
       loadThumbstickImages(currentProject.id);
     }
-  }, [currentProject]);
+  }, [currentProject, currentProject?.currentOrientation]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
@@ -109,27 +133,33 @@ const Editor: React.FC = () => {
   useEffect(() => {
     if (currentProject && !isInteracting) {
       const timer = setTimeout(() => {
+        // Save project-level data
         saveProject({
           name: skinName,
           identifier: skinIdentifier,
           console: selectedConsoleData,
-          device: selectedDeviceData,
+          device: selectedDeviceData
+        });
+        
+        // Save orientation-specific data
+        const orientationData = getOrientationData();
+        saveOrientationData({
           controls,
           screens,
           menuInsetsEnabled,
           menuInsetsBottom,
           // Don't save the blob URL, just mark that we have an image
-          backgroundImage: currentProject.backgroundImage ? {
-            fileName: currentProject.backgroundImage.fileName,
+          backgroundImage: uploadedImage ? {
+            fileName: uploadedImage.file.name,
             url: null, // Don't save blob URLs to localStorage
-            hasStoredImage: currentProject.backgroundImage.hasStoredImage
+            hasStoredImage: true
           } : null
         });
       }, 1000); // Debounce saves by 1 second
 
       return () => clearTimeout(timer);
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, currentProject, saveProject, isInteracting]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, currentProject, saveProject, saveOrientationData, isInteracting, uploadedImage]);
 
   // Add debug logging to check data
   useEffect(() => {
@@ -279,17 +309,51 @@ const Editor: React.FC = () => {
   }, [selectedConsole, consoles, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
+    console.log('handleImageUpload called:', { fileName: file.name, orientation: getCurrentOrientation() });
     setUploadedImage({ file, url: previewUrl });
     
     // Save image to IndexedDB if we have a current project
     if (currentProject) {
       try {
-        await saveProjectImage(file);
+        await saveProjectImage(file, getCurrentOrientation());
+        console.log('Image saved to IndexedDB successfully');
       } catch (error) {
         console.error('Failed to save image:', error);
         // Still allow the image to be used even if storage fails
       }
     }
+  };
+
+  const handleOrientationToggle = () => {
+    if (!currentProject) return;
+    
+    console.log('Toggling orientation from', getCurrentOrientation());
+    console.log('Current uploadedImage:', uploadedImage);
+    
+    // Save current orientation data before switching
+    const orientationData = getOrientationData();
+    if (orientationData) {
+      const imageData = uploadedImage ? {
+        fileName: uploadedImage.file.name,
+        url: null,
+        hasStoredImage: true
+      } : orientationData.backgroundImage;
+      
+      console.log('Saving orientation data with image:', imageData);
+      
+      saveOrientationData({
+        controls,
+        screens,
+        menuInsetsEnabled,
+        menuInsetsBottom,
+        backgroundImage: imageData
+      });
+    }
+    
+    // Toggle orientation
+    const newOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
+    console.log('Switching to orientation:', newOrientation);
+    setOrientation(newOrientation);
   };
 
   const handleControlsUpdate = (newControls: ControlMapping[]) => {
@@ -425,8 +489,8 @@ const Editor: React.FC = () => {
     // Try to find matching device based on dimensions
     if (deviceDimensions && devices.length > 0) {
       const matchingDevice = devices.find(d => 
-        d.logical.width === deviceDimensions.width && 
-        d.logical.height === deviceDimensions.height
+        d.logicalWidth === deviceDimensions.width && 
+        d.logicalHeight === deviceDimensions.height
       );
       if (matchingDevice) {
         setSelectedDevice(matchingDevice.model);
@@ -443,7 +507,7 @@ const Editor: React.FC = () => {
       // Save to IndexedDB if we have a project
       if (currentProject) {
         try {
-          await saveProjectImage(importedImage.file);
+          await saveProjectImage(importedImage.file, getCurrentOrientation());
         } catch (error) {
           console.error('Failed to save imported image:', error);
         }
@@ -538,6 +602,30 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
+        {/* Orientation Toggle */}
+        {currentProject && (
+          <button
+            onClick={handleOrientationToggle}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+            title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
+          >
+            <svg 
+              className={`w-5 h-5 transition-transform duration-300 ${
+                getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
+              }`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
+              <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
+            </svg>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
+            </span>
+          </button>
+        )}
+        
         {/* Right side - Project Manager */}
         <ProjectManager />
       </div>
@@ -627,6 +715,7 @@ const Editor: React.FC = () => {
               controls={controls}
               screens={screens}
               consoleType={selectedConsole}
+              orientation={getCurrentOrientation()}
               menuInsetsEnabled={menuInsetsEnabled}
               menuInsetsBottom={menuInsetsBottom}
               onControlUpdate={handleControlsUpdate}
@@ -643,11 +732,11 @@ const Editor: React.FC = () => {
             <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
               {uploadedImage && (
                 <button
-                  id="change-image-button"
+                  id="remove-image-button"
                   onClick={() => setUploadedImage(null)}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  Change Image
+                  Remove Image
                 </button>
               )}
               <ImportButton onImport={handleImport} />

@@ -40,17 +40,26 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       throw new Error('Console and device must be selected');
     }
 
-    const skinConfig = {
+    // Get data for both orientations from current project
+    const portraitData = currentProject?.orientations?.portrait;
+    const landscapeData = currentProject?.orientations?.landscape;
+
+    const skinConfig: any = {
       name: skinName || 'Untitled Skin',
       identifier: skinIdentifier || 'com.playcase.default.skin',
       gameTypeIdentifier: selectedConsole.gameTypeIdentifier,
       representations: {
         iphone: {
-          edgeToEdge: {
-            portrait: (() => {
-              const portrait: any = {
-                assets: backgroundImage ? { medium: backgroundImage.file.name } : {},
-                items: controls.map(control => {
+          edgeToEdge: {}
+        }
+      }
+    };
+
+    // Add portrait orientation if it has data
+    if (portraitData) {
+      skinConfig.representations.iphone.edgeToEdge.portrait = {
+        assets: portraitData.backgroundImage ? { medium: portraitData.backgroundImage.fileName || 'background.png' } : {},
+        items: (portraitData.controls || []).map(control => {
                   const item: any = {};
                   
                   // Add thumbstick if present (must come before inputs)
@@ -83,53 +92,118 @@ const ExportButton: React.FC<ExportButtonProps> = ({
                   
                   return item;
                 }),
-                screens: screens.map(screen => {
-                  const screenObj: any = {
-                    outputFrame: {
-                      x: screen.outputFrame?.x || 0,
-                      y: screen.outputFrame?.y || 0,
-                      width: screen.outputFrame?.width || 200,
-                      height: screen.outputFrame?.height || 150
-                    }
-                  };
-                  
-                  // Only include inputFrame if it exists (not for SEGA Genesis)
-                  if (screen.inputFrame) {
-                    screenObj.inputFrame = {
-                      x: screen.inputFrame.x,
-                      y: screen.inputFrame.y,
-                      width: screen.inputFrame.width,
-                      height: screen.inputFrame.height
-                    };
-                  }
-                  
-                  return screenObj;
-                }),
-                mappingSize: {
-                  width: selectedDevice.logicalWidth,
-                  height: selectedDevice.logicalHeight
-                },
-                extendedEdges: {
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0
-                }
-              };
-              
-              // Add menuInsets after extendedEdges if enabled
-              if (menuInsetsEnabled) {
-                portrait.menuInsets = {
-                  bottom: menuInsetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
-                };
-              }
-              
-              return portrait;
-            })()
+        screens: (portraitData.screens || []).map(screen => {
+          const screenObj: any = {
+            outputFrame: {
+              x: screen.outputFrame?.x || 0,
+              y: screen.outputFrame?.y || 0,
+              width: screen.outputFrame?.width || 200,
+              height: screen.outputFrame?.height || 150
+            }
+          };
+          
+          // Only include inputFrame if it exists (not for SEGA Genesis)
+          if (screen.inputFrame) {
+            screenObj.inputFrame = {
+              x: screen.inputFrame.x,
+              y: screen.inputFrame.y,
+              width: screen.inputFrame.width,
+              height: screen.inputFrame.height
+            };
           }
-        }
-      }
-    };
+          
+          return screenObj;
+        }),
+        mappingSize: {
+          width: selectedDevice.logicalWidth,
+          height: selectedDevice.logicalHeight
+        },
+        extendedEdges: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0
+        },
+        menuInsets: portraitData.menuInsetsEnabled ? {
+          bottom: (portraitData.menuInsetsBottom || 0) / 100
+        } : {}
+      };
+    }
+    
+    // Add landscape orientation if it has data
+    if (landscapeData && (landscapeData.controls?.length > 0 || landscapeData.screens?.length > 0)) {
+      skinConfig.representations.iphone.edgeToEdge.landscape = {
+        assets: landscapeData.backgroundImage ? { medium: landscapeData.backgroundImage.fileName || 'background.png' } : {},
+        items: (landscapeData.controls || []).map(control => {
+          const item: any = {};
+          
+          // Add thumbstick if present (must come before inputs)
+          if (control.thumbstick) {
+            item.thumbstick = {
+              name: control.thumbstick.name,
+              width: control.thumbstick.width,
+              height: control.thumbstick.height
+            };
+          }
+          
+          // Add inputs
+          item.inputs = control.inputs;
+          
+          // Add frame
+          item.frame = {
+            x: control.frame?.x || 0,
+            y: control.frame?.y || 0,
+            width: control.frame?.width || 50,
+            height: control.frame?.height || 50
+          };
+          
+          // Add extended edges
+          item.extendedEdges = control.extendedEdges || {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0
+          };
+          
+          return item;
+        }),
+        screens: (landscapeData.screens || []).map(screen => {
+          const screenObj: any = {
+            outputFrame: {
+              x: screen.outputFrame?.x || 0,
+              y: screen.outputFrame?.y || 0,
+              width: screen.outputFrame?.width || 200,
+              height: screen.outputFrame?.height || 150
+            }
+          };
+          
+          // Only include inputFrame if it exists (not for SEGA Genesis)
+          if (screen.inputFrame) {
+            screenObj.inputFrame = {
+              x: screen.inputFrame.x,
+              y: screen.inputFrame.y,
+              width: screen.inputFrame.width,
+              height: screen.inputFrame.height
+            };
+          }
+          
+          return screenObj;
+        }),
+        mappingSize: {
+          width: selectedDevice.logicalHeight,  // Swapped for landscape
+          height: selectedDevice.logicalWidth   // Swapped for landscape
+        },
+        extendedEdges: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0
+        },
+        menuInsets: landscapeData.menuInsetsEnabled ? {
+          bottom: (landscapeData.menuInsetsBottom || 0) / 100
+        } : {}
+      };
+    }
 
     return JSON.stringify(skinConfig, null, 2);
   };
@@ -155,12 +229,21 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       errors.push('iPhone model must be selected');
     }
     
-    if (controls.length === 0) {
-      errors.push('At least one control must be added');
+    // Check if at least one orientation has data
+    const portraitData = currentProject?.orientations?.portrait;
+    const landscapeData = currentProject?.orientations?.landscape;
+    
+    const hasPortraitControls = portraitData?.controls && portraitData.controls.length > 0;
+    const hasLandscapeControls = landscapeData?.controls && landscapeData.controls.length > 0;
+    const hasPortraitScreens = portraitData?.screens && portraitData.screens.length > 0;
+    const hasLandscapeScreens = landscapeData?.screens && landscapeData.screens.length > 0;
+    
+    if (!hasPortraitControls && !hasLandscapeControls) {
+      errors.push('At least one control must be added in either portrait or landscape');
     }
     
-    if (screens.length === 0) {
-      errors.push('At least one screen must be added to display the game');
+    if (!hasPortraitScreens && !hasLandscapeScreens) {
+      errors.push('At least one screen must be added in either portrait or landscape');
     }
     
     return {
@@ -186,54 +269,56 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       const jsonContent = generateSkinJson();
       zip.file('info.json', jsonContent);
 
-      // Add the background image if present
-      let imageFile: File | null = null;
+      // Add background images for both orientations
+      const portraitData = currentProject?.orientations?.portrait;
+      const landscapeData = currentProject?.orientations?.landscape;
       
-      if (backgroundImage && backgroundImage.file.size > 0) {
-        // Use the provided image file
-        imageFile = backgroundImage.file;
-      } else if (currentProject?.backgroundImage?.hasStoredImage && currentProject.id) {
-        // Try to retrieve from IndexedDB
+      // Add portrait background image
+      if (portraitData?.backgroundImage?.hasStoredImage && currentProject?.id) {
         try {
-          const storedImage = await indexedDBManager.getImage(currentProject.id);
+          const storedImage = await indexedDBManager.getImage(`${currentProject.id}-portrait`);
           if (storedImage) {
-            imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+            const imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+            zip.file(imageFile.name, imageFile);
           }
         } catch (error) {
-          console.error('Failed to retrieve stored image:', error);
+          console.error('Failed to retrieve portrait background image:', error);
         }
       }
       
-      if (imageFile) {
-        zip.file(imageFile.name, imageFile);
+      // Add landscape background image
+      if (landscapeData?.backgroundImage?.hasStoredImage && currentProject?.id) {
+        try {
+          const storedImage = await indexedDBManager.getImage(`${currentProject.id}-landscape`);
+          if (storedImage) {
+            const imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+            zip.file(imageFile.name, imageFile);
+          }
+        } catch (error) {
+          console.error('Failed to retrieve landscape background image:', error);
+        }
       }
       
-      // Add thumbstick images
-      for (const control of controls) {
-        if (control.thumbstick && control.id) {
-          let thumbstickFile: File | null = null;
-          
-          // First try to use the provided file
-          if (thumbstickFiles[control.id]) {
-            thumbstickFile = thumbstickFiles[control.id];
-          } else if (currentProject?.id) {
-            // Try to retrieve from IndexedDB
-            try {
-              const storedImage = await indexedDBManager.getImage(
-                currentProject.id, 
-                'thumbstick', 
-                control.id
-              );
-              if (storedImage) {
-                thumbstickFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
-              }
-            } catch (error) {
-              console.error(`Failed to retrieve thumbstick image for control ${control.id}:`, error);
+      // Add thumbstick images for both orientations
+      const allControls = [
+        ...(portraitData?.controls || []).map(c => ({ ...c, orientation: 'portrait' })),
+        ...(landscapeData?.controls || []).map(c => ({ ...c, orientation: 'landscape' }))
+      ];
+      
+      for (const control of allControls) {
+        if (control.thumbstick && control.id && currentProject?.id) {
+          try {
+            const storedImage = await indexedDBManager.getImage(
+              currentProject.id, 
+              'thumbstick', 
+              control.id
+            );
+            if (storedImage) {
+              const thumbstickFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+              zip.file(control.thumbstick.name, thumbstickFile);
             }
-          }
-          
-          if (thumbstickFile) {
-            zip.file(control.thumbstick.name, thumbstickFile);
+          } catch (error) {
+            console.error(`Failed to retrieve thumbstick image for control ${control.id}:`, error);
           }
         }
       }

@@ -5,8 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: parseInt(process.env.VITE_PORT || '8008'),
-    strictPort: true,
+    host: process.env.REPL_SLUG ? '0.0.0.0' : 'localhost',
+    port: parseInt(process.env.VITE_PORT || process.env.REPL_SLUG ? '3000' : '8008'),
+    strictPort: !process.env.REPL_SLUG,
     // Disable caching
     headers: {
       'Cache-Control': 'no-store',
@@ -16,4 +17,6 @@ export default defineConfig({
   optimizeDeps: {
     force: true,
   },
+  // Add base URL for Replit deployment
+  base: process.env.REPL_SLUG ? '/' : '/',
 })

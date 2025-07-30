@@ -11,7 +11,7 @@
 - ✅ Implement custom button creator with multi-action support
 - ✅ Add menu insets panel with visual overlay
 - ✅ Implement thumbstick support with custom images
-- Add landscape orientation support
+- ✅ Add landscape orientation support
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
 - Add thumbstick image storage to IndexedDB
@@ -116,6 +116,23 @@
   - Automatic input mapping to analogStickUp/Down/Left/Right
   - Properties panel opens on thumbstick click for easy configuration
   - Memory management with URL cleanup for blob URLs
+- ✅ Created ScreenList component for screen management:
+  - Displays existing screens as clickable pills in Game Screens panel
+  - Green color theme matches screen elements on canvas
+  - Hover state shows delete button with confirmation dialog
+  - Click pills to select screen and open properties panel
+  - Updated Canvas to support external screen selection
+  - Integrated into Editor below ScreenPalette
+  - Only shows when screens exist
+- ✅ Implemented landscape orientation support:
+  - Updated Project interface to store separate portrait/landscape data
+  - Added orientation toggle button in Editor header
+  - Canvas swaps width/height dimensions when in landscape
+  - Each orientation maintains independent control/screen layouts
+  - Export includes both orientations in JSON structure
+  - Import handles both single and dual-orientation files
+  - DeviceInfo shows correct dimensions for current orientation
+  - Menu insets and all constraints respect orientation
 
 ## Next Steps
 1. Fix Nintendo DS screen management (BUG-001)
@@ -128,12 +145,17 @@
    - Update project save/load to handle thumbstick data
    - Ensure persistence across sessions
    
-3. Add landscape orientation support
-   - Duplicate portrait layout for landscape
-   - Adjust default positions for landscape
-   - Update export to include both orientations
+3. Add copy layout feature between orientations
+   - Add button to copy current orientation's layout
+   - Useful for starting landscape from portrait layout
+   - Adjust positions after copying as needed
    
-4. Implement undo/redo functionality
+4. Fix TypeScript build errors
+   - Fix type issues in Canvas, ControlPropertiesPanel
+   - Remove unused imports and variables
+   - Ensure clean build for production
+   
+5. Implement undo/redo functionality
    - Track state changes in history
    - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
    - Visual indicators in UI

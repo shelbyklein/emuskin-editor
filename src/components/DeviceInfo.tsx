@@ -5,10 +5,17 @@ import { Device } from '../types';
 interface DeviceInfoProps {
   device: Device | null;
   scale: number;
+  orientation?: 'portrait' | 'landscape';
 }
 
-const DeviceInfo: React.FC<DeviceInfoProps> = ({ device }) => {
+const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, scale, orientation = 'portrait' }) => {
   if (!device) return null;
+
+  // Swap dimensions for landscape
+  const logicalWidth = orientation === 'landscape' ? device.logicalHeight : device.logicalWidth;
+  const logicalHeight = orientation === 'landscape' ? device.logicalWidth : device.logicalHeight;
+  const physicalWidth = orientation === 'landscape' ? device.physicalHeight : device.physicalWidth;
+  const physicalHeight = orientation === 'landscape' ? device.physicalWidth : device.physicalHeight;
 
   return (
     <div className="text-xs">
@@ -17,10 +24,10 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ device }) => {
           <strong className="mr-1">Device:</strong> {device.model}
         </span>
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-          <strong className="mr-1">Logical:</strong> {device.logicalWidth} × {device.logicalHeight}
+          <strong className="mr-1">Logical:</strong> {logicalWidth} × {logicalHeight}
         </span>
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
-          <strong className="mr-1">Physical:</strong> {device.physicalWidth} × {device.physicalHeight}
+          <strong className="mr-1">Physical:</strong> {physicalWidth} × {physicalHeight}
         </span>
       </div>
     </div>

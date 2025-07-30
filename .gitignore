@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Replit
+.replit.backup
+.cache
+.config
+.upm
