@@ -1607,15 +1607,6 @@ const Canvas: React.FC<CanvasProps> = ({
           <div id="device-info-section" className="mt-4">
             <DeviceInfo device={device} scale={scale} />
           </div>
-          
-          {/* Info panel */}
-          <div id="canvas-help-text" className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <p>• Click and drag controls/screens to reposition</p>
-            <p>• Click the cog icon to open properties panel</p>
-            <p>• Drag corner/edge handles to resize</p>
-            <p>• Click an item to select, then press Delete to remove</p>
-            <p>• Click empty space to deselect</p>
-          </div>
         </div>
       ) : (
         <p className="text-gray-500 dark:text-gray-400">
