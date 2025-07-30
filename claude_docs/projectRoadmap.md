@@ -134,6 +134,8 @@
 - [x] Update JSON generation to include thumbstick data
 - [x] Fix control click behavior to open properties panel
 - [x] Implement touch support for mobile devices
+- [x] Reorganize UI with skin title in header
+- [x] Create ControlList component for control management
 
 ## Future Scalability Considerations
 - User accounts and cloud storage

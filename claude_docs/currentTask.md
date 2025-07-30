@@ -118,7 +118,17 @@
   - Memory management with URL cleanup for blob URLs
 
 ## Next Steps
-1. Add landscape orientation support
+1. Fix Nintendo DS screen management (BUG-001)
+   - Prevent deletion of DS screens
+   - Ensure exactly 2 screens for DS at all times
+   - Add validation in ScreenPalette and Canvas
+   
+2. Add thumbstick images to IndexedDB
+   - Store thumbstick images like background images
+   - Update project save/load to handle thumbstick data
+   - Ensure persistence across sessions
+   
+3. Add landscape orientation support
    - Duplicate portrait layout for landscape
    - Adjust default positions for landscape
    - Update export to include both orientations
@@ -133,11 +143,6 @@
    - Cmd/Ctrl+E: Export skin
    - Delete/Backspace: Delete selected item
    - Arrow keys: Nudge selected item
-   
-6. Create onboarding tutorial
-   - Interactive walkthrough for new users
-   - Highlight key features
-   - Sample projects to start from
 
 ## Technical Debt
 - Consider migrating from localStorage to IndexedDB for all project data

@@ -7,6 +7,7 @@ import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
 import ControlList from '../components/ControlList';
 import ScreenPalette from '../components/ScreenPalette';
+import ScreenList from '../components/ScreenList';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
@@ -38,6 +39,7 @@ const Editor: React.FC = () => {
   const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
   const [isEditPanelOpen, setIsEditPanelOpen] = useState<boolean>(false);
   const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
+  const [selectedScreenIndex, setSelectedScreenIndex] = useState<number | null>(null);
   
   // Clean up thumbstick URLs on unmount
   useEffect(() => {
@@ -325,6 +327,18 @@ const Editor: React.FC = () => {
     }
   };
 
+  const handleDeleteScreen = (index: number) => {
+    const newScreens = screens.filter((_, i) => i !== index);
+    setScreens(newScreens);
+    // Clear selection if deleted screen was selected
+    if (selectedScreenIndex === index) {
+      setSelectedScreenIndex(null);
+    } else if (selectedScreenIndex !== null && selectedScreenIndex > index) {
+      // Adjust selection index if needed
+      setSelectedScreenIndex(selectedScreenIndex - 1);
+    }
+  };
+
   const handleControlSelectFromList = (index: number) => {
     setSelectedControlIndex(index);
   };
@@ -570,6 +584,16 @@ const Editor: React.FC = () => {
                 existingScreens={screens}
                 onScreenAdd={handleScreenAdd}
               />
+              {screens.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <ScreenList
+                    screens={screens}
+                    onScreenDelete={handleDeleteScreen}
+                    onScreenSelect={setSelectedScreenIndex}
+                    selectedScreen={selectedScreenIndex}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -612,6 +636,8 @@ const Editor: React.FC = () => {
               onThumbstickImageUpload={handleThumbstickImageUpload}
               selectedControlIndex={selectedControlIndex}
               onControlSelectionChange={setSelectedControlIndex}
+              selectedScreenIndex={selectedScreenIndex}
+              onScreenSelectionChange={setSelectedScreenIndex}
             />
             {/* Canvas Actions - Moved to bottom */}
             <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">

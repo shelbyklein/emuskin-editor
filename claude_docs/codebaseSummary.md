@@ -15,6 +15,7 @@ emuskin-generator/
 │   ├── components/     # Reusable UI components
 │   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize for controls and screens
 │   │   ├── ConsoleIcon.tsx      # Console system icon component
+│   │   ├── ControlList.tsx      # Control list panel with delete confirmations
 │   │   ├── ControlPalette.tsx   # Button selection palette
 │   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
@@ -201,6 +202,8 @@ emuskin-generator/
 - ✅ Reorganized UI to display skin title in header with console icon
 - ✅ Created SkinEditPanel component for skin configuration
 - ✅ Added ConsoleIcon component using actual console image assets
+- ✅ Created ControlList component for visual control management
+- 🐛 Identified Nintendo DS screen management bug (BUG-001)
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

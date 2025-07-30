@@ -22,6 +22,8 @@ interface CanvasProps {
   onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
   selectedControlIndex?: number | null;
   onControlSelectionChange?: (index: number | null) => void;
+  selectedScreenIndex?: number | null;
+  onScreenSelectionChange?: (index: number | null, openProperties?: boolean) => void;
 }
 
 interface DragState {
@@ -61,7 +63,9 @@ const Canvas: React.FC<CanvasProps> = ({
   thumbstickImages = {},
   onThumbstickImageUpload,
   selectedControlIndex,
-  onControlSelectionChange
+  onControlSelectionChange,
+  selectedScreenIndex,
+  onScreenSelectionChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 390, height: 844 });
@@ -82,6 +86,16 @@ const Canvas: React.FC<CanvasProps> = ({
     }
   }, [selectedControlIndex, selectedControl]);
 
+  useEffect(() => {
+    if (selectedScreenIndex !== undefined && selectedScreenIndex !== selectedScreen) {
+      setSelectedScreen(selectedScreenIndex);
+      // Show properties panel when screen is selected from list
+      if (selectedScreenIndex !== null) {
+        setShowScreenPropertiesPanel(true);
+      }
+    }
+  }, [selectedScreenIndex, selectedScreen]);
+
   // Update control selection and notify parent
   const updateControlSelection = useCallback((index: number | null, showProperties: boolean = false) => {
     setSelectedControl(index);
@@ -90,6 +104,16 @@ const Canvas: React.FC<CanvasProps> = ({
       setShowPropertiesPanel(true);
     }
   }, [onControlSelectionChange]);
+
+  // Update screen selection and notify parent
+  const updateScreenSelection = useCallback((index: number | null, showProperties: boolean = false) => {
+    setSelectedScreen(index);
+    onScreenSelectionChange?.(index, showProperties);
+    if (showProperties && index !== null) {
+      setShowScreenPropertiesPanel(true);
+    }
+  }, [onScreenSelectionChange]);
+
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [showScreenPropertiesPanel, setShowScreenPropertiesPanel] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
@@ -224,9 +248,9 @@ const Canvas: React.FC<CanvasProps> = ({
     
     if (itemType === 'control') {
       updateControlSelection(index);
-      setSelectedScreen(null);
+      updateScreenSelection(null);
     } else {
-      setSelectedScreen(index);
+      updateScreenSelection(index);
       updateControlSelection(null);
     }
   }, []);
@@ -254,9 +278,9 @@ const Canvas: React.FC<CanvasProps> = ({
     
     if (itemType === 'control') {
       updateControlSelection(index);
-      setSelectedScreen(null);
+      updateScreenSelection(null);
     } else {
-      setSelectedScreen(index);
+      updateScreenSelection(index);
       updateControlSelection(null);
     }
   }, []);
@@ -286,9 +310,9 @@ const Canvas: React.FC<CanvasProps> = ({
     
     if (itemType === 'control') {
       updateControlSelection(index);
-      setSelectedScreen(null);
+      updateScreenSelection(null);
     } else {
-      setSelectedScreen(index);
+      updateScreenSelection(index);
       updateControlSelection(null);
     }
   }, [controls, screens]);
@@ -319,9 +343,9 @@ const Canvas: React.FC<CanvasProps> = ({
     
     if (itemType === 'control') {
       updateControlSelection(index);
-      setSelectedScreen(null);
+      updateScreenSelection(null);
     } else {
-      setSelectedScreen(index);
+      updateScreenSelection(index);
       updateControlSelection(null);
     }
   }, [controls, screens]);
@@ -1127,7 +1151,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleDeleteScreen = useCallback((index: number) => {
     const updatedScreens = screensRef.current.filter((_, i) => i !== index);
     updateScreensWithMirroredControls(updatedScreens);
-    setSelectedScreen(null);
+    updateScreenSelection(null);
     setShowScreenPropertiesPanel(false);
   }, [updateScreensWithMirroredControls]);
 
@@ -1192,7 +1216,7 @@ const Canvas: React.FC<CanvasProps> = ({
             }}
             onClick={() => {
               updateControlSelection(null);
-              setSelectedScreen(null);
+              updateScreenSelection(null);
               setShowPropertiesPanel(false);
               setShowScreenPropertiesPanel(false);
             }}
@@ -1292,7 +1316,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     e.stopPropagation();
                     // Select the screen (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
-                      setSelectedScreen(index);
+                      updateScreenSelection(index);
                       updateControlSelection(null);
                     }
                     setHasDragged(false);
@@ -1321,8 +1345,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     style={{ bottom: '3px', left: '3px' }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedScreen(index);
-                      setShowScreenPropertiesPanel(true);
+                      updateScreenSelection(index, true);
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     aria-label={`Settings for ${screen.label || 'screen'}`}
@@ -1468,7 +1491,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     // Select the control (don't open properties panel - use settings button for that)
                     if (!hasDragged && !hasResized) {
                       updateControlSelection(index);
-                      setSelectedScreen(null);
+                      updateScreenSelection(null);
                     }
                     setHasDragged(false); // Reset for next interaction
                   }}

@@ -2,15 +2,24 @@
 
 ## Immediate Priorities (Next Session)
 
-### 1. Polish Header UI
-- **Purpose**: Complete the header reorganization
+### 1. Fix Nintendo DS Screen Management (BUG-001)
+- **Purpose**: Ensure DS always has exactly 2 screens
 - **Implementation**:
-  - Add hover effects to edit button
-  - Consider adding skin identifier subtitle below name
-  - Add visual feedback when edit panel is open
-  - Ensure responsive behavior on mobile devices
+  - Add validation in ScreenPalette to prevent DS screen deletion
+  - Modify Canvas to handle DS screens specially
+  - Add screen count validation when changing consoles
+  - Consider making DS screens non-deletable in UI
+  - Fix duplicate screen creation when switching consoles
 
-### 2. Landscape Orientation Support
+### 2. Add Thumbstick Images to IndexedDB
+- **Purpose**: Persist thumbstick images across sessions
+- **Implementation**:
+  - Store thumbstick images in IndexedDB like background images
+  - Update ProjectContext save/load to handle thumbstick data
+  - Clean up old blob URLs when loading new images
+  - Handle image data in project export/import
+
+### 3. Landscape Orientation Support
 - **Purpose**: Enable skin creation for landscape mode
 - **Implementation**:
   - Add orientation selector in device panel or edit panel
@@ -191,11 +200,10 @@
 
 ## Recommended Next Session Plan
 
-1. **Add Thumbstick Image Storage to IndexedDB** - Store thumbstick images alongside background images for project persistence
-2. **Add Landscape Orientation Support** - Essential for many games that require landscape layouts
-3. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
-4. **Implement Success/Error Toasts** - Better UX than current alert() calls
-5. **Add Undo/Redo Functionality** - Critical for a visual editor
-6. **Control Alignment Tools** - Help users create precise layouts
+1. **Fix Nintendo DS Screen Management (BUG-001)** - Critical bug affecting DS skin creation
+2. **Add Thumbstick Image Storage to IndexedDB** - Complete the thumbstick feature with persistence
+3. **Add Landscape Orientation Support** - Essential for many games that require landscape layouts
+4. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
+5. **Implement Success/Error Toasts** - Better UX than current alert() calls
 
-These priorities focus on completing the thumbstick feature and adding essential editor functionality.
+These priorities focus on fixing critical bugs and completing partially implemented features before adding new functionality.
