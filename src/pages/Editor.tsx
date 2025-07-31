@@ -48,13 +48,13 @@ const Editor: React.FC = () => {
       Object.values(thumbstickImages).forEach(url => {
         URL.revokeObjectURL(url);
       });
-      // Reset edit panel tracking
-      hasShownEditPanelRef.current = null;
+      // Don't reset edit panel tracking - let it persist across component mounts
     };
   }, []);
   const { settings } = useEditor();
   const { 
     currentProject, 
+    createProject,
     saveProject, 
     saveProjectImage, 
     getCurrentOrientation, 
@@ -63,58 +63,76 @@ const Editor: React.FC = () => {
     saveOrientationData
   } = useProject();
 
+  // Track if we're saving to prevent state reset
+  const isSavingRef = useRef(false);
+
+  // Set default skin name if empty
+  useEffect(() => {
+    if (!currentProject && skinName === '') {
+      setSkinName('Untitled Skin');
+    }
+  }, [currentProject, skinName]);
+
+
   // Load project data when current project changes or orientation changes
   useEffect(() => {
-    if (currentProject) {
+    // Skip loading if we're in the middle of saving to prevent overwriting user input
+    if (!currentProject || isSavingRef.current) {
+      return;
+    }
+    
+    // Only update skin name/identifier if they're substantially different
+    // This prevents overwriting user input that hasn't been saved yet
+    if (currentProject.name !== skinName || currentProject.identifier !== skinIdentifier) {
       setSkinName(currentProject.name);
       setSkinIdentifier(currentProject.identifier);
+    }
+    
+    // Check if this is a project that hasn't been configured yet
+    const isUnconfiguredProject = !currentProject.hasBeenConfigured;
+    
+    // Load orientation-specific data
+    const orientationData = getOrientationData();
+    
+    if (orientationData) {
+      setControls(orientationData.controls || []);
+      setScreens(orientationData.screens || []);
+      setMenuInsetsEnabled(orientationData.menuInsetsEnabled || false);
+      setMenuInsetsBottom(orientationData.menuInsetsBottom || 0);
       
-      // Check if this is a new project (no console or device selected)
-      const isNewProject = !currentProject.console && !currentProject.device;
-      
-      // Load orientation-specific data
-      const orientationData = getOrientationData();
-      
-      if (orientationData) {
-        setControls(orientationData.controls || []);
-        setScreens(orientationData.screens || []);
-        setMenuInsetsEnabled(orientationData.menuInsetsEnabled || false);
-        setMenuInsetsBottom(orientationData.menuInsetsBottom || 0);
-        
-        // Handle background image
-        if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
-          setUploadedImage({
-            file: new File([], orientationData.backgroundImage.fileName || 'image'),
-            url: orientationData.backgroundImage.url
-          });
-        } else if (!orientationData.backgroundImage || !orientationData.backgroundImage.hasStoredImage) {
-          // Only clear if there's truly no image for this orientation
-          setUploadedImage(null);
-        }
-        // If hasStoredImage is true but URL is null, keep the current uploadedImage
-        // This happens when we don't save blob URLs
+      // Handle background image
+      if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
+        setUploadedImage({
+          file: new File([], orientationData.backgroundImage.fileName || 'image'),
+          url: orientationData.backgroundImage.url
+        });
+      } else if (!orientationData.backgroundImage || !orientationData.backgroundImage.hasStoredImage) {
+        // Only clear if there's truly no image for this orientation
+        setUploadedImage(null);
       }
-      
-      if (currentProject.console) {
-        setSelectedConsole(currentProject.console.shortName);
-      }
-      if (currentProject.device) {
-        setSelectedDevice(currentProject.device.model);
-      }
-      
-      // Load thumbstick images from IndexedDB
-      loadThumbstickImages(currentProject.id);
-      
-      // Mark as saved when loading a project
-      setHasUnsavedChanges(false);
-      // Reset the mounted flag to prevent marking as unsaved during load
-      hasMountedRef.current = false;
-      
-      // Show edit panel for new projects (only once per project)
-      if (isNewProject && hasShownEditPanelRef.current !== currentProject.id) {
-        setIsEditPanelOpen(true);
-        hasShownEditPanelRef.current = currentProject.id;
-      }
+      // If hasStoredImage is true but URL is null, keep the current uploadedImage
+      // This happens when we don't save blob URLs
+    }
+    
+    if (currentProject.console) {
+      setSelectedConsole(currentProject.console.shortName);
+    }
+    if (currentProject.device) {
+      setSelectedDevice(currentProject.device.model);
+    }
+    
+    // Load thumbstick images from IndexedDB
+    loadThumbstickImages(currentProject.id);
+    
+    // Mark as saved when loading a project
+    setHasUnsavedChanges(false);
+    // Reset the mounted flag to prevent marking as unsaved during load
+    hasMountedRef.current = false;
+    
+    // Show edit panel for unconfigured projects (only once per project)
+    if (isUnconfiguredProject && hasShownEditPanelRef.current !== currentProject.id) {
+      setIsEditPanelOpen(true);
+      hasShownEditPanelRef.current = currentProject.id;
     }
   }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
   
@@ -145,47 +163,78 @@ const Editor: React.FC = () => {
 
   // Manual save function
   const handleSave = useCallback(() => {
-    if (!currentProject) return;
+    // Set saving flag to prevent state reset
+    isSavingRef.current = true;
     
-    // Save project-level data
-    saveProject({
-      name: skinName,
-      identifier: skinIdentifier,
-      console: selectedConsoleData,
-      device: selectedDeviceData
-    });
+    // If no current project, create one with all the current data
+    if (!currentProject) {
+      // Create project with current form data
+      createProject(skinName || 'Untitled Skin', {
+        identifier: skinIdentifier,
+        console: selectedConsoleData,
+        device: selectedDeviceData
+      });
+      
+      // Immediately save orientation data (no setTimeout needed)
+      saveOrientationData({
+        controls,
+        screens,
+        menuInsetsEnabled,
+        menuInsetsBottom,
+        backgroundImage: uploadedImage ? {
+          fileName: uploadedImage.file.name,
+          url: null,
+          hasStoredImage: true
+        } : null
+      });
+    } else {
+      // Save project-level data
+      saveProject({
+        name: skinName,
+        identifier: skinIdentifier,
+        console: selectedConsoleData,
+        device: selectedDeviceData
+      });
+      
+      // Save orientation-specific data
+      saveOrientationData({
+        controls,
+        screens,
+        menuInsetsEnabled,
+        menuInsetsBottom,
+        // Don't save the blob URL, just mark that we have an image
+        backgroundImage: uploadedImage ? {
+          fileName: uploadedImage.file.name,
+          url: null, // Don't save blob URLs to localStorage
+          hasStoredImage: true
+        } : null
+      });
+    }
     
-    // Save orientation-specific data
-    saveOrientationData({
-      controls,
-      screens,
-      menuInsetsEnabled,
-      menuInsetsBottom,
-      // Don't save the blob URL, just mark that we have an image
-      backgroundImage: uploadedImage ? {
-        fileName: uploadedImage.file.name,
-        url: null, // Don't save blob URLs to localStorage
-        hasStoredImage: true
-      } : null
-    });
-    
+    // Update UI state
     setHasUnsavedChanges(false);
     setShowSavedMessage(true);
     
-    // Hide saved message after 2 seconds
+    // Hide saved message after 2 seconds and reset saving flag
     setTimeout(() => {
       setShowSavedMessage(false);
+      isSavingRef.current = false;
     }, 2000);
-  }, [currentProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProject, saveOrientationData]);
+  }, [currentProject, createProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProject, saveOrientationData]);
 
   // Track if component has mounted
   const hasMountedRef = useRef(false);
   // Track if we've shown the edit panel for this project
   const hasShownEditPanelRef = useRef<string | null>(null);
   
-  // Track changes to mark as unsaved (but not on initial load)
+  // Track changes to mark as unsaved (but not on initial load or during saves)
   useEffect(() => {
-    if (hasMountedRef.current && currentProject) {
+    // Don't track changes if we're in the middle of saving or haven't mounted yet
+    if (isSavingRef.current) {
+      return;
+    }
+    
+    if (hasMountedRef.current) {
       setHasUnsavedChanges(true);
     } else {
       hasMountedRef.current = true;
@@ -919,13 +968,37 @@ const Editor: React.FC = () => {
         consoles={consoles}
         devices={devices}
         controls={controls}
-        onSkinNameChange={setSkinName}
-        onSkinIdentifierChange={setSkinIdentifier}
+        onSkinNameChange={(newName) => {
+          setSkinName(newName);
+          // Save the name to the project immediately
+          if (currentProject) {
+            saveProject({ name: newName });
+          }
+        }}
+        onSkinIdentifierChange={(newIdentifier) => {
+          setSkinIdentifier(newIdentifier);
+          // Save the identifier to the project immediately
+          if (currentProject) {
+            saveProject({ identifier: newIdentifier });
+          }
+        }}
         onConsoleChange={(newConsole) => {
           setSelectedConsole(newConsole);
           // Clear controls when console changes
           if (newConsole !== selectedConsole) {
             setControls([]);
+          }
+          
+          // Find the console data object
+          const consoleData = consoles.find(c => c.shortName === newConsole) || null;
+          
+          // Save console data and mark as configured if both console and device are set
+          if (currentProject) {
+            const isFullyConfigured = !!(newConsole && selectedDevice);
+            saveProject({ 
+              console: consoleData,
+              hasBeenConfigured: isFullyConfigured 
+            });
           }
         }}
         onDeviceChange={(newDevice) => {
@@ -933,6 +1006,18 @@ const Editor: React.FC = () => {
           // Clear controls when device changes
           if (newDevice !== selectedDevice) {
             setControls([]);
+          }
+          
+          // Find the device data object
+          const deviceData = devices.find(d => d.model === newDevice) || null;
+          
+          // Save device data and mark as configured if both console and device are set
+          if (currentProject) {
+            const isFullyConfigured = !!(selectedConsole && newDevice);
+            saveProject({ 
+              device: deviceData,
+              hasBeenConfigured: isFullyConfigured 
+            });
           }
         }}
       />

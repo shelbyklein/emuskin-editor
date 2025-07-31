@@ -17,6 +17,8 @@
 - ✅ Add thumbstick image storage to IndexedDB
 - ✅ Add copy layout between orientations feature
 - ✅ Remove auto-save and add manual save button
+- ✅ Fix save button functionality - resolved race condition in state management
+- ✅ Begin WordPress user account integration - authentication foundation implemented
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
 
@@ -30,6 +32,23 @@
 - Grid and snap-to-grid settings persist across sessions
 - Extended edges always visible for better usability
 - Screens use green theme to distinguish from blue controls
+
+## Recently Fixed Issues
+- ✅ Save button not persisting to localStorage
+  - Issue: No project existed when navigating directly to /editor
+  - Fixed by creating project on first save with all current data
+- ✅ Project name and console not saving correctly
+  - Issue: Project was created with default values before user input
+  - Fixed by updating createProject to accept initial data
+- ✅ Save button causing title to revert to default value
+  - Issue: useEffect reloading project data after save
+  - Fixed by adding isSavingRef to prevent state reset during save
+- ✅ Save button not enabling when no project exists
+  - Issue: hasUnsavedChanges only tracked when currentProject existed
+  - Fixed by removing currentProject check in change tracking
+- ✅ Project display not updating after save
+  - Issue: When creating new project, the data wasn't fully saved
+  - Fixed by calling saveProject again after project creation to ensure all data is saved
 
 ## Recent Accomplishments
 - ✅ Reorganized UI to display skin title in header with console icon
@@ -165,6 +184,38 @@
   - Added manual save button with visual feedback
   - Added Cmd/Ctrl+S keyboard shortcut for quick saving
   - Simplified state management and removed race conditions
+- ✅ Fixed save button race condition bug
+  - Race condition was causing skin name/identifier updates to not persist when saving
+  - Removed setTimeout approach in handleSave for new project creation
+  - Added isSavingRef flag to prevent state overwrites during save operations
+  - Enhanced project loading useEffect to skip updates when saving is in progress
+  - Fixed change tracking to not trigger false unsaved flags during save process
+  - New skin names and identifiers now persist correctly after saving
+- ✅ Fixed edit panel auto-opening bug
+  - Edit panel was opening every time user loaded a project created via "new-project-button"
+  - Projects created with new-project-button remained in "unconfigured" state permanently
+  - Added hasBeenConfigured flag to Project interface to track configuration status
+  - Modified edit panel logic to use hasBeenConfigured instead of checking for null console/device
+  - Projects are marked as configured when both console and device are set via SkinEditPanel
+  - Removed hasShownEditPanelRef reset on component unmount to persist across navigation
+  - Added backward compatibility migration for existing projects
+  - Edit panel now only shows once per unconfigured project, not on every load
+- ✅ Fixed SkinEditPanel "Save Settings" button not persisting data
+  - SkinEditPanel callbacks were only updating local state, not saving to localStorage
+  - Modified onSkinNameChange and onSkinIdentifierChange to call saveProject immediately
+  - Updated onConsoleChange and onDeviceChange to save full console/device objects to project
+  - Added proper lookup of console/device data objects from dropdown selections
+  - All skin settings (name, identifier, console, device) now persist correctly when "Save Settings" is clicked
+  - Projects are automatically marked as configured when both console and device are selected
+- ✅ Implemented WordPress authentication foundation
+  - Created AuthContext for user state management with WordPress integration
+  - Added user ownership fields to Project interface (userId, isPublic, createdAt)
+  - Built AuthButton component for login/logout functionality
+  - Created AuthCallback page for OAuth flow handling
+  - Added authentication route and integrated AuthProvider into app structure
+  - Created comprehensive API utilities for backend communication (projects, auth, images)
+  - Implemented mock authentication system for development
+  - All components ready for WordPress JWT integration once backend is deployed
 
 ## Next Steps
 1. Implement undo/redo functionality

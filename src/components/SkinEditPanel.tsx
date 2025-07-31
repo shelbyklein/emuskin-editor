@@ -38,7 +38,6 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   const [localSkinIdentifier, setLocalSkinIdentifier] = useState(skinIdentifier);
   const [localSelectedConsole, setLocalSelectedConsole] = useState(selectedConsole);
   const [localSelectedDevice, setLocalSelectedDevice] = useState(selectedDevice);
-  const [hasChanges, setHasChanges] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; identifier?: string; console?: string; device?: string }>({});
   
   // Update local state when props change
@@ -47,7 +46,6 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     setLocalSkinIdentifier(skinIdentifier);
     setLocalSelectedConsole(selectedConsole);
     setLocalSelectedDevice(selectedDevice);
-    setHasChanges(false);
     setErrors({});
   }, [isOpen, skinName, skinIdentifier, selectedConsole, selectedDevice]);
   
@@ -65,18 +63,6 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     }
   }, [isOpen]);
   
-  // Check if changes have been made
-  useEffect(() => {
-    // For new projects (no console/device selected), always allow save
-    const isNewProject = !selectedConsole && !selectedDevice;
-    const changed = isNewProject || (
-      localSkinName !== skinName ||
-      localSkinIdentifier !== skinIdentifier ||
-      localSelectedConsole !== selectedConsole ||
-      localSelectedDevice !== selectedDevice
-    );
-    setHasChanges(changed);
-  }, [localSkinName, localSkinIdentifier, localSelectedConsole, localSelectedDevice, skinName, skinIdentifier, selectedConsole, selectedDevice]);
   
   // Validate inputs
   const validateInputs = () => {

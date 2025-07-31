@@ -22,6 +22,10 @@ interface Project {
   identifier: string;
   console: Console | null;
   device: Device | null;
+  // User ownership and sharing
+  userId?: string; // WordPress user ID - optional for backward compatibility
+  isPublic?: boolean; // Whether project can be viewed by others
+  createdAt?: number; // Creation timestamp
   // Legacy support - will be migrated to orientations
   controls?: ControlMapping[];
   screens?: ScreenMapping[];
@@ -38,13 +42,14 @@ interface Project {
     landscape: OrientationData;
   };
   currentOrientation?: 'portrait' | 'landscape';
+  hasBeenConfigured?: boolean; // Track if user has configured console/device
   lastModified: number;
 }
 
 interface ProjectContextType {
   currentProject: Project | null;
   projects: Project[];
-  createProject: (name: string) => string;
+  createProject: (name: string, initialData?: Partial<Project>) => string;
   loadProject: (id: string) => void;
   saveProject: (updates: Partial<Project>) => void;
   saveProjectImage: (file: File, orientation?: 'portrait' | 'landscape') => Promise<void>;
@@ -75,6 +80,7 @@ const defaultProject: Project = {
     landscape: { ...defaultOrientationData }
   },
   currentOrientation: 'portrait',
+  hasBeenConfigured: false,
   lastModified: Date.now()
 };
 
@@ -94,8 +100,10 @@ interface ProjectProviderProps {
 
 // Helper function to migrate legacy projects to orientation-based structure
 const migrateProject = (project: Project): Project => {
+  let migrated = project;
+  
   if (!project.orientations) {
-    return {
+    migrated = {
       ...project,
       orientations: {
         portrait: {
@@ -116,7 +124,13 @@ const migrateProject = (project: Project): Project => {
       menuInsetsBottom: undefined
     };
   }
-  return project;
+  
+  // Mark projects as configured if they have console and device (backward compatibility)
+  if (migrated.hasBeenConfigured === undefined) {
+    migrated.hasBeenConfigured = !!(migrated.console && migrated.device);
+  }
+  
+  return migrated;
 };
 
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
@@ -138,11 +152,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     indexedDBManager.clearOldImages(30).catch(console.error);
   }, []);
 
-  const createProject = (name: string): string => {
+  const createProject = (name: string, initialData?: Partial<Project>): string => {
     const newProject: Project = {
       ...defaultProject,
       id: `project-${Date.now()}`,
       name,
+      ...initialData,
       orientations: {
         portrait: { ...defaultOrientationData },
         landscape: { ...defaultOrientationData }
@@ -228,7 +243,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   };
 
   const saveProject = useCallback((updates: Partial<Project>) => {
-    if (!currentProjectId) return;
+    if (!currentProjectId) {
+      return;
+    }
 
     setProjects(prev => prev.map(project => {
       if (project.id === currentProjectId) {
@@ -321,7 +338,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   }, [currentProject?.orientations, getCurrentOrientation]);
 
   const saveOrientationData = useCallback((data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => {
-    if (!currentProjectId || !currentProject?.orientations) return;
+    if (!currentProjectId || !currentProject?.orientations) {
+      return;
+    }
     
     const targetOrientation = orientation || getCurrentOrientation();
     

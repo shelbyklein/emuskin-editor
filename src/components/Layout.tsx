@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import AuthButton from './AuthButton';
 
 const Layout: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -72,6 +73,11 @@ const Layout: React.FC = () => {
               >
                 About
               </Link>
+              
+              {/* Authentication */}
+              <div className="ml-4">
+                <AuthButton />
+              </div>
               
               {/* Theme Toggle */}
               <button
