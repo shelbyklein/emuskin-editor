@@ -39,7 +39,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   const [localSelectedConsole, setLocalSelectedConsole] = useState(selectedConsole);
   const [localSelectedDevice, setLocalSelectedDevice] = useState(selectedDevice);
   const [hasChanges, setHasChanges] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; identifier?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; identifier?: string; console?: string; device?: string }>({});
   
   // Update local state when props change
   useEffect(() => {
@@ -67,17 +67,20 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   
   // Check if changes have been made
   useEffect(() => {
-    const changed = 
+    // For new projects (no console/device selected), always allow save
+    const isNewProject = !selectedConsole && !selectedDevice;
+    const changed = isNewProject || (
       localSkinName !== skinName ||
       localSkinIdentifier !== skinIdentifier ||
       localSelectedConsole !== selectedConsole ||
-      localSelectedDevice !== selectedDevice;
+      localSelectedDevice !== selectedDevice
+    );
     setHasChanges(changed);
   }, [localSkinName, localSkinIdentifier, localSelectedConsole, localSelectedDevice, skinName, skinIdentifier, selectedConsole, selectedDevice]);
   
   // Validate inputs
   const validateInputs = () => {
-    const newErrors: { name?: string; identifier?: string } = {};
+    const newErrors: { name?: string; identifier?: string; console?: string; device?: string } = {};
     
     if (!localSkinName.trim()) {
       newErrors.name = 'Skin name is required';
@@ -87,6 +90,14 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
       newErrors.identifier = 'Skin identifier is required';
     } else if (!/^[a-zA-Z0-9.]+$/.test(localSkinIdentifier)) {
       newErrors.identifier = 'Identifier must use reverse domain notation (e.g., com.example.skin)';
+    }
+    
+    if (!localSelectedConsole) {
+      newErrors.console = 'Please select a console';
+    }
+    
+    if (!localSelectedDevice) {
+      newErrors.device = 'Please select an iPhone model';
     }
     
     setErrors(newErrors);
@@ -113,6 +124,15 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   };
   
   const handleCancel = () => {
+    // For new projects, don't allow canceling without selecting console/device
+    const isNewProject = !selectedConsole && !selectedDevice;
+    if (isNewProject) {
+      if (!localSelectedConsole || !localSelectedDevice) {
+        alert('Please select a console and device for your new skin before continuing.');
+        return;
+      }
+    }
+    
     // Reset to original values
     setLocalSkinName(skinName);
     setLocalSkinIdentifier(skinIdentifier);
@@ -132,12 +152,15 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
         onClick={handleCancel}
       />
       
-      {/* Panel */}
-      <div className={`fixed right-0 top-0 h-full w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl z-50 overflow-y-auto transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Skin Settings</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {!selectedConsole && !selectedDevice ? 'Configure New Skin' : 'Edit Skin Settings'}
+            </h2>
             <button
               onClick={handleCancel}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -200,7 +223,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 id="edit-console"
                 value={localSelectedConsole}
                 onChange={(e) => setLocalSelectedConsole(e.target.value)}
-                className="w-full input-field"
+                className={`w-full input-field ${errors.console ? 'border-red-500' : ''}`}
               >
                 <option value="">Select a console...</option>
                 {consoles.map((console) => (
@@ -209,6 +232,9 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.console && (
+                <p className="mt-1 text-sm text-red-500">{errors.console}</p>
+              )}
             </div>
 
             {/* Device Selection */}
@@ -220,7 +246,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 id="edit-device"
                 value={localSelectedDevice}
                 onChange={(e) => setLocalSelectedDevice(e.target.value)}
-                className="w-full input-field"
+                className={`w-full input-field ${errors.device ? 'border-red-500' : ''}`}
               >
                 <option value="">Select an iPhone model...</option>
                 {devices.map((device) => (
@@ -229,6 +255,9 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.device && (
+                <p className="mt-1 text-sm text-red-500">{errors.device}</p>
+              )}
             </div>
           </div>
 
@@ -236,14 +265,9 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
           <div className="mt-8 space-y-3">
             <button
               onClick={handleSave}
-              disabled={!hasChanges}
-              className={`w-full px-4 py-2 rounded-lg transition-colors ${
-                hasChanges
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full px-4 py-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700"
             >
-              Save Changes
+              Save Settings
             </button>
             <button
               onClick={handleCancel}
@@ -252,6 +276,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
               Cancel
             </button>
           </div>
+        </div>
         </div>
       </div>
     </>

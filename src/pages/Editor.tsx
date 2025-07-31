@@ -67,6 +67,9 @@ const Editor: React.FC = () => {
       setSkinName(currentProject.name);
       setSkinIdentifier(currentProject.identifier);
       
+      // Check if this is a new project (no console or device selected)
+      const isNewProject = !currentProject.console && !currentProject.device;
+      
       // Load orientation-specific data
       const orientationData = getOrientationData();
       
@@ -104,6 +107,11 @@ const Editor: React.FC = () => {
       setHasUnsavedChanges(false);
       // Reset the mounted flag to prevent marking as unsaved during load
       hasMountedRef.current = false;
+      
+      // Show edit panel for new projects
+      if (isNewProject) {
+        setIsEditPanelOpen(true);
+      }
     }
   }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
   
@@ -743,66 +751,82 @@ const Editor: React.FC = () => {
       <div id="editor-layout" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Form, Controls and Image Upload */}
         <div id="editor-left-column" className="space-y-6">
-          {/* Image Upload Section */}
-          {selectedConsole && selectedDevice && !uploadedImage && (
-            <div id="image-upload-section" className="card animate-slide-up">
-              <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
-              <ImageUploader onImageUpload={handleImageUpload} />
+          {/* Show configuration prompt if console/device not selected */}
+          {!selectedConsole || !selectedDevice ? (
+            <div id="configuration-prompt" className="card animate-slide-up">
+              <div className="text-center p-8">
+                <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Get Started</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">Configure your skin settings to begin designing</p>
+                <button
+                  onClick={() => setIsEditPanelOpen(true)}
+                  className="btn-primary"
+                >
+                  Configure Skin Settings
+                </button>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Image Upload Section */}
+              {!uploadedImage && (
+                <div id="image-upload-section" className="card animate-slide-up">
+                  <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
+                  <ImageUploader onImageUpload={handleImageUpload} />
+                </div>
+              )}
 
-          {/* Control Palette */}
-          {selectedConsole && selectedDevice && (
-            <div id="control-palette-section" className="card animate-slide-up">
-              <ControlPalette 
-                consoleType={selectedConsole}
-                onControlSelect={handleControlSelect}
-              />
-            </div>
-          )}
-          {/* Control List */}
-          {selectedConsole && selectedDevice && controls.length > 0 && (
-            <div id="control-list-section" className="card animate-slide-up">
-              <ControlList 
-                controls={controls}
-                onControlDelete={handleControlDelete}
-                onControlSelect={handleControlSelectFromList}
-                selectedControl={selectedControlIndex}
-              />
-            </div>
-          )}
-
-          {/* Screen Palette */}
-          {selectedConsole && selectedDevice && (
-            <div id="screen-palette-section" className="card animate-slide-up">
-              <h3 id="screen-palette-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Game Screens</h3>
-              <ScreenPalette 
-                consoleType={selectedConsole}
-                existingScreens={screens}
-                onScreenAdd={handleScreenAdd}
-              />
-              {screens.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <ScreenList
-                    screens={screens}
-                    onScreenDelete={handleDeleteScreen}
-                    onScreenSelect={setSelectedScreenIndex}
-                    selectedScreen={selectedScreenIndex}
-                    consoleType={selectedConsole}
+              {/* Control Palette */}
+              <div id="control-palette-section" className="card animate-slide-up">
+                <ControlPalette 
+                  consoleType={selectedConsole}
+                  onControlSelect={handleControlSelect}
+                />
+              </div>
+              
+              {/* Control List */}
+              {controls.length > 0 && (
+                <div id="control-list-section" className="card animate-slide-up">
+                  <ControlList 
+                    controls={controls}
+                    onControlDelete={handleControlDelete}
+                    onControlSelect={handleControlSelectFromList}
+                    selectedControl={selectedControlIndex}
                   />
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Menu Insets Panel */}
-          {selectedConsole && selectedDevice && (
-            <MenuInsetsPanel
-              menuInsetsEnabled={menuInsetsEnabled}
-              menuInsetsBottom={menuInsetsBottom}
-              onToggle={setMenuInsetsEnabled}
-              onBottomChange={setMenuInsetsBottom}
-            />
+              {/* Screen Palette */}
+              <div id="screen-palette-section" className="card animate-slide-up">
+                <h3 id="screen-palette-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Game Screens</h3>
+                <ScreenPalette 
+                  consoleType={selectedConsole}
+                  existingScreens={screens}
+                  onScreenAdd={handleScreenAdd}
+                />
+                {screens.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <ScreenList
+                      screens={screens}
+                      onScreenDelete={handleDeleteScreen}
+                      onScreenSelect={setSelectedScreenIndex}
+                      selectedScreen={selectedScreenIndex}
+                      consoleType={selectedConsole}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Menu Insets Panel */}
+              <MenuInsetsPanel
+                menuInsetsEnabled={menuInsetsEnabled}
+                menuInsetsBottom={menuInsetsBottom}
+                onToggle={setMenuInsetsEnabled}
+                onBottomChange={setMenuInsetsBottom}
+              />
+            </>
           )}
         </div>
 
@@ -819,53 +843,68 @@ const Editor: React.FC = () => {
                 <GridControls />
               )}
             </div>
-            <Canvas 
-              device={selectedDeviceData}
-              backgroundImage={uploadedImage?.url || null}
-              controls={controls}
-              screens={screens}
-              consoleType={selectedConsole}
-              orientation={getCurrentOrientation()}
-              menuInsetsEnabled={menuInsetsEnabled}
-              menuInsetsBottom={menuInsetsBottom}
-              onControlUpdate={handleControlsUpdate}
-              onScreenUpdate={handleScreensUpdate}
-              thumbstickImages={thumbstickImages}
-              onThumbstickImageUpload={handleThumbstickImageUpload}
-              selectedControlIndex={selectedControlIndex}
-              onControlSelectionChange={setSelectedControlIndex}
-              selectedScreenIndex={selectedScreenIndex}
-              onScreenSelectionChange={setSelectedScreenIndex}
-            />
-            {/* Canvas Actions - Moved to bottom */}
-            <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
-              {uploadedImage && (
-                <button
-                  id="remove-image-button"
-                  onClick={() => setUploadedImage(null)}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  Remove Image
-                </button>
-              )}
-              <ImportButton onImport={handleImport} />
-              <ExportButton
-                skinName={skinName}
-                skinIdentifier={skinIdentifier}
-                selectedConsole={selectedConsoleData}
-                selectedDevice={selectedDeviceData}
+            {/* Show canvas only when console and device are selected */}
+            {selectedConsole && selectedDevice ? (
+              <Canvas 
+                device={selectedDeviceData}
+                backgroundImage={uploadedImage?.url || null}
                 controls={controls}
                 screens={screens}
-                backgroundImage={uploadedImage}
+                consoleType={selectedConsole}
+                orientation={getCurrentOrientation()}
                 menuInsetsEnabled={menuInsetsEnabled}
                 menuInsetsBottom={menuInsetsBottom}
-                thumbstickFiles={thumbstickFiles}
+                onControlUpdate={handleControlsUpdate}
+                onScreenUpdate={handleScreensUpdate}
+                thumbstickImages={thumbstickImages}
+                onThumbstickImageUpload={handleThumbstickImageUpload}
+                selectedControlIndex={selectedControlIndex}
+                onControlSelectionChange={setSelectedControlIndex}
+                selectedScreenIndex={selectedScreenIndex}
+                onScreenSelectionChange={setSelectedScreenIndex}
               />
-            </div>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                <div className="text-center">
+                  <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-lg font-medium mb-2">Configure Your Skin First</p>
+                  <p className="text-sm">Please select a console and device to begin designing</p>
+                </div>
+              </div>
+            )}
+            {/* Canvas Actions - Moved to bottom */}
+            {selectedConsole && selectedDevice && (
+              <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
+                {uploadedImage && (
+                  <button
+                    id="remove-image-button"
+                    onClick={() => setUploadedImage(null)}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Remove Image
+                  </button>
+                )}
+                <ImportButton onImport={handleImport} />
+                <ExportButton
+                  skinName={skinName}
+                  skinIdentifier={skinIdentifier}
+                  selectedConsole={selectedConsoleData}
+                  selectedDevice={selectedDeviceData}
+                  controls={controls}
+                  screens={screens}
+                  backgroundImage={uploadedImage}
+                  menuInsetsEnabled={menuInsetsEnabled}
+                  menuInsetsBottom={menuInsetsBottom}
+                  thumbstickFiles={thumbstickFiles}
+                />
+              </div>
+            )}
           </div>
 
           {/* JSON Preview */}
-          {selectedConsoleData && selectedDeviceData && (
+          {selectedConsole && selectedDevice && selectedConsoleData && selectedDeviceData && (
             <div id="json-preview-section" className="card animate-slide-up">
               <JsonPreview
                 skinName={skinName}
