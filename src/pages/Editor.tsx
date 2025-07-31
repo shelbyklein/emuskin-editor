@@ -1118,16 +1118,32 @@ const Editor: React.FC = () => {
         controls={controls}
         onSkinNameChange={(newName) => {
           setSkinName(newName);
-          // Save the name to the project immediately
+          // Save the name to the project immediately or create project if none exists
           if (currentProject) {
             saveProject({ name: newName });
+          } else {
+            // If no project exists, create one first
+            const projectId = createProject(newName, {
+              identifier: skinIdentifier,
+              console: selectedConsoleData,
+              device: selectedDeviceData
+            });
+            console.log('Created new project for skin name change:', projectId);
           }
         }}
         onSkinIdentifierChange={(newIdentifier) => {
           setSkinIdentifier(newIdentifier);
-          // Save the identifier to the project immediately
+          // Save the identifier to the project immediately or create project if none exists
           if (currentProject) {
             saveProject({ identifier: newIdentifier });
+          } else {
+            // If no project exists, create one first
+            const projectId = createProject(skinName || 'Untitled Skin', {
+              identifier: newIdentifier,
+              console: selectedConsoleData,
+              device: selectedDeviceData
+            });
+            console.log('Created new project for identifier change:', projectId);
           }
         }}
         onConsoleChange={(newConsole) => {
@@ -1147,6 +1163,14 @@ const Editor: React.FC = () => {
               console: consoleData,
               hasBeenConfigured: isFullyConfigured 
             });
+          } else {
+            // If no project exists, create one first
+            const projectId = createProject(skinName || 'Untitled Skin', {
+              identifier: skinIdentifier,
+              console: consoleData,
+              device: selectedDeviceData
+            });
+            console.log('Created new project for console change:', projectId);
           }
         }}
         onDeviceChange={(newDevice) => {
@@ -1166,6 +1190,14 @@ const Editor: React.FC = () => {
               device: deviceData,
               hasBeenConfigured: isFullyConfigured 
             });
+          } else {
+            // If no project exists, create one first
+            const projectId = createProject(skinName || 'Untitled Skin', {
+              identifier: skinIdentifier,
+              console: selectedConsoleData,
+              device: deviceData
+            });
+            console.log('Created new project for device change:', projectId);
           }
         }}
       />
