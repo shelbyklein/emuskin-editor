@@ -1450,8 +1450,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     </div>
                   )}
 
-                  {/* Control buttons in top-left like macOS stoplight */}
-                  <div className="absolute top-2 left-2 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Control buttons above element like macOS stoplight */}
+                  <div className="absolute -top-8 left-0 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {/* Settings button - green */}
                     <button
                       id={`screen-settings-${index}`}
@@ -1675,8 +1675,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     />
                   ) : null}
 
-                  {/* Control buttons in top-left like macOS stoplight */}
-                  <div className="absolute top-2 left-2 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Control buttons above element like macOS stoplight */}
+                  <div className="absolute -top-8 left-0 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {/* Settings button - green */}
                     <button
                       id={`control-settings-${index}`}
