@@ -235,6 +235,7 @@ emuskin-generator/
 - ✅ AuthButton added to mobile menu for full mobile support
 - ✅ Implemented lock feature for controls and screens preventing accidental movement
 - ✅ Implemented undo/redo functionality with 50-state history and keyboard shortcuts
+- ✅ Fixed JWT authentication 400 error by implementing local token validation
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

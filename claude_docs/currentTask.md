@@ -21,6 +21,7 @@
 - ✅ Implement WordPress user account integration - JWT authentication fully implemented
 - ✅ Implement lock feature for controls and screens - prevents accidental movement
 - ✅ Implement undo/redo functionality - 50-state history with keyboard shortcuts
+- ✅ Fix JWT authentication 400 error on reload - removed broken validate endpoint
 - Add keyboard shortcuts for common actions
 
 ## Context
@@ -252,6 +253,12 @@
   - History initializes when loading projects
   - Debounced history pushes to avoid excessive entries
   - Memory-efficient implementation with automatic cleanup
+- ✅ Fixed JWT authentication 400 error
+  - Removed problematic API call to Simple JWT Login's validate endpoint
+  - Implemented local JWT validation by decoding token client-side
+  - Check token expiration and extract user data from payload
+  - Authentication now persists correctly across page reloads
+  - Better error handling and logging for auth issues
 
 ## Next Steps
 1. Add keyboard shortcuts for common actions

@@ -48,30 +48,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const validateToken = async () => {
       if (token && user) {
         try {
-          // Try to validate with the real API
+          // Validate token locally (no API call to avoid 400 error)
           const { valid, user: validatedUser } = await authAPI.validateToken();
           if (valid && validatedUser) {
-            setUser(validatedUser);
+            // Update user data if needed
+            if (validatedUser.email !== user.email) {
+              setUser(validatedUser);
+            }
           } else {
+            // Token is invalid or expired
+            console.log('Token validation failed - clearing auth state');
             setToken(null);
             setUser(null);
           }
-          setIsLoading(false);
         } catch (error) {
-          // In development, assume token is valid if API is not available
-          if (import.meta.env.DEV) {
-            console.warn('Token validation failed, assuming valid in development mode');
-            setIsLoading(false);
-          } else {
-            console.error('Token validation failed:', error);
-            setToken(null);
-            setUser(null);
-            setIsLoading(false);
-          }
+          console.error('Token validation error:', error);
+          // Clear auth state on error
+          setToken(null);
+          setUser(null);
         }
-      } else {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
 
     validateToken();

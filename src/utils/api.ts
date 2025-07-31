@@ -129,20 +129,10 @@ export const authAPI = {
     if (!token) return { valid: false };
     
     try {
-      const wordpressUrl = import.meta.env.VITE_WORDPRESS_URL || 'https://playcase.gg';
-      
-      // Try to validate token with WordPress (using Simple JWT Login)
-      // Note: We don't use the response since Simple JWT Login might not properly validate
-      await fetch(`${wordpressUrl}/?rest_route=/simple-jwt-login/v1/auth/validate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.replace(/"/g, '')}`,
-        },
-      });
-      
-      // Even if validation fails, check if we can decode the JWT
-      // Simple JWT Login might not properly validate but the token could still be valid
-      const jwtPayload = decodeJWT(token.replace(/"/g, ''));
+      // Instead of making API call that causes 400 error, just validate JWT locally
+      // Simple JWT Login's validate endpoint doesn't work as expected
+      const cleanToken = token.replace(/"/g, '');
+      const jwtPayload = decodeJWT(cleanToken);
       
       if (jwtPayload && jwtPayload.email) {
         // Check if token is expired

@@ -12,14 +12,14 @@
   - Deploy to cloud platform (Heroku, AWS, etc.)
   - Update ProjectContext to sync with API when authenticated
 
-### 2. Undo/Redo Functionality ✅ [COMPLETED]
-- **Implemented**:
-  - 50-state history stack tracking all control/screen changes
-  - Keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
-  - Visual undo/redo buttons in canvas toolbar
-  - Tracks add, delete, move, resize, and property changes
-  - Memory-efficient with debounced updates
-- **Status**: Fully functional
+### 2. Toast Notifications
+- **Purpose**: Better UX than alert() dialogs
+- **Implementation**:
+  - Create Toast component with auto-dismiss
+  - Replace all alert() calls with toasts
+  - Different styles for success/error/info
+  - Stack multiple toasts if needed
+  - Non-blocking user experience
 
 ### 3. Keyboard Shortcuts Enhancement
 - **Purpose**: Improve productivity for power users
@@ -30,16 +30,7 @@
   - Cmd/Ctrl+A for select all
   - Tab/Shift+Tab for cycling through controls
 
-### 4. Success/Error Toast Notifications
-- **Purpose**: Better UX than alert() dialogs
-- **Implementation**:
-  - Create Toast component with auto-dismiss
-  - Replace all alert() calls with toasts
-  - Different styles for success/error/info
-  - Stack multiple toasts if needed
-  - Non-blocking user experience
-
-### 5. Control Alignment Tools
+### 4. Control Alignment Tools
 - **Purpose**: Precise control positioning
 - **Implementation**:
   - Align selected controls (left, right, center, top, bottom)
@@ -48,6 +39,14 @@
   - Visual alignment guides when dragging
 
 ## Completed Features (Recent)
+
+### ✅ JWT Authentication Fix [COMPLETED]
+- **Implemented**:
+  - Fixed 400 error on reload by removing broken validate endpoint
+  - Local JWT validation by decoding token client-side
+  - Proper token expiration checking
+  - Better error handling and auth state cleanup
+- **Status**: Authentication now persists correctly
 
 ### ✅ Lock Feature for Controls/Screens [COMPLETED]
 - **Implemented**:
