@@ -68,8 +68,10 @@ const Canvas: React.FC<CanvasProps> = ({
   onScreenSelectionChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 390, height: 844 });
   const [scale, setScale] = useState(1);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [selectedControl, setSelectedControl] = useState<number | null>(null);
   const [selectedScreen, setSelectedScreen] = useState<number | null>(null);
   const { settings } = useEditor();
@@ -195,7 +197,7 @@ const Canvas: React.FC<CanvasProps> = ({
     startTop: 0
   });
 
-  // Set canvas dimensions to 1:1 pixel representation
+  // Set canvas dimensions based on device
   useEffect(() => {
     if (!device) {
       // Set default size when no device is selected
@@ -205,9 +207,6 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const deviceWidth = device.logicalWidth || 390;
     const deviceHeight = device.logicalHeight || 844;
-    
-    // Always use scale of 1 for 1:1 pixel representation
-    setScale(1);
     
     // Swap dimensions for landscape orientation
     if (orientation === 'landscape') {
@@ -222,6 +221,55 @@ const Canvas: React.FC<CanvasProps> = ({
       });
     }
   }, [device, orientation]);
+
+  // Track container size with ResizeObserver
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateContainerSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        // Account for padding (16px on each side from p-4)
+        const padding = 32;
+        setContainerSize({
+          width: rect.width - padding,
+          height: window.innerHeight - rect.top - 200 // Leave space for other UI elements
+        });
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(updateContainerSize);
+    resizeObserver.observe(containerRef.current);
+    
+    // Initial size update
+    updateContainerSize();
+
+    // Also update on window resize
+    window.addEventListener('resize', updateContainerSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateContainerSize);
+    };
+  }, []);
+
+  // Calculate scale to fit canvas in container (only in landscape mode)
+  useEffect(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return;
+
+    // Only scale in landscape mode
+    if (orientation === 'landscape') {
+      const scaleX = containerSize.width / canvasSize.width;
+      const scaleY = containerSize.height / canvasSize.height;
+      
+      // Use the smaller scale to maintain aspect ratio, but don't scale up beyond 1
+      const newScale = Math.min(scaleX, scaleY, 1);
+      setScale(newScale);
+    } else {
+      // Keep 1:1 scale in portrait mode
+      setScale(1);
+    }
+  }, [canvasSize, containerSize, orientation]);
 
   // Handle mouse down on item (control or screen)
   const handleMouseDown = useCallback((e: React.MouseEvent, index: number, itemType: 'control' | 'screen') => {
@@ -245,14 +293,15 @@ const Canvas: React.FC<CanvasProps> = ({
     // Reset drag flag at start of new interaction
     setHasDragged(false);
     
+    // Account for scale when calculating offset
     setDragState({
       isDragging: true,
       itemType,
       itemIndex: index,
       startX: e.clientX,
       startY: e.clientY,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top
+      offsetX: (e.clientX - rect.left) / scale,
+      offsetY: (e.clientY - rect.top) / scale
     });
     
     if (itemType === 'control') {
@@ -287,14 +336,15 @@ const Canvas: React.FC<CanvasProps> = ({
     // Reset drag flag at start of new interaction
     setHasDragged(false);
     
+    // Account for scale when calculating offset
     setDragState({
       isDragging: true,
       itemType,
       itemIndex: index,
       startX: touch.clientX,
       startY: touch.clientY,
-      offsetX: touch.clientX - rect.left,
-      offsetY: touch.clientY - rect.top
+      offsetX: (touch.clientX - rect.left) / scale,
+      offsetY: (touch.clientY - rect.top) / scale
     });
     
     if (itemType === 'control') {
@@ -316,6 +366,17 @@ const Canvas: React.FC<CanvasProps> = ({
     
     setHasResized(true); // Set flag when resize starts
     
+    // Reset drag state when starting resize
+    setDragState({
+      isDragging: false,
+      itemType: null,
+      itemIndex: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0
+    });
+    
     setResizeState({
       isResizing: true,
       itemType,
@@ -336,7 +397,7 @@ const Canvas: React.FC<CanvasProps> = ({
       updateScreenSelection(index);
       updateControlSelection(null);
     }
-  }, [controls, screens]);
+  }, [controls, screens, scale]);
 
   // Handle resize touch start
   const handleResizeTouchStart = useCallback((e: React.TouchEvent, index: number, handle: string, itemType: 'control' | 'screen') => {
@@ -348,6 +409,17 @@ const Canvas: React.FC<CanvasProps> = ({
     const frame = itemType === 'control' ? (item as ControlMapping).frame : (item as ScreenMapping).outputFrame;
     
     setHasResized(true); // Set flag when resize starts
+    
+    // Reset drag state when starting resize
+    setDragState({
+      isDragging: false,
+      itemType: null,
+      itemIndex: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0
+    });
     
     setResizeState({
       isResizing: true,
@@ -369,7 +441,7 @@ const Canvas: React.FC<CanvasProps> = ({
       updateScreenSelection(index);
       updateControlSelection(null);
     }
-  }, [controls, screens]);
+  }, [controls, screens, scale]);
 
   // Handle mouse move (dragging)
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -385,8 +457,9 @@ const Canvas: React.FC<CanvasProps> = ({
 
       const rect = container.getBoundingClientRect();
       
-      const newX = e.clientX - rect.left - dragState.offsetX;
-      const newY = e.clientY - rect.top - dragState.offsetY;
+      // Account for scale when calculating coordinates
+      const newX = (e.clientX - rect.left) / scale - dragState.offsetX;
+      const newY = (e.clientY - rect.top) / scale - dragState.offsetY;
       
       let width, height;
       if (dragState.itemType === 'control') {
@@ -448,14 +521,15 @@ const Canvas: React.FC<CanvasProps> = ({
         }
       }
     }
-  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings]);
+  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings, scale]);
 
   // Handle resize
   const handleResize = useCallback((e: MouseEvent) => {
     if (!resizeState.isResizing || resizeState.itemIndex === null || !resizeState.itemType) return;
 
-    const deltaX = e.clientX - resizeState.startX;
-    const deltaY = e.clientY - resizeState.startY;
+    // Account for scale when calculating deltas
+    const deltaX = (e.clientX - resizeState.startX) / scale;
+    const deltaY = (e.clientY - resizeState.startY) / scale;
     
     let newX = resizeState.startLeft;
     let newY = resizeState.startTop;
@@ -678,16 +752,16 @@ const Canvas: React.FC<CanvasProps> = ({
       resizeThrottleRef.current = requestAnimationFrame(() => {
         if (resizePositionRef.current && resizeState.itemIndex !== null) {
           if (resizeState.itemType === 'control') {
-            const updatedControls = [...controlsRef.current];
+            const updatedControls = [...controls];
             updatedControls[resizeState.itemIndex] = {
-              ...controlsRef.current[resizeState.itemIndex],
+              ...controls[resizeState.itemIndex],
               frame: resizePositionRef.current
             };
             onControlUpdate(updatedControls);
           } else {
-            const updatedScreens = [...screensRef.current];
+            const updatedScreens = [...screens];
             updatedScreens[resizeState.itemIndex] = {
-              ...screensRef.current[resizeState.itemIndex],
+              ...screens[resizeState.itemIndex],
               outputFrame: resizePositionRef.current
             };
             updateScreensWithMirroredControls(updatedScreens);
@@ -696,12 +770,15 @@ const Canvas: React.FC<CanvasProps> = ({
         resizeThrottleRef.current = null;
       });
     }
-  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType]);
+  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType, scale]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
+    // Always reset both states on mouse up
+    const wasResizing = resizeState.isResizing;
+    
     // Apply final resize position if we were resizing
-    if (resizeState.isResizing && resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
+    if (wasResizing && resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
       // Cancel any pending throttled update
       if (resizeThrottleRef.current) {
         cancelAnimationFrame(resizeThrottleRef.current);
@@ -710,16 +787,16 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Apply final position
       if (resizeState.itemType === 'control') {
-        const updatedControls = [...controlsRef.current];
+        const updatedControls = [...controls];
         updatedControls[resizeState.itemIndex] = {
-          ...controlsRef.current[resizeState.itemIndex],
+          ...controls[resizeState.itemIndex],
           frame: resizePositionRef.current
         };
         onControlUpdate(updatedControls);
       } else {
-        const updatedScreens = [...screensRef.current];
+        const updatedScreens = [...screens];
         updatedScreens[resizeState.itemIndex] = {
-          ...screensRef.current[resizeState.itemIndex],
+          ...screens[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
         updateScreensWithMirroredControls(updatedScreens);
@@ -775,8 +852,9 @@ const Canvas: React.FC<CanvasProps> = ({
 
       const rect = container.getBoundingClientRect();
       
-      const newX = touch.clientX - rect.left - dragState.offsetX;
-      const newY = touch.clientY - rect.top - dragState.offsetY;
+      // Account for scale when calculating coordinates
+      const newX = (touch.clientX - rect.left) / scale - dragState.offsetX;
+      const newY = (touch.clientY - rect.top) / scale - dragState.offsetY;
       
       let width, height;
       if (dragState.itemType === 'control') {
@@ -826,15 +904,16 @@ const Canvas: React.FC<CanvasProps> = ({
         updateScreensWithMirroredControls(updatedScreens);
       }
     }
-  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings]);
+  }, [dragState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, resizeState.isResizing, settings, scale]);
 
   // Handle touch resize
   const handleTouchResize = useCallback((e: TouchEvent) => {
     if (!resizeState.isResizing || resizeState.itemIndex === null || !resizeState.itemType) return;
 
     const touch = e.touches[0];
-    const deltaX = touch.clientX - resizeState.startX;
-    const deltaY = touch.clientY - resizeState.startY;
+    // Account for scale when calculating deltas
+    const deltaX = (touch.clientX - resizeState.startX) / scale;
+    const deltaY = (touch.clientY - resizeState.startY) / scale;
     
     let newX = resizeState.startLeft;
     let newY = resizeState.startTop;
@@ -1052,16 +1131,16 @@ const Canvas: React.FC<CanvasProps> = ({
         resizeThrottleRef.current = requestAnimationFrame(() => {
           if (resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
             if (resizeState.itemType === 'control') {
-              const updatedControls = [...controlsRef.current];
+              const updatedControls = [...controls];
               updatedControls[resizeState.itemIndex] = {
-                ...controlsRef.current[resizeState.itemIndex],
+                ...controls[resizeState.itemIndex],
                 frame: resizePositionRef.current
               };
               onControlUpdate(updatedControls);
             } else {
-              const updatedScreens = [...screensRef.current];
+              const updatedScreens = [...screens];
               updatedScreens[resizeState.itemIndex] = {
-                ...screensRef.current[resizeState.itemIndex],
+                ...screens[resizeState.itemIndex],
                 outputFrame: resizePositionRef.current
               };
               updateScreensWithMirroredControls(updatedScreens);
@@ -1071,7 +1150,7 @@ const Canvas: React.FC<CanvasProps> = ({
         });
       }
     }
-  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType]);
+  }, [resizeState, controls, screens, device, onControlUpdate, updateScreensWithMirroredControls, settings, consoleType, scale]);
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
@@ -1085,16 +1164,16 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Apply final position
       if (resizeState.itemType === 'control') {
-        const updatedControls = [...controlsRef.current];
+        const updatedControls = [...controls];
         updatedControls[resizeState.itemIndex] = {
-          ...controlsRef.current[resizeState.itemIndex],
+          ...controls[resizeState.itemIndex],
           frame: resizePositionRef.current
         };
         onControlUpdate(updatedControls);
       } else {
-        const updatedScreens = [...screensRef.current];
+        const updatedScreens = [...screens];
         updatedScreens[resizeState.itemIndex] = {
-          ...screensRef.current[resizeState.itemIndex],
+          ...screens[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
         updateScreensWithMirroredControls(updatedScreens);
@@ -1224,10 +1303,20 @@ const Canvas: React.FC<CanvasProps> = ({
         id="canvas-container"
         ref={containerRef}
         className="w-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex justify-center box-border"
-        style={{ boxSizing: 'border-box' }}
+        style={{ 
+          boxSizing: 'border-box'
+        }}
       >
       {device ? (
-        <div id="canvas-wrapper" className="inline-flex flex-col items-start">
+        <div 
+          id="canvas-wrapper" 
+          ref={canvasWrapperRef}
+          className="inline-flex flex-col items-start" 
+          style={{ 
+            minWidth: 'min-content',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top center'
+          }}>
           <div 
             id="canvas-drawing-area"
             className="canvas-area relative border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden mx-auto [&>*]:box-border touch-interactive"

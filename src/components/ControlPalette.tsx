@@ -89,50 +89,57 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
     const isDpad = button.key === 'dpad';
     const isThumbstick = button.key === 'thumbstick';
     const isTouchscreen = button.key === 'touchscreen';
+    const isQuicksave = button.key === 'quickSave';
+    const isQuickload = button.key === 'quickLoad';
     
     return (
       <button
         id={`control-button-${button.key}`}
         key={button.key}
         onClick={() => handleButtonClick(button)}
-        className="flex flex-col items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
-        title={`Add ${button.label}`}
+        className="group relative flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
+        style={{ width: '65px', height: '65px' }}
         aria-label={`Add ${button.label} control`}
       >
-        <div className="w-8 h-8 flex items-center justify-center">
+        <div id={`control-button-icon-${button.key}`} className="w-10 h-10 flex items-center justify-center">
           {isDpad ? (
             // D-pad icon
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
+            <svg id={`control-button-svg-${button.key}`} viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-700 dark:text-gray-300">
               <path d="M9 5v4H5v6h4v4h6v-4h4V9h-4V5H9z" />
             </svg>
           ) : isThumbstick ? (
             // Thumbstick icon
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
+            <svg id={`control-button-svg-${button.key}`} viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-700 dark:text-gray-300">
               <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
               <circle cx="12" cy="12" r="3" />
             </svg>
           ) : isTouchscreen ? (
             // Touchscreen icon - finger touching screen
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
+            <svg id={`control-button-svg-${button.key}`} viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-700 dark:text-gray-300">
               <rect x="5" y="3" width="14" height="18" fill="none" stroke="currentColor" strokeWidth="2" rx="1" />
               <circle cx="12" cy="15" r="2" />
               <path d="M12 13v-3" stroke="currentColor" strokeWidth="2" />
             </svg>
           ) : (
             // Regular button
-            <div className="w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
-              {button.label.charAt(0)}
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
+              {isQuicksave ? 'QS' : isQuickload ? 'QL' : button.label.charAt(0)}
             </div>
           )}
         </div>
-        <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">{button.label}</span>
+        
+        {/* Tooltip */}
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
+          <span id={`control-button-label-${button.key}`}>{button.label}</span>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+        </div>
       </button>
     );
   };
 
   if (!consoleType) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+      <div id="control-palette-empty-state" className="text-center text-gray-500 dark:text-gray-400 py-4">
         Select a console to see available controls
       </div>
     );
@@ -140,21 +147,21 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
 
   if (loading) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+      <div id="control-palette-loading" className="text-center text-gray-500 dark:text-gray-400 py-4">
         Loading controls...
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h4 className="font-medium text-gray-700 dark:text-gray-300">Available Controls</h4>
+    <div id="control-palette-container" className="space-y-4">
+      <h4 id="control-palette-title" className="font-medium text-gray-700 dark:text-gray-300">Available Controls</h4>
       
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+      <div id="control-palette-buttons-grid" className="flex flex-wrap gap-2">
         {availableButtons.map(button => renderButton(button))}
       </div>
       
-      <div className="border-t dark:border-gray-700 pt-4">
+      <div id="control-palette-custom-section" className="border-t dark:border-gray-700 pt-4">
         <button
           id="add-custom-button"
           onClick={() => setShowCustomModal(true)}

@@ -11,10 +11,10 @@ const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div id="layout-container" className="min-h-screen bg-gray-50 dark:bg-dark-bg transition-colors duration-200 flex flex-col">
+    <div id="layout-container" className="min-h-screen bg-gray-50 dark:bg-dark-bg transition-colors duration-200 flex flex-col lg:min-w-[1400px]">
       {/* Header with Navigation */}
       <header id="main-header" className="bg-white dark:bg-dark-surface shadow-lg border-b border-gray-200 dark:border-dark-border transition-all duration-200">
-        <div id="header-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div id="header-content" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div id="header-inner" className="flex justify-between h-16">
             <div id="logo-container" className="flex items-center">
               <h1 id="app-title" className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
@@ -187,13 +187,13 @@ const Layout: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in w-full">
+      <main id="main-content" className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in w-full">
         <Outlet />
       </main>
 
       {/* Footer */}
       <footer id="main-footer" className="mt-auto bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border transition-all duration-200">
-        <div id="footer-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="footer-content" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div id="footer-inner" className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div id="footer-info" className="text-center md:text-left">
               <p className="text-sm text-gray-600 dark:text-gray-400">

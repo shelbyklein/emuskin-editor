@@ -8,7 +8,7 @@ interface DeviceInfoProps {
   orientation?: 'portrait' | 'landscape';
 }
 
-const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, orientation = 'portrait' }) => {
+const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, scale, orientation = 'portrait' }) => {
   if (!device) return null;
 
   // Swap dimensions for landscape
@@ -28,6 +28,9 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, orientation = 'portrait
         </span>
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
           <strong className="mr-1">Physical:</strong> {physicalWidth} × {physicalHeight}
+        </span>
+        <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+          <strong className="mr-1">Scale:</strong> {Math.round(scale * 100)}%
         </span>
       </div>
     </div>

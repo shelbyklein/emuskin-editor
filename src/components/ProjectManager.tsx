@@ -2,7 +2,13 @@
 import React, { useState } from 'react';
 import { useProject } from '../contexts/ProjectContext';
 
-const ProjectManager: React.FC = () => {
+interface ProjectManagerProps {
+  onSave?: () => void;
+  hasUnsavedChanges?: boolean;
+  showSavedMessage?: boolean;
+}
+
+const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChanges = false, showSavedMessage = false }) => {
   const { currentProject, projects, createProject, loadProject, deleteProject } = useProject();
   const [showProjectList, setShowProjectList] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -67,6 +73,29 @@ const ProjectManager: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
             </svg>
           </button>
+          
+          {/* Save Button */}
+          {currentProject && onSave && (
+            <button
+              id="save-project-button"
+              onClick={onSave}
+              className={`p-1.5 transition-colors ${
+                showSavedMessage
+                  ? 'text-green-600 dark:text-green-400'
+                  : hasUnsavedChanges
+                  ? 'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
+                  : 'text-gray-400 dark:text-gray-600'
+              }`}
+              title={showSavedMessage ? 'Saved!' : hasUnsavedChanges ? 'Save project (Cmd/Ctrl+S)' : 'No changes to save'}
+              aria-label="Save project"
+              disabled={!hasUnsavedChanges && !showSavedMessage}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M7.707 14.707a1 1 0 01-1.414 0L3 11.414V17a1 1 0 001 1h12a1 1 0 001-1v-5.586l-3.293 3.293a1 1 0 01-1.414 0L10 12.414l-2.293 2.293z" />
+                <path d="M10 2a1 1 0 011 1v5.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 8.586V3a1 1 0 011-1z" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

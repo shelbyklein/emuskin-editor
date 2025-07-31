@@ -687,31 +687,13 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
-        {/* Save Button, Orientation Toggle and Copy */}
+        {/* Orientation Toggle and Copy */}
         {currentProject && (
           <div className="flex items-center space-x-2">
-            {/* Save Button */}
-            <button
-              onClick={handleSave}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                hasUnsavedChanges
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-              }`}
-              title="Save project"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
-              </svg>
-              <span className="text-sm font-medium">
-                {showSavedMessage ? 'Saved!' : hasUnsavedChanges ? 'Save' : 'Saved'}
-              </span>
-            </button>
-            
             {/* Orientation Toggle */}
             <button
               onClick={handleOrientationToggle}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
               title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
             >
               <svg 
@@ -749,13 +731,17 @@ const Editor: React.FC = () => {
         )}
         
         {/* Right side - Project Manager */}
-        <ProjectManager />
+        <ProjectManager 
+          onSave={handleSave}
+          hasUnsavedChanges={hasUnsavedChanges}
+          showSavedMessage={showSavedMessage}
+        />
       </div>
 
       {/* Two Column Layout */}
-      <div id="editor-layout" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="editor-layout" className="flex flex-col lg:flex-row gap-6">
         {/* Left Column - Form, Controls and Image Upload */}
-        <div id="editor-left-column" className="space-y-6">
+        <div id="editor-left-column" className="space-y-6 w-full lg:w-[280px] lg:flex-shrink-0">
           {/* Show configuration prompt if console/device not selected */}
           {!selectedConsole || !selectedDevice ? (
             <div id="configuration-prompt" className="card animate-slide-up">
@@ -836,7 +822,7 @@ const Editor: React.FC = () => {
         </div>
 
         {/* Right Column - Canvas and JSON Preview */}
-        <div id="editor-right-column" className="space-y-6">
+        <div id="editor-right-column" className="space-y-6 flex-1 min-w-0">
           {/* Canvas Area */}
           <div id="canvas-section" className="card">
             <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
