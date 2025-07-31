@@ -65,6 +65,14 @@ const Editor: React.FC = () => {
 
   // Track if we're saving to prevent state reset
   const isSavingRef = useRef(false);
+  
+  // Track the latest values from SkinEditPanel callbacks to avoid stale state issues
+  const latestSkinData = useRef({
+    name: '',
+    identifier: '',
+    console: '',
+    device: ''
+  });
 
   // Set default skin name if empty
   useEffect(() => {
@@ -81,12 +89,17 @@ const Editor: React.FC = () => {
       return;
     }
     
-    // Only update skin name/identifier if they're substantially different
-    // This prevents overwriting user input that hasn't been saved yet
-    if (currentProject.name !== skinName || currentProject.identifier !== skinIdentifier) {
-      setSkinName(currentProject.name);
-      setSkinIdentifier(currentProject.identifier);
-    }
+    // Always update skin name/identifier from the current project to ensure UI consistency
+    setSkinName(currentProject.name);
+    setSkinIdentifier(currentProject.identifier);
+    
+    // Reset the latest data ref when loading a project
+    latestSkinData.current = {
+      name: currentProject.name,
+      identifier: currentProject.identifier,
+      console: currentProject.console?.shortName || '',
+      device: currentProject.device?.model || ''
+    };
     
     // Check if this is a project that hasn't been configured yet
     const isUnconfiguredProject = !currentProject.hasBeenConfigured;
@@ -159,6 +172,14 @@ const Editor: React.FC = () => {
       saveProject({ hasBeenConfigured: true });
     }
   }, [currentProject, currentProject?.currentOrientation, getOrientationData, saveProject]);
+  
+  // Watch for project name and identifier changes to update UI immediately
+  useEffect(() => {
+    if (currentProject && !isSavingRef.current) {
+      setSkinName(currentProject.name);
+      setSkinIdentifier(currentProject.identifier);
+    }
+  }, [currentProject?.name, currentProject?.identifier, currentProject?.lastModified]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
@@ -1132,63 +1153,66 @@ const Editor: React.FC = () => {
         devices={devices}
         controls={controls}
         onSkinNameChange={(newName) => {
+          console.log('🔵 Editor: onSkinNameChange called with:', newName);
+          console.log('🔵 Editor: currentProject exists?', !!currentProject);
+          
+          // Track the latest value to avoid stale state issues
+          latestSkinData.current.name = newName;
+          
+          // Update local state immediately for responsive UI
           setSkinName(newName);
-          // Save the name to the project immediately or create project if none exists
+          console.log('🔵 Editor: setSkinName called with:', newName);
+          
+          // Don't save here - wait for all data to be collected
           if (currentProject) {
-            saveProject({ name: newName });
+            console.log('🔵 Editor: Project exists, will save all data in device callback');
           } else {
-            // If no project exists, create one first
-            const projectId = createProject(newName, {
-              identifier: skinIdentifier,
-              console: selectedConsoleData,
-              device: selectedDeviceData
-            });
-            console.log('Created new project for skin name change:', projectId);
+            console.log('🔵 Editor: No current project, waiting for device callback');
           }
+          // Don't create project here - wait for all data to be set
         }}
         onSkinIdentifierChange={(newIdentifier) => {
+          // Track the latest value to avoid stale state issues
+          latestSkinData.current.identifier = newIdentifier;
+          
+          // Update local state immediately for responsive UI  
           setSkinIdentifier(newIdentifier);
-          // Save the identifier to the project immediately or create project if none exists
+          
+          // Don't save here - wait for all data to be collected
           if (currentProject) {
-            saveProject({ identifier: newIdentifier });
-          } else {
-            // If no project exists, create one first
-            const projectId = createProject(skinName || 'Untitled Skin', {
-              identifier: newIdentifier,
-              console: selectedConsoleData,
-              device: selectedDeviceData
-            });
-            console.log('Created new project for identifier change:', projectId);
+            console.log('🔵 Editor: Project exists, will save all data in device callback');
           }
+          // Don't create project here - wait for all data to be set
         }}
         onConsoleChange={(newConsole) => {
+          // Track the latest value to avoid stale state issues
+          latestSkinData.current.console = newConsole;
+          
           setSelectedConsole(newConsole);
           // Clear controls when console changes
           if (newConsole !== selectedConsole) {
             setControls([]);
           }
           
-          // Find the console data object
-          const consoleData = consoles.find(c => c.shortName === newConsole) || null;
-          
-          // Save console data and mark as configured if both console and device are set
+          // Don't save here - wait for all data to be collected
           if (currentProject) {
-            const isFullyConfigured = !!(newConsole && selectedDevice);
-            saveProject({ 
-              console: consoleData,
-              hasBeenConfigured: isFullyConfigured 
-            });
-          } else {
-            // If no project exists, create one first
-            const projectId = createProject(skinName || 'Untitled Skin', {
-              identifier: skinIdentifier,
-              console: consoleData,
-              device: selectedDeviceData
-            });
-            console.log('Created new project for console change:', projectId);
+            console.log('🔵 Editor: Project exists, will save all data in device callback');
           }
+          // Don't create project here - wait for device change which is called last
         }}
         onDeviceChange={(newDevice) => {
+          console.log('🔵 Editor: onDeviceChange called with:', newDevice);
+          console.log('🔵 Editor: Current state at device change:', {
+            skinName,
+            skinIdentifier,
+            selectedConsole,
+            currentProject: !!currentProject
+          });
+          console.log('🔵 Editor: Latest tracked values:', latestSkinData.current);
+          
+          // Track the latest device value
+          latestSkinData.current.device = newDevice;
+          
           setSelectedDevice(newDevice);
           // Clear controls when device changes
           if (newDevice !== selectedDevice) {
@@ -1198,21 +1222,51 @@ const Editor: React.FC = () => {
           // Find the device data object
           const deviceData = devices.find(d => d.model === newDevice) || null;
           
-          // Save device data and mark as configured if both console and device are set
           if (currentProject) {
-            const isFullyConfigured = !!(selectedConsole && newDevice);
+            console.log('🔵 Editor: Updating existing project with ALL data');
+            
+            // Get the console data object
+            const consoleData = consoles.find(c => c.shortName === latestSkinData.current.console) || null;
+            
+            // Save ALL data in one comprehensive call
+            const isFullyConfigured = !!(latestSkinData.current.console && newDevice);
+            
+            console.log('🔵 Editor: Saving comprehensive update:', {
+              name: latestSkinData.current.name || currentProject.name,
+              identifier: latestSkinData.current.identifier || currentProject.identifier,
+              console: consoleData,
+              device: deviceData,
+              hasBeenConfigured: isFullyConfigured
+            });
+            
             saveProject({ 
+              name: latestSkinData.current.name || currentProject.name,
+              identifier: latestSkinData.current.identifier || currentProject.identifier,
+              console: consoleData,
               device: deviceData,
               hasBeenConfigured: isFullyConfigured 
             });
           } else {
-            // If no project exists, create one first
-            const projectId = createProject(skinName || 'Untitled Skin', {
-              identifier: skinIdentifier,
-              console: selectedConsoleData,
-              device: deviceData
+            // Use the latest tracked values instead of potentially stale state
+            const finalName = latestSkinData.current.name || 'Untitled Skin';
+            const finalIdentifier = latestSkinData.current.identifier || 'com.playcase.default.skin';
+            const finalConsole = latestSkinData.current.console;
+            
+            console.log('🔵 Editor: Creating new project with LATEST tracked data:', {
+              name: finalName,
+              identifier: finalIdentifier,
+              console: finalConsole,
+              device: newDevice
             });
-            console.log('Created new project for device change:', projectId);
+            
+            // Create project with all current form data (since this is called last)
+            const projectId = createProject(finalName, {
+              identifier: finalIdentifier,
+              console: consoles.find(c => c.shortName === finalConsole) || null,
+              device: deviceData,
+              hasBeenConfigured: true
+            });
+            console.log('🔵 Editor: Created project with ID:', projectId);
           }
         }}
       />

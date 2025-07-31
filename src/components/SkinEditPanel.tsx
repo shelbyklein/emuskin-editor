@@ -42,11 +42,24 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   
   // Update local state when props change
   useEffect(() => {
+    console.log('🔵 SkinEditPanel: useEffect updating local state from props:', {
+      skinName,
+      skinIdentifier,
+      selectedConsole,
+      selectedDevice,
+      isOpen
+    });
     setLocalSkinName(skinName);
     setLocalSkinIdentifier(skinIdentifier);
     setLocalSelectedConsole(selectedConsole);
     setLocalSelectedDevice(selectedDevice);
     setErrors({});
+    console.log('🔵 SkinEditPanel: Local state updated to:', {
+      localSkinName: skinName,
+      localSkinIdentifier: skinIdentifier,
+      localSelectedConsole: selectedConsole,
+      localSelectedDevice: selectedDevice
+    });
   }, [isOpen, skinName, skinIdentifier, selectedConsole, selectedDevice]);
   
   // Handle escape key
@@ -91,21 +104,45 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   };
   
   const handleSave = () => {
-    if (!validateInputs()) return;
+    console.log('🔵 SkinEditPanel: handleSave called', {
+      localSkinName,
+      localSkinIdentifier,
+      localSelectedConsole,
+      localSelectedDevice
+    });
+    
+    if (!validateInputs()) {
+      console.log('❌ SkinEditPanel: Validation failed');
+      return;
+    }
     
     // Check if console or device change would affect existing controls
     if (controls.length > 0 && (localSelectedConsole !== selectedConsole || localSelectedDevice !== selectedDevice)) {
       const confirmed = window.confirm(
         'Changing the console or device will reset all placed controls. Are you sure you want to continue?'
       );
-      if (!confirmed) return;
+      if (!confirmed) {
+        console.log('❌ SkinEditPanel: User cancelled confirmation dialog');
+        return;
+      }
     }
     
-    // Apply changes
+    console.log('🟢 SkinEditPanel: About to call callbacks...');
+    
+    // Apply changes - call all callbacks to ensure state updates
+    console.log('📞 Calling onSkinNameChange with:', localSkinName);
     onSkinNameChange(localSkinName);
+    
+    console.log('📞 Calling onSkinIdentifierChange with:', localSkinIdentifier);
     onSkinIdentifierChange(localSkinIdentifier);
+    
+    console.log('📞 Calling onConsoleChange with:', localSelectedConsole);
     onConsoleChange(localSelectedConsole);
+    
+    console.log('📞 Calling onDeviceChange with:', localSelectedDevice);
     onDeviceChange(localSelectedDevice);
+    
+    console.log('🟢 SkinEditPanel: All callbacks completed, closing modal');
     onClose();
   };
   
@@ -134,20 +171,22 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     <>
       {/* Backdrop */}
       <div 
+        id="skin-edit-panel-backdrop"
         className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
         onClick={handleCancel}
       />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+      <div id="skin-edit-panel-container" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div id="skin-edit-panel-modal" className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div id="skin-edit-panel-content" className="p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div id="skin-edit-panel-header" className="flex justify-between items-center mb-6">
+            <h2 id="skin-edit-panel-title" className="text-xl font-bold text-gray-900 dark:text-white">
               {!selectedConsole && !selectedDevice ? 'Configure New Skin' : 'Edit Skin Settings'}
             </h2>
             <button
+              id="skin-edit-panel-close-button"
               onClick={handleCancel}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
               title="Close (Esc)"
@@ -159,9 +198,9 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-6">
+          <div id="skin-edit-panel-form" className="space-y-6">
             {/* Skin Name */}
-            <div>
+            <div id="skin-edit-panel-name-section">
               <label htmlFor="edit-skinName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Skin Name
               </label>
@@ -169,17 +208,21 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 type="text"
                 id="edit-skinName"
                 value={localSkinName}
-                onChange={(e) => setLocalSkinName(e.target.value)}
+                onChange={(e) => {
+                  console.log('🔵 SkinEditPanel: edit-skinName input changed to:', e.target.value);
+                  setLocalSkinName(e.target.value);
+                  console.log('🔵 SkinEditPanel: setLocalSkinName called with:', e.target.value);
+                }}
                 className={`w-full input-field ${errors.name ? 'border-red-500' : ''}`}
                 placeholder="My Custom Skin"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                <p id="skin-edit-panel-name-error" className="mt-1 text-sm text-red-500">{errors.name}</p>
               )}
             </div>
 
             {/* Skin Identifier */}
-            <div>
+            <div id="skin-edit-panel-identifier-section">
               <label htmlFor="edit-skinIdentifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Skin Identifier
               </label>
@@ -192,20 +235,20 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 placeholder="com.playcase.default.skin"
               />
               {errors.identifier ? (
-                <p className="mt-1 text-sm text-red-500">{errors.identifier}</p>
+                <p id="skin-edit-panel-identifier-error" className="mt-1 text-sm text-red-500">{errors.identifier}</p>
               ) : (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p id="skin-edit-panel-identifier-help" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Use reverse domain notation (e.g., com.yourname.skinname)
                 </p>
               )}
             </div>
 
             {/* Console Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div id="skin-edit-panel-console-section">
+              <label id="skin-edit-panel-console-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Console System
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div id="skin-edit-panel-console-grid" className="grid grid-cols-4 gap-2">
                 {consoles.map((console) => {
                   // Map console names to icon filenames
                   const iconMap: Record<string, string> = {
@@ -225,6 +268,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                   return (
                     <button
                       key={console.shortName}
+                      id={`skin-edit-panel-console-${console.shortName}`}
                       type="button"
                       onClick={() => setLocalSelectedConsole(console.shortName)}
                       className={`
@@ -251,12 +295,12 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 })}
               </div>
               {errors.console && (
-                <p className="mt-1 text-sm text-red-500">{errors.console}</p>
+                <p id="skin-edit-panel-console-error" className="mt-1 text-sm text-red-500">{errors.console}</p>
               )}
             </div>
 
             {/* Device Selection */}
-            <div>
+            <div id="skin-edit-panel-device-section">
               <label htmlFor="edit-device" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 iPhone Model
               </label>
@@ -274,20 +318,22 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 ))}
               </select>
               {errors.device && (
-                <p className="mt-1 text-sm text-red-500">{errors.device}</p>
+                <p id="skin-edit-panel-device-error" className="mt-1 text-sm text-red-500">{errors.device}</p>
               )}
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-8 space-y-3">
+          <div id="skin-edit-panel-actions" className="mt-8 space-y-3">
             <button
+              id="skin-edit-panel-save-button"
               onClick={handleSave}
               className="w-full px-4 py-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700"
             >
               Save Settings
             </button>
             <button
+              id="skin-edit-panel-cancel-button"
               onClick={handleCancel}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
