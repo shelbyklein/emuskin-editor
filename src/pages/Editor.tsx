@@ -48,6 +48,8 @@ const Editor: React.FC = () => {
       Object.values(thumbstickImages).forEach(url => {
         URL.revokeObjectURL(url);
       });
+      // Reset edit panel tracking
+      hasShownEditPanelRef.current = null;
     };
   }, []);
   const { settings } = useEditor();
@@ -108,9 +110,10 @@ const Editor: React.FC = () => {
       // Reset the mounted flag to prevent marking as unsaved during load
       hasMountedRef.current = false;
       
-      // Show edit panel for new projects
-      if (isNewProject) {
+      // Show edit panel for new projects (only once per project)
+      if (isNewProject && hasShownEditPanelRef.current !== currentProject.id) {
         setIsEditPanelOpen(true);
+        hasShownEditPanelRef.current = currentProject.id;
       }
     }
   }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
@@ -177,6 +180,8 @@ const Editor: React.FC = () => {
 
   // Track if component has mounted
   const hasMountedRef = useRef(false);
+  // Track if we've shown the edit panel for this project
+  const hasShownEditPanelRef = useRef<string | null>(null);
   
   // Track changes to mark as unsaved (but not on initial load)
   useEffect(() => {

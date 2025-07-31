@@ -216,22 +216,54 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
 
             {/* Console Selection */}
             <div>
-              <label htmlFor="edit-console" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Console System
               </label>
-              <select
-                id="edit-console"
-                value={localSelectedConsole}
-                onChange={(e) => setLocalSelectedConsole(e.target.value)}
-                className={`w-full input-field ${errors.console ? 'border-red-500' : ''}`}
-              >
-                <option value="">Select a console...</option>
-                {consoles.map((console) => (
-                  <option key={console.shortName} value={console.shortName}>
-                    {console.console}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-4 gap-2">
+                {consoles.map((console) => {
+                  // Map console names to icon filenames
+                  const iconMap: Record<string, string> = {
+                    'gbc': 'gbc.png',
+                    'gba': 'gba.png',
+                    'nds': 'ds.png',
+                    'nes': 'nes.png',
+                    'snes': 'snes.png',
+                    'n64': 'n64.png',
+                    'sg': 'genesis.png',
+                    'ps1': 'ps1.png'
+                  };
+                  
+                  const iconPath = iconMap[console.shortName] ? `/assets/consoles/${iconMap[console.shortName]}` : null;
+                  const isSelected = localSelectedConsole === console.shortName;
+                  
+                  return (
+                    <button
+                      key={console.shortName}
+                      type="button"
+                      onClick={() => setLocalSelectedConsole(console.shortName)}
+                      className={`
+                        flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all
+                        ${isSelected 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }
+                      `}
+                      title={console.console}
+                    >
+                      {iconPath && (
+                        <img 
+                          src={iconPath} 
+                          alt={console.console}
+                          className="w-8 h-8 mb-1 object-contain"
+                        />
+                      )}
+                      <span className={`text-xs font-medium ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                        {console.shortName.toUpperCase()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
               {errors.console && (
                 <p className="mt-1 text-sm text-red-500">{errors.console}</p>
               )}
