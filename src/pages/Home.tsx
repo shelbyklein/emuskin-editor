@@ -1,23 +1,35 @@
 // Home page displaying all saved skin projects
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContext';
+import { useAuth } from '../contexts/AuthContext';
 import { indexedDBManager } from '../utils/indexedDB';
 import ImportButton from '../components/ImportButton';
+import LoginModal from '../components/LoginModal';
 import { ControlMapping, ScreenMapping } from '../types';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { projects, loadProject, deleteProject, createProject, clearProject } = useProject();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  // Filter projects to show only current user's projects
+  const userProjects = useMemo(() => {
+    return projects.filter(project => 
+      !project.userId || // Show legacy projects without userId
+      (user && project.userId === user.id) // Show projects belonging to current user
+    );
+  }, [projects, user]);
 
   // Load preview images for projects
   useEffect(() => {
     const loadImages = async () => {
       const images: { [key: string]: string } = {};
       
-      for (const project of projects) {
+      for (const project of userProjects) {
         if (project.backgroundImage?.hasStoredImage && project.id) {
           try {
             const imageData = await indexedDBManager.getImage(project.id);
@@ -38,11 +50,18 @@ const Home: React.FC = () => {
 
     // Cleanup URLs on unmount
     return () => {
-      Object.values(projectImages).forEach(url => URL.revokeObjectURL(url));
+      setProjectImages(prevImages => {
+        Object.values(prevImages).forEach(url => URL.revokeObjectURL(url));
+        return {};
+      });
     };
-  }, [projects]);
+  }, [userProjects]);
 
   const handleCreateNew = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     clearProject(); // Clear any current project
     const projectId = createProject('New Skin');
     loadProject(projectId);
@@ -119,7 +138,9 @@ const Home: React.FC = () => {
                 Emulator Skin Generator
               </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Create custom skins for Delta and Gamma emulators
+                {isAuthenticated && user 
+                  ? `Welcome back, ${user.displayName}!` 
+                  : 'Create custom skins for Delta and Gamma emulators'}
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -141,7 +162,63 @@ const Home: React.FC = () => {
 
       {/* Projects Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {projects.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16">
+            <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
+        ) : !isAuthenticated ? (
+          <div id="login-prompt" className="text-center py-16 max-w-2xl mx-auto">
+            <svg className="mx-auto h-20 w-20 text-blue-500 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Sign in to Create Your Skins
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+              Create an account or sign in to start designing custom emulator skins. 
+              Your projects will be saved to your account and accessible from any device.
+            </p>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Benefits of signing in:</h3>
+              <ul className="text-left inline-block space-y-2 text-gray-600 dark:text-gray-400">
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Save unlimited skin projects</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Access your projects from any device</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Share skins with the community (coming soon)</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Automatic backups and version history</span>
+                </li>
+              </ul>
+            </div>
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2 mx-auto"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span>Sign in with Playcase</span>
+            </button>
+          </div>
+        ) : userProjects.length === 0 ? (
           <div id="empty-state" className="text-center py-16">
             <svg className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -160,8 +237,48 @@ const Home: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div id="projects-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {projects.map((project) => (
+          <div>
+            {/* User Profile Section */}
+            {user && (
+              <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {user.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user.displayName}
+                        className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-700"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-medium">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        {user.displayName}
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {userProjects.length} {userProjects.length === 1 ? 'project' : 'projects'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                      Member since today
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Projects Section */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Projects</h2>
+            </div>
+            
+            <div id="projects-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {userProjects.map((project) => (
               <div
                 key={project.id}
                 id={`project-card-${project.id}`}
@@ -233,9 +350,16 @@ const Home: React.FC = () => {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>
+      
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+      />
     </div>
   );
 };

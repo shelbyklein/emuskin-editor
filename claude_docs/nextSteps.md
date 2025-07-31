@@ -2,220 +2,140 @@
 
 ## Immediate Priorities (Next Session)
 
-### 1. Fix Nintendo DS Screen Management (BUG-001)
-- **Purpose**: Ensure DS always has exactly 2 screens
+### 1. Backend API Development
+- **Purpose**: Enable cloud sync and multi-device access for authenticated users
 - **Implementation**:
-  - Add validation in ScreenPalette to prevent DS screen deletion
-  - Modify Canvas to handle DS screens specially
-  - Add screen count validation when changing consoles
-  - Consider making DS screens non-deletable in UI
-  - Fix duplicate screen creation when switching consoles
+  - Set up Node.js/Express backend with JWT validation
+  - Create database schema for users, projects, and images
+  - Implement project CRUD endpoints with user ownership
+  - Add image upload/storage endpoints
+  - Deploy to cloud platform (Heroku, AWS, etc.)
+  - Update ProjectContext to sync with API when authenticated
 
-### 2. Add Thumbstick Images to IndexedDB
-- **Purpose**: Persist thumbstick images across sessions
-- **Implementation**:
-  - Store thumbstick images in IndexedDB like background images
-  - Update ProjectContext save/load to handle thumbstick data
-  - Clean up old blob URLs when loading new images
-  - Handle image data in project export/import
-
-### 3. Landscape Orientation Support
-- **Purpose**: Enable skin creation for landscape mode
-- **Implementation**:
-  - Add orientation selector in device panel or edit panel
-  - Swap width/height when landscape selected
-  - Update canvas dimensions appropriately
-  - Ensure controls/screens adapt to rotated view
-  - Update export to include orientation in JSON
-
-### 4. Undo/Redo Functionality
+### 2. Undo/Redo Functionality
 - **Purpose**: Allow users to undo mistakes and redo actions
 - **Implementation**:
-  - Create history stack for all actions
+  - Create history stack for all actions (max 50 states)
   - Track control/screen changes
   - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
   - Visual undo/redo buttons in toolbar
-  - Limit history to reasonable number of states
+  - Memory-efficient state storage
 
-### 5. Keyboard Shortcuts
+### 3. Keyboard Shortcuts Enhancement
 - **Purpose**: Improve productivity for power users
 - **Implementation**:
-  - Delete key for removing selected items
-  - Arrow keys for fine positioning
-  - Cmd/Ctrl+C/V for copy/paste
-  - Cmd/Ctrl+S for quick save
-  - Escape to deselect
+  - Arrow keys for fine positioning (1px, 10px with Shift)
+  - Cmd/Ctrl+C/V for copy/paste controls
+  - Cmd/Ctrl+D for duplicate selected
+  - Cmd/Ctrl+A for select all
+  - Tab/Shift+Tab for cycling through controls
 
-## Completed Features (Reference)
-
-### 1. ✅ Import Functionality for Existing Skins [COMPLETED]
-- **Purpose**: Allow users to load and edit existing .deltaskin/.gammaskin files
+### 4. Success/Error Toast Notifications
+- **Purpose**: Better UX than alert() dialogs
 - **Implementation**:
-  - ✅ Added ImportButton component to Editor and Home pages
-  - ✅ Uses JSZip to parse uploaded skin files
-  - ✅ Extracts info.json and parses controls/screens
-  - ✅ Loads background images from ZIP
-  - ✅ Handles format differences (standard/edgeToEdge representations)
-  - ✅ Validates imported data before loading
-  - ✅ Auto-detects device model from mappingSize
-  - ✅ Maps console identifiers to internal shortnames
-- **Completed**: Import button now available on both Home and Editor pages
+  - Create Toast component with auto-dismiss
+  - Replace all alert() calls with toasts
+  - Different styles for success/error/info
+  - Stack multiple toasts if needed
+  - Non-blocking user experience
 
-### 2. ✅ Complete Custom Button Creator [COMPLETED]
-- **Current State**: Fully functional custom button creator
+### 5. Control Alignment Tools
+- **Purpose**: Precise control positioning
+- **Implementation**:
+  - Align selected controls (left, right, center, top, bottom)
+  - Distribute controls evenly
+  - Match sizes between controls
+  - Visual alignment guides when dragging
+
+## Completed Features (Recent)
+
+### ✅ WordPress JWT Authentication [COMPLETED]
 - **Implemented**:
-  - ✅ Custom buttons created with unique IDs and labels
-  - ✅ Multi-input arrays supported (e.g., ["a", "b"] for A+B)
-  - ✅ Custom labels display in Canvas
-  - ✅ Labels editable in ControlPropertiesPanel
-  - ✅ Buttons persist with projects and export correctly
-- **Completed**: Custom buttons now fully operational
+  - Switched from OAuth to JWT for simplicity
+  - LoginModal with email/password authentication
+  - JWT token decoding for user data
+  - Fixed WordPress REST API endpoint format (?rest_route=)
+  - Removed OAuth complexity and costs
+  - Works with Simple JWT Login plugin
+- **Status**: Fully functional with playcase.gg credentials
 
-### 3. ✅ Menu Insets Panel [COMPLETED]
-- **Purpose**: Allow configuration of system UI safe areas
+### ✅ Fix Save Button Issues [COMPLETED]
 - **Implemented**:
-  - ✅ Created MenuInsetsPanel component with toggle and slider
-  - ✅ Bottom value configurable from 0-100%
-  - ✅ Visual overlay on canvas showing inset area
-  - ✅ JSON structure includes menuInsets after extendedEdges
-  - ✅ Real-time preview updates
-- **Completed**: Menu insets fully operational for iPhone home indicator
+  - Fixed race condition in save functionality
+  - Resolved edit panel auto-opening bug
+  - Fixed SkinEditPanel data persistence
+  - Added hasBeenConfigured flag to projects
+- **Status**: Save functionality working reliably
 
-### 4. ✅ Thumbstick Support [COMPLETED]
-- **Purpose**: Support custom thumbstick images for N64, NDS, and SG
+### ✅ Landscape Orientation Support [COMPLETED]
 - **Implemented**:
-  - ✅ Added thumbstick property to ControlMapping type
-  - ✅ Image upload in ControlPropertiesPanel
-  - ✅ Width/height dimension controls
-  - ✅ Canvas renders thumbstick images centered
-  - ✅ JSON includes thumbstick data before inputs
-  - ✅ Thumbstick images included in exports
-  - ✅ Proper input mapping to analogStick directions
-- **Completed**: Full thumbstick support with custom images
+  - Orientation toggle with separate data storage
+  - Canvas dimension swapping
+  - Export includes both orientations
+  - Copy layout between orientations feature
+- **Status**: Full portrait/landscape support
 
-### 5. ✅ Touch Support for Mobile Devices [COMPLETED]
-- **Purpose**: Enable skin editing on iPads and other touch devices
-- **Implementation**:
-  - ✅ Added touch event handlers (touchstart, touchmove, touchend)
-  - ✅ Parallel implementation to mouse events
-  - ✅ Fixed passive event listener errors with CSS approach
-  - ✅ Added touch-interactive CSS class for proper touch handling
-  - ✅ Full drag and resize support on touch devices
-  - ✅ Maintains all existing mouse functionality
-- **Completed**: Full touch support for all canvas interactions
-
-### 6. ✅ Screen Pills in Game Screens Panel [COMPLETED]
-- **Purpose**: Provide clickable screen management similar to control pills
-- **Implementation**:
-  - ✅ Created ScreenList component with green theme
-  - ✅ Displays screens as clickable pills
-  - ✅ Hover state shows delete button
-  - ✅ Delete confirmation dialog for safety
-  - ✅ Click pills to select and open properties panel
-  - ✅ Updated Canvas to support external screen selection
-  - ✅ Integrated below ScreenPalette in Editor
-- **Completed**: Full screen pill functionality matching control pills
-
-### 7. Landscape Orientation Support
-- **Purpose**: Many skins need both portrait and landscape layouts
-- **Implementation**:
-  - Add orientation toggle in Editor
-  - Duplicate controls/screens for landscape
-  - Update Canvas to handle orientation switching
-  - Modify export to include both orientations in JSON
-  - Consider auto-rotate functionality
-- **Time Estimate**: 3-4 hours
+### ✅ Touch Support [COMPLETED]
+- **Implemented**:
+  - Full touch event handling for mobile devices
+  - Works on iPads and touch screens
+  - Drag and resize with touch gestures
+- **Status**: Fully touch-enabled
 
 ## Secondary Priorities
 
-### 4. Keyboard Shortcuts
-- Cmd/Ctrl+S: Save current project
-- Cmd/Ctrl+E: Export skin
-- Cmd/Ctrl+Z: Undo (requires history implementation)
-- Cmd/Ctrl+Shift+Z: Redo
-- Arrow keys: Nudge selected item by 1px (10px with Shift)
-- Escape: Deselect current item
-
-### 5. Control Alignment Tools
-- Align selected controls (left, right, center, top, bottom, middle)
-- Distribute controls evenly (horizontal/vertical spacing)
-- Match sizes (width, height, both)
-- Visual guides when dragging near other controls
-
-### 6. Improved Visual Feedback
-- Loading states for async operations
-- Success/error toasts instead of alerts
-- Progress indicator for export process
-- Hover states for all interactive elements
-
-## Nice-to-Have Features
-
-### 7. Template System
+### 6. Project Templates
 - Pre-made layouts for common configurations
-- Save current layout as reusable template
-- Share templates between projects
+- Save current layout as template
+- Template marketplace/sharing
 
-### 8. Advanced Grid Options
-- Different grid sizes for X and Y axes
-- Grid offset controls
-- Hex grid option for certain button layouts
+### 7. Batch Operations
+- Multi-select controls with Shift+click
+- Group move/resize operations
+- Bulk property editing
 
-### 9. Batch Operations
-- Select multiple controls (with Shift+click or drag selection)
-- Move/resize multiple controls together
-- Copy/paste controls between projects
+### 8. Advanced Export Options
+- Preview skin in mock emulator
+- Export statistics and validation report
+- Batch export for multiple devices
 
-### 10. Export Previews
-- Show how the skin will look in the emulator
-- Simulate button presses
-- Preview both orientations side-by-side
+### 9. Performance Optimizations
+- Virtual scrolling for large control lists
+- Canvas rendering optimizations
+- Lazy loading for images
 
-## Technical Improvements
-
-### 11. Performance Optimizations
-- Virtualize control/screen lists for large numbers of items
-- Debounce project saves more intelligently
-- Lazy load large images
-- Use Web Workers for ZIP generation
-
-### 12. Testing Infrastructure
-- Unit tests for utility functions
-- Integration tests for critical workflows
-- E2E tests for export functionality
-- Visual regression tests for Canvas
-
-### 13. Accessibility
-- Keyboard navigation for all features
+### 10. Accessibility Improvements
+- Full keyboard navigation
 - Screen reader support
 - High contrast mode
-- Focus indicators
+- Focus management
 
 ## Long-Term Vision
 
-### 14. Cloud Features
-- User accounts with cloud storage
-- Share skins publicly
-- Browse community creations
-- Version control for skins
+### Cloud Features
+- Project sharing and collaboration
+- Version history
+- Team workspaces
+- Public skin gallery
 
-### 15. Advanced Editing
-- Layers system for complex layouts
-- Control grouping
-- Advanced animation support
-- Conditional visibility based on orientation
+### Platform Expansion
+- Native desktop app (Electron)
+- iPad-specific features
+- CLI tools for automation
+- Plugin system for extensions
 
-### 16. Platform Expansion
-- iPad skin support
-- Export to other emulator formats
-- Native app versions
-- CLI tool for batch processing
+### Advanced Editing
+- Layers system
+- Masking and clipping
+- Animation keyframes
+- Conditional logic
 
 ## Recommended Next Session Plan
 
-1. **Fix Nintendo DS Screen Management (BUG-001)** - Critical bug affecting DS skin creation
-2. **Add Thumbstick Image Storage to IndexedDB** - Complete the thumbstick feature with persistence
-3. **Add Landscape Orientation Support** - Essential for many games that require landscape layouts
-4. **Add Basic Keyboard Shortcuts** - Improves workflow significantly with minimal effort
-5. **Implement Success/Error Toasts** - Better UX than current alert() calls
+1. **Backend API Development** - Critical for user data persistence
+2. **Undo/Redo Functionality** - Most requested feature
+3. **Toast Notifications** - Quick UX improvement
+4. **Keyboard Shortcuts** - Power user productivity
+5. **Control Alignment Tools** - Precision editing
 
-These priorities focus on fixing critical bugs and completing partially implemented features before adding new functionality.
+Focus on backend first to enable cloud sync, then enhance the editing experience with undo/redo and better keyboard support.

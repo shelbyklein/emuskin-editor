@@ -131,8 +131,9 @@ export const authAPI = {
     try {
       const wordpressUrl = import.meta.env.VITE_WORDPRESS_URL || 'https://playcase.gg';
       
-      // Validate token with WordPress (using Simple JWT Login)
-      const response = await fetch(`${wordpressUrl}/?rest_route=/simple-jwt-login/v1/auth/validate`, {
+      // Try to validate token with WordPress (using Simple JWT Login)
+      // Note: We don't use the response since Simple JWT Login might not properly validate
+      await fetch(`${wordpressUrl}/?rest_route=/simple-jwt-login/v1/auth/validate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token.replace(/"/g, '')}`,

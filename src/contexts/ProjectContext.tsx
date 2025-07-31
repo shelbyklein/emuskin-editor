@@ -3,6 +3,7 @@ import React, { createContext, useContext, ReactNode, useEffect, useCallback } f
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
+import { useAuth } from './AuthContext';
 
 interface OrientationData {
   controls: ControlMapping[];
@@ -136,6 +137,7 @@ const migrateProject = (project: Project): Project => {
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
   const [projects, setProjects] = useLocalStorage<Project[]>('emuskin-projects', []);
   const [currentProjectId, setCurrentProjectId] = useLocalStorage<string | null>('emuskin-current-project', null);
+  const { user } = useAuth();
 
   // Migrate projects on load
   const migratedProjects = projects.map(migrateProject);
@@ -158,6 +160,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       id: `project-${Date.now()}`,
       name,
       ...initialData,
+      userId: user?.id, // Automatically assign current user's ID
+      createdAt: Date.now(), // Add creation timestamp
       orientations: {
         portrait: { ...defaultOrientationData },
         landscape: { ...defaultOrientationData }

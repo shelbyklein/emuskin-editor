@@ -75,6 +75,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              autoComplete="email"
               required
               autoFocus
             />
@@ -90,6 +91,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              autoComplete="current-password"
               required
             />
           </div>

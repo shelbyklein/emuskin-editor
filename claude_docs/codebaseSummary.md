@@ -14,11 +14,13 @@ emuskin-generator/
 ├── src/
 │   ├── components/     # Reusable UI components
 │   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize for controls and screens
+│   │   ├── AuthButton.tsx       # Login/logout button with WordPress integration
 │   │   ├── ConsoleIcon.tsx      # Console system icon component
 │   │   ├── ControlList.tsx      # Control list panel with delete confirmations
 │   │   ├── ControlPalette.tsx   # Button selection palette
 │   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
+│   │   ├── LoginModal.tsx       # Email/password login modal for JWT auth
 │   │   ├── MenuInsetsPanel.tsx  # Menu insets configuration
 │   │   ├── DeviceInfo.tsx       # Device metrics display
 │   │   ├── ExportButton.tsx     # Export to .deltaskin/.gammaskin with validation
@@ -42,8 +44,10 @@ emuskin-generator/
 │   ├── hooks/          # Custom React hooks
 │   │   └── useLocalStorage.tsx # LocalStorage with JSON parsing
 │   ├── utils/          # Helper functions
-│   │   └── indexedDB.ts # IndexedDB manager for large file storage
+│   │   ├── indexedDB.ts # IndexedDB manager for large file storage
+│   │   └── api.ts      # API utilities for WordPress authentication
 │   ├── contexts/       # React contexts
+│   │   ├── AuthContext.tsx    # WordPress user authentication state
 │   │   ├── EditorContext.tsx  # Editor settings (grid, etc) with persistence
 │   │   ├── ProjectContext.tsx # Project management state with screens
 │   │   └── ThemeContext.tsx   # Dark/light theme state
@@ -219,6 +223,16 @@ emuskin-generator/
 - ✅ Fixed all TypeScript build errors - clean production build
 - ✅ Verified thumbstick image persistence works correctly
 - ✅ Added copy layout between orientations feature with confirmation
+- ✅ Switched from OAuth to JWT authentication with Simple JWT Login
+- ✅ Fixed WordPress REST API endpoint format (?rest_route=)
+- ✅ Implemented JWT token decoding for user data extraction
+- ✅ Created LoginModal component for email/password authentication
+- ✅ Removed OAuth callback complexity in favor of direct login
+- ✅ Implemented user authentication gate on Home page
+- ✅ Projects are now tied to user accounts with userId and createdAt fields
+- ✅ Non-authenticated users see login prompt with benefits
+- ✅ Added user profile section showing project count
+- ✅ AuthButton added to mobile menu for full mobile support
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

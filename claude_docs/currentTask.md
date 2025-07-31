@@ -18,7 +18,7 @@
 - ✅ Add copy layout between orientations feature
 - ✅ Remove auto-save and add manual save button
 - ✅ Fix save button functionality - resolved race condition in state management
-- ✅ Begin WordPress user account integration - authentication foundation implemented
+- ✅ Implement WordPress user account integration - JWT authentication fully implemented
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
 
@@ -216,6 +216,24 @@
   - Created comprehensive API utilities for backend communication (projects, auth, images)
   - Implemented mock authentication system for development
   - All components ready for WordPress JWT integration once backend is deployed
+- ✅ Switched from OAuth to JWT authentication for simplicity and cost
+  - Replaced miniOrange OAuth with Simple JWT Login plugin (free)
+  - Fixed API endpoint URLs to use ?rest_route= format (WordPress configuration)
+  - Implemented JWT decoding to extract user data directly from token
+  - Updated login flow to use email/password with modal interface
+  - Removed OAuth callback page and related complexity
+  - Authentication now works with sklein91@gmail.com credentials
+  - Fixed "Authentication is not enabled" error by using correct email parameter
+  - All OAuth-related code cleaned up and removed
+- ✅ Implemented user authentication gate on Home page
+  - Non-authenticated users see login prompt with benefits list
+  - Authenticated users see their projects and profile section
+  - Projects are filtered to show only current user's projects
+  - Legacy projects without userId are still shown to maintain backward compatibility
+  - ProjectContext automatically assigns userId to new projects
+  - Added createdAt timestamp to track project creation
+  - Added AuthButton to mobile menu for mobile authentication
+  - All created skins are now tied to user accounts
 
 ## Next Steps
 1. Implement undo/redo functionality

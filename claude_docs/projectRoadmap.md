@@ -139,9 +139,19 @@
 - [x] Create ScreenList component for screen management
 - [x] Add clickable screen pills in Game Screens panel
 
+- [x] Implement landscape orientation support
+- [x] Add orientation toggle with separate data storage
+- [x] Fix TypeScript build errors for production
+- [x] Add copy layout between orientations feature
+- [x] Fix save button race condition issues
+- [x] Implement WordPress user authentication with JWT
+- [x] Switch from OAuth to JWT for simpler authentication
+- [x] Create LoginModal for email/password login
+- [x] Fix WordPress API endpoint format issues
+
 ## Future Scalability Considerations
-- User accounts and cloud storage
+- User accounts and cloud storage (JWT auth foundation complete)
 - iPad support (touch support already implemented)
-- Landscape orientation support
 - Community template sharing
 - Collaborative editing features
+- Backend API for project sync

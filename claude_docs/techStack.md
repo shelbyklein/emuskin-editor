@@ -23,6 +23,12 @@
 - **Storage**: LocalStorage for settings, IndexedDB for projects and images
 - **File Handling**: JSZip for generating skin files
 
+## Authentication
+- **WordPress Integration**: Simple JWT Login plugin (free)
+- **Auth Method**: JWT tokens with email/password login
+- **Token Storage**: LocalStorage with JWT decoding for user data
+- **API Format**: WordPress REST API with ?rest_route= parameter
+
 ## Development Tools
 - **Version Control**: Git with GitHub
 - **Testing**: Vitest + React Testing Library

@@ -187,6 +187,11 @@ const Layout: React.FC = () => {
               >
                 About
               </Link>
+              
+              {/* Authentication in Mobile Menu */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 px-3">
+                <AuthButton />
+              </div>
             </div>
           </div>
         )}
