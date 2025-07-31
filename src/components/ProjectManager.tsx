@@ -9,18 +9,8 @@ interface ProjectManagerProps {
 }
 
 const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChanges = false, showSavedMessage = false }) => {
-  const { currentProject, projects, createProject, loadProject, deleteProject } = useProject();
+  const { currentProject, projects, loadProject, deleteProject } = useProject();
   const [showProjectList, setShowProjectList] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [showNewProject, setShowNewProject] = useState(false);
-
-  const handleNewProject = () => {
-    if (newProjectName.trim()) {
-      createProject(newProjectName.trim());
-      setNewProjectName('');
-      setShowNewProject(false);
-    }
-  };
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString('en-US', {
@@ -50,18 +40,6 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChang
 
         {/* Action Buttons */}
         <div id="project-actions" className="flex items-center space-x-1">
-          <button
-            id="new-project-button"
-            onClick={() => setShowNewProject(true)}
-            className="p-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            title="New Project"
-            aria-label="Create new project"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          
           <button
             id="open-project-button"
             onClick={() => setShowProjectList(!showProjectList)}
@@ -98,43 +76,6 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChang
           )}
         </div>
       </div>
-
-      {/* New Project Dialog */}
-      {showNewProject && (
-        <div id="new-project-dialog" className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 z-10">
-          <h3 id="new-project-dialog-title" className="text-sm font-medium text-gray-900 dark:text-white mb-2">New Project</h3>
-          <input
-            id="new-project-name"
-            type="text"
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleNewProject()}
-            placeholder="Project name"
-            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            autoFocus
-          />
-          <div id="new-project-actions" className="flex justify-end space-x-2 mt-2">
-            <button
-              id="new-project-cancel"
-              onClick={() => {
-                setShowNewProject(false);
-                setNewProjectName('');
-              }}
-              className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              id="new-project-create"
-              onClick={handleNewProject}
-              disabled={!newProjectName.trim()}
-              className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded"
-            >
-              Create
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Project List */}
       {showProjectList && projects.length > 0 && (
