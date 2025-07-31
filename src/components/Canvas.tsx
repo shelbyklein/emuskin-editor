@@ -76,6 +76,11 @@ const Canvas: React.FC<CanvasProps> = ({
   const [selectedScreen, setSelectedScreen] = useState<number | null>(null);
   const { settings } = useEditor();
   const { isDark } = useTheme();
+  
+  // Debug log for background image
+  useEffect(() => {
+    console.log('Canvas backgroundImage prop:', backgroundImage ? backgroundImage.substring(0, 50) + '...' : 'null');
+  }, [backgroundImage]);
 
   // Sync external selection with internal state
   useEffect(() => {
@@ -1451,7 +1456,12 @@ const Canvas: React.FC<CanvasProps> = ({
                   )}
 
                   {/* Control buttons above element like macOS stoplight */}
-                  <div className="absolute -top-8 left-0 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div 
+                    className="absolute -top-6 left-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      gap: screen.outputFrame.width < 65 ? Math.max((screen.outputFrame.width - 50) * 0.4, 0) + 'px' : '6px'
+                    }}
+                  >
                     {/* Settings button - green */}
                     <button
                       id={`screen-settings-${index}`}
@@ -1676,7 +1686,12 @@ const Canvas: React.FC<CanvasProps> = ({
                   ) : null}
 
                   {/* Control buttons above element like macOS stoplight */}
-                  <div className="absolute -top-8 left-0 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div 
+                    className="absolute -top-6 left-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      gap: control.frame.width < 65 ? Math.max((control.frame.width - 50) * 0.4, 0) + 'px' : '6px'
+                    }}
+                  >
                     {/* Settings button - green */}
                     <button
                       id={`control-settings-${index}`}

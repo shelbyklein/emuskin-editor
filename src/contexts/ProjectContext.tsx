@@ -1,5 +1,5 @@
 // Project context for managing skin projects with local storage
-import React, { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
@@ -54,12 +54,14 @@ interface ProjectContextType {
   loadProject: (id: string) => void;
   saveProject: (updates: Partial<Project>) => void;
   saveProjectImage: (file: File, orientation?: 'portrait' | 'landscape') => Promise<void>;
+  storeTemporaryImage: (file: File, orientation?: 'portrait' | 'landscape') => Promise<string>;
   deleteProject: (id: string) => void;
   clearProject: () => void;
   getCurrentOrientation: () => 'portrait' | 'landscape';
   setOrientation: (orientation: 'portrait' | 'landscape') => void;
   getOrientationData: (orientation?: 'portrait' | 'landscape') => OrientationData | null;
   saveOrientationData: (data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => void;
+  saveProjectWithOrientation: (projectUpdates: Partial<Project>, orientationData?: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => void;
 }
 
 const defaultOrientationData: OrientationData = {
@@ -139,13 +141,21 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [currentProjectId, setCurrentProjectId] = useLocalStorage<string | null>('emuskin-current-project', null);
   const { user } = useAuth();
 
-  // Migrate projects on load
-  const migratedProjects = projects.map(migrateProject);
-  if (JSON.stringify(projects) !== JSON.stringify(migratedProjects)) {
-    setProjects(migratedProjects);
-  }
-
-  const currentProject = migratedProjects.find(p => p.id === currentProjectId) || null;
+  // Always migrate projects on the fly to ensure we have the latest data
+  const activeProjects = projects.map(migrateProject);
+  const currentProject = activeProjects.find(p => p.id === currentProjectId) || null;
+  
+  // Debug log currentProject changes
+  useEffect(() => {
+    if (currentProject) {
+      console.log('ProjectContext: currentProject updated:', {
+        id: currentProject.id,
+        name: currentProject.name,
+        identifier: currentProject.identifier,
+        lastModified: currentProject.lastModified
+      });
+    }
+  }, [currentProject?.name, currentProject?.identifier, currentProject?.lastModified]);
 
   // Initialize IndexedDB on mount
   useEffect(() => {
@@ -176,7 +186,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   };
 
   const loadProject = async (id: string) => {
-    const project = migratedProjects.find(p => p.id === id);
+    const project = activeProjects.find(p => p.id === id);
     if (project) {
       setCurrentProjectId(id);
       
@@ -184,13 +194,27 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       const orientations = ['portrait', 'landscape'] as const;
       for (const orientation of orientations) {
         const orientationData = project.orientations?.[orientation];
+        console.log(`Checking ${orientation} orientation:`, {
+          hasOrientationData: !!orientationData,
+          hasBackgroundImage: !!orientationData?.backgroundImage,
+          hasStoredImage: orientationData?.backgroundImage?.hasStoredImage
+        });
         if (orientationData?.backgroundImage?.hasStoredImage) {
           try {
-            const storedImage = await indexedDBManager.getImage(`${id}-${orientation}`);
+            console.log(`Loading ${orientation} image for project ${id}`);
+            const storedImage = await indexedDBManager.getImage(`${id}-${orientation}`, 'background');
+            console.log(`getImage result for ${orientation}:`, storedImage);
             if (storedImage) {
+              console.log(`Found ${orientation} image in IndexedDB:`, storedImage.fileName, storedImage.url);
               // Update the project with the restored image URL
               setProjects(prev => prev.map(p => {
                 if (p.id === id && p.orientations) {
+                  // Clean up old blob URL if it exists
+                  const oldUrl = p.orientations[orientation].backgroundImage?.url;
+                  if (oldUrl && oldUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(oldUrl);
+                  }
+                  
                   return {
                     ...p,
                     orientations: {
@@ -198,8 +222,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
                       [orientation]: {
                         ...p.orientations[orientation],
                         backgroundImage: {
-                          ...p.orientations[orientation].backgroundImage!,
-                          url: storedImage.url
+                          fileName: storedImage.fileName,
+                          url: storedImage.url,
+                          hasStoredImage: true
                         }
                       }
                     }
@@ -248,32 +273,69 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   const saveProject = useCallback((updates: Partial<Project>) => {
     if (!currentProjectId) {
+      console.error('No project to save - currentProjectId is null');
       return;
     }
 
-    setProjects(prev => prev.map(project => {
-      if (project.id === currentProjectId) {
-        return {
-          ...project,
-          ...updates,
-          lastModified: Date.now()
-        };
+    console.log('ProjectContext.saveProject called:', {
+      projectId: currentProjectId,
+      updates: {
+        name: updates.name,
+        identifier: updates.identifier,
+        consoleShortName: updates.console?.shortName,
+        deviceModel: updates.device?.model
       }
-      return project;
-    }));
+    });
+
+    setProjects(prev => {
+      const newProjects = prev.map(project => {
+        if (project.id === currentProjectId) {
+          // Ensure we maintain the migrated structure when updating
+          const migratedProject = migrateProject(project);
+          const updatedProject = {
+            ...migratedProject,
+            ...updates,
+            lastModified: Date.now()
+          };
+          console.log('Project updated in state:', {
+            id: updatedProject.id,
+            name: updatedProject.name,
+            console: updatedProject.console?.shortName
+          });
+          return updatedProject;
+        }
+        return project;
+      });
+      console.log('All projects after update:', newProjects.map(p => ({ id: p.id, name: p.name })));
+      return newProjects;
+    });
   }, [currentProjectId]);
 
   const saveProjectImage = useCallback(async (file: File, orientation: 'portrait' | 'landscape' = 'portrait') => {
-    if (!currentProjectId || !currentProject) return;
+    console.log('saveProjectImage called:', {
+      hasCurrentProjectId: !!currentProjectId,
+      currentProjectId,
+      hasCurrentProject: !!currentProject,
+      fileName: file.name,
+      orientation
+    });
+    
+    if (!currentProjectId || !currentProject) {
+      console.log('Cannot save image - no current project');
+      return;
+    }
     
     try {
-      // Store image in IndexedDB with orientation suffix
-      const imageKey = `${currentProjectId}-${orientation}`;
-      const url = await indexedDBManager.storeImage(imageKey, file, 'background');
+      console.log('Storing image in IndexedDB...');
+      // Store image in IndexedDB - the storeImage function will add the orientation to the ID
+      const url = await indexedDBManager.storeImage(`${currentProjectId}-${orientation}`, file, 'background');
+      console.log('Image stored in IndexedDB, URL:', url);
       
       // Update project with new image info
+      console.log('Updating project state with image info...');
       setProjects(prev => prev.map(project => {
         if (project.id === currentProjectId && project.orientations) {
+          console.log(`Updating ${orientation} orientation with image data`);
           return {
             ...project,
             orientations: {
@@ -292,11 +354,27 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         }
         return project;
       }));
+      console.log('Project state updated with image');
     } catch (error) {
       console.error('Failed to save image to IndexedDB:', error);
       throw error;
     }
   }, [currentProjectId, currentProject]);
+
+  const storeTemporaryImage = useCallback(async (file: File, orientation: 'portrait' | 'landscape' = 'portrait'): Promise<string> => {
+    if (!currentProjectId) {
+      throw new Error('No project loaded');
+    }
+    
+    try {
+      // Store image in IndexedDB but don't update project state
+      const url = await indexedDBManager.storeImage(`${currentProjectId}-${orientation}`, file, 'background');
+      return url;
+    } catch (error) {
+      console.error('Failed to store temporary image:', error);
+      throw error;
+    }
+  }, [currentProjectId]);
 
   const deleteProject = async (id: string) => {
     // Delete associated images from IndexedDB
@@ -343,10 +421,20 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   const saveOrientationData = useCallback((data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => {
     if (!currentProjectId || !currentProject?.orientations) {
+      console.error('Cannot save orientation data - no project or orientations');
       return;
     }
     
     const targetOrientation = orientation || getCurrentOrientation();
+    
+    console.log('ProjectContext.saveOrientationData called:', {
+      projectId: currentProjectId,
+      targetOrientation,
+      dataKeys: Object.keys(data),
+      numControls: data.controls?.length,
+      numScreens: data.screens?.length,
+      hasBackgroundImage: !!data.backgroundImage
+    });
     
     setProjects(prev => prev.map(project => {
       if (project.id === currentProjectId && project.orientations) {
@@ -365,6 +453,75 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       return project;
     }));
   }, [currentProjectId, currentProject?.orientations, getCurrentOrientation]);
+  
+  // Combined save function that updates both project and orientation data atomically
+  const saveProjectWithOrientation = useCallback((
+    projectUpdates: Partial<Project>,
+    orientationData?: Partial<OrientationData>,
+    orientation?: 'portrait' | 'landscape'
+  ) => {
+    if (!currentProjectId) {
+      console.error('No project to save - currentProjectId is null');
+      return;
+    }
+    
+    const targetOrientation = orientation || getCurrentOrientation();
+    
+    console.log('ProjectContext.saveProjectWithOrientation called:', {
+      projectId: currentProjectId,
+      projectUpdates: {
+        name: projectUpdates.name,
+        identifier: projectUpdates.identifier,
+        consoleShortName: projectUpdates.console?.shortName,
+        deviceModel: projectUpdates.device?.model
+      },
+      orientationDataKeys: orientationData ? Object.keys(orientationData) : [],
+      targetOrientation
+    });
+    
+    setProjects(prev => {
+      const newProjects = prev.map(project => {
+        if (project.id === currentProjectId) {
+          // Migrate if needed
+          const migratedProject = migrateProject(project);
+          
+          // Build the updated project with both project and orientation updates
+          let updatedProject = {
+            ...migratedProject,
+            ...projectUpdates,
+            lastModified: Date.now()
+          };
+          
+          // Apply orientation data if provided
+          if (orientationData && updatedProject.orientations) {
+            updatedProject = {
+              ...updatedProject,
+              orientations: {
+                ...updatedProject.orientations,
+                [targetOrientation]: {
+                  ...updatedProject.orientations[targetOrientation],
+                  ...orientationData
+                }
+              }
+            };
+          }
+          
+          console.log('Project updated with combined data:', {
+            id: updatedProject.id,
+            name: updatedProject.name,
+            console: updatedProject.console?.shortName,
+            hasOrientationData: !!orientationData
+          });
+          
+          return updatedProject;
+        }
+        return project;
+      });
+      
+      console.log('All projects after combined update:', newProjects.map(p => ({ id: p.id, name: p.name })));
+      return newProjects;
+    });
+  }, [currentProjectId, getCurrentOrientation]);
 
   return (
     <ProjectContext.Provider value={{
@@ -374,12 +531,14 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       loadProject,
       saveProject,
       saveProjectImage,
+      storeTemporaryImage,
       deleteProject,
       clearProject,
       getCurrentOrientation,
       setOrientation,
       getOrientationData,
-      saveOrientationData
+      saveOrientationData,
+      saveProjectWithOrientation
     }}>
       {children}
     </ProjectContext.Provider>

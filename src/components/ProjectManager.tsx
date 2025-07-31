@@ -93,8 +93,8 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChang
                 }`}
               >
                 <button
-                  onClick={() => {
-                    loadProject(project.id);
+                  onClick={async () => {
+                    await loadProject(project.id);
                     setShowProjectList(false);
                   }}
                   className="flex-1 text-left"

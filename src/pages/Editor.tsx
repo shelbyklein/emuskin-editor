@@ -46,22 +46,40 @@ const Editor: React.FC = () => {
     return () => {
       // Clean up thumbstick URLs
       Object.values(thumbstickImages).forEach(url => {
-        URL.revokeObjectURL(url);
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
       });
+      // Clean up background image URL
+      if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
+        URL.revokeObjectURL(uploadedImage.url);
+      }
       // Don't reset edit panel tracking - let it persist across component mounts
     };
-  }, []);
+  }, [thumbstickImages, uploadedImage]);
   const { settings } = useEditor();
   const { 
     currentProject, 
     createProject,
     saveProject, 
-    saveProjectImage, 
+    saveProjectImage,
+    storeTemporaryImage,
     getCurrentOrientation, 
     setOrientation, 
     getOrientationData, 
-    saveOrientationData
+    saveOrientationData,
+    saveProjectWithOrientation
   } = useProject();
+  
+  // Debug log current project changes
+  useEffect(() => {
+    console.log('Editor: currentProject changed:', {
+      id: currentProject?.id,
+      name: currentProject?.name,
+      identifier: currentProject?.identifier,
+      lastModified: currentProject?.lastModified
+    });
+  }, [currentProject]);
 
   // Track if we're saving to prevent state reset
   const isSavingRef = useRef(false);
@@ -80,6 +98,16 @@ const Editor: React.FC = () => {
       setSkinName('Untitled Skin');
     }
   }, [currentProject, skinName]);
+  
+  // Keep latestSkinData.current in sync with state
+  useEffect(() => {
+    latestSkinData.current = {
+      name: skinName,
+      identifier: skinIdentifier,
+      console: selectedConsole,
+      device: selectedDevice
+    };
+  }, [skinName, skinIdentifier, selectedConsole, selectedDevice]);
 
 
   // Load project data when current project changes or orientation changes
@@ -88,6 +116,26 @@ const Editor: React.FC = () => {
     if (!currentProject || isSavingRef.current) {
       return;
     }
+    
+    // Skip if this is just a lastModified update (not actual data change)
+    // Compare everything except lastModified to determine if data actually changed
+    const isJustTimestampUpdate = 
+      skinName === currentProject.name && 
+      skinIdentifier === currentProject.identifier &&
+      selectedConsole === currentProject.console?.shortName &&
+      selectedDevice === currentProject.device?.model;
+      
+    if (isJustTimestampUpdate) {
+      console.log('Skipping project load - only timestamp changed');
+      return;
+    }
+    
+    console.log('Loading project data into UI:', {
+      oldName: skinName,
+      newName: currentProject.name,
+      oldIdentifier: skinIdentifier,
+      newIdentifier: currentProject.identifier
+    });
     
     // Always update skin name/identifier from the current project to ensure UI consistency
     setSkinName(currentProject.name);
@@ -100,6 +148,14 @@ const Editor: React.FC = () => {
       console: currentProject.console?.shortName || '',
       device: currentProject.device?.model || ''
     };
+    
+    // Also update selectedConsoleData and selectedDeviceData
+    if (currentProject.console) {
+      setSelectedConsoleData(currentProject.console);
+    }
+    if (currentProject.device) {
+      setSelectedDeviceData(currentProject.device);
+    }
     
     // Check if this is a project that hasn't been configured yet
     const isUnconfiguredProject = !currentProject.hasBeenConfigured;
@@ -131,17 +187,24 @@ const Editor: React.FC = () => {
       setHistoryIndex(0);
       
       // Handle background image
-      if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
-        setUploadedImage({
-          file: new File([], orientationData.backgroundImage.fileName || 'image'),
-          url: orientationData.backgroundImage.url
-        });
-      } else if (!orientationData.backgroundImage || !orientationData.backgroundImage.hasStoredImage) {
-        // Only clear if there's truly no image for this orientation
+      if (orientationData.backgroundImage) {
+        if (orientationData.backgroundImage.url && !orientationData.backgroundImage.url.startsWith('blob:')) {
+          // Only set if we have a valid non-blob URL (from IndexedDB)
+          setUploadedImage({
+            file: new File([], orientationData.backgroundImage.fileName || 'image'),
+            url: orientationData.backgroundImage.url
+          });
+        } else if (orientationData.backgroundImage.hasStoredImage) {
+          // Image should be in IndexedDB but URL is missing or is a blob URL
+          // The loadProject function should have already loaded it
+          console.log('Waiting for image to be loaded from IndexedDB...');
+        } else {
+          // No image stored
+          setUploadedImage(null);
+        }
+      } else {
         setUploadedImage(null);
       }
-      // If hasStoredImage is true but URL is null, keep the current uploadedImage
-      // This happens when we don't save blob URLs
     }
     
     if (currentProject.console) {
@@ -162,10 +225,21 @@ const Editor: React.FC = () => {
     // Show edit panel for unconfigured projects (only once per project)
     // Only show for projects that truly need configuration (no console OR no device)
     const needsConfiguration = !currentProject.console || !currentProject.device;
+    console.log('Edit panel check:', {
+      projectId: currentProject.id,
+      isUnconfiguredProject,
+      needsConfiguration,
+      hasShownEditPanelRef: hasShownEditPanelRef.current,
+      willShowPanel: isUnconfiguredProject && needsConfiguration && hasShownEditPanelRef.current !== currentProject.id
+    });
+    
     if (isUnconfiguredProject && needsConfiguration && hasShownEditPanelRef.current !== currentProject.id) {
       console.log('Opening edit panel for unconfigured project:', currentProject.id);
-      setIsEditPanelOpen(true);
-      hasShownEditPanelRef.current = currentProject.id;
+      // Small delay to ensure component is fully mounted
+      setTimeout(() => {
+        setIsEditPanelOpen(true);
+        hasShownEditPanelRef.current = currentProject.id;
+      }, 100);
     } else if (!needsConfiguration && !currentProject.hasBeenConfigured) {
       // Mark project as configured if it has both console and device but wasn't marked yet
       console.log('Marking project as configured:', currentProject.id);
@@ -180,6 +254,46 @@ const Editor: React.FC = () => {
       setSkinIdentifier(currentProject.identifier);
     }
   }, [currentProject?.name, currentProject?.identifier, currentProject?.lastModified]);
+  
+  // Watch for background image URL updates from IndexedDB loading
+  useEffect(() => {
+    if (currentProject && !isSavingRef.current) {
+      const orientationData = getOrientationData();
+      console.log('Checking for background image update:', {
+        hasOrientationData: !!orientationData,
+        hasBackgroundImage: !!orientationData?.backgroundImage,
+        backgroundImageUrl: orientationData?.backgroundImage?.url,
+        currentUploadedImageUrl: uploadedImage?.url
+      });
+      if (orientationData?.backgroundImage?.url && 
+          orientationData.backgroundImage.url !== uploadedImage?.url) {
+        console.log('Setting uploaded image from loaded URL:', orientationData.backgroundImage.url);
+        // Update with the newly loaded URL from IndexedDB
+        setUploadedImage({
+          file: new File([], orientationData.backgroundImage.fileName || 'image'),
+          url: orientationData.backgroundImage.url
+        });
+      }
+    }
+  }, [currentProject?.orientations, getOrientationData, uploadedImage?.url]);
+  
+  // Handle pending image save after project creation
+  useEffect(() => {
+    if (currentProject && pendingImageSaveRef.current) {
+      const pendingImage = pendingImageSaveRef.current;
+      console.log('Processing pending image save for new project...');
+      
+      saveProjectImage(pendingImage.file, pendingImage.orientation)
+        .then(() => {
+          console.log('Pending image saved successfully');
+          pendingImageSaveRef.current = null;
+        })
+        .catch(error => {
+          console.error('Failed to save pending image:', error);
+          pendingImageSaveRef.current = null;
+        });
+    }
+  }, [currentProject?.id, saveProjectImage]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
@@ -207,70 +321,129 @@ const Editor: React.FC = () => {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
 
   // Manual save function
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
+    console.log('=== SAVE BUTTON CLICKED ===');
+    console.log('Current state:', {
+      hasCurrentProject: !!currentProject,
+      projectId: currentProject?.id,
+      skinName,
+      skinIdentifier,
+      hasUploadedImage: !!uploadedImage,
+      uploadedImageUrl: uploadedImage?.url?.substring(0, 50) + '...',
+      uploadedImageFileName: uploadedImage?.file.name,
+      orientation: getCurrentOrientation()
+    });
+    
     // Set saving flag to prevent state reset
     isSavingRef.current = true;
     
     // If no current project, create one with all the current data
     if (!currentProject) {
-      // Create project with current form data
-      createProject(skinName || 'Untitled Skin', {
-        identifier: skinIdentifier,
+      // Create project with current form data - use state values directly
+      const projectId = createProject(skinName || 'Untitled Skin', {
+        identifier: skinIdentifier || 'com.playcase.default.skin',
         console: selectedConsoleData,
-        device: selectedDeviceData
+        device: selectedDeviceData,
+        hasBeenConfigured: !!(selectedConsoleData && selectedDeviceData)
       });
       
-      // Immediately save orientation data (no setTimeout needed)
+      // Mark that we need to save the image after project creation
+      if (uploadedImage) {
+        console.log('Marking image for save after project creation...');
+        pendingImageSaveRef.current = {
+          file: uploadedImage.file,
+          orientation: getCurrentOrientation()
+        };
+      }
+      
+      // Immediately save orientation data (but not the image - that's handled separately)
       saveOrientationData({
         controls,
         screens,
         menuInsetsEnabled,
-        menuInsetsBottom,
-        backgroundImage: uploadedImage ? {
-          fileName: uploadedImage.file.name,
-          url: null,
-          hasStoredImage: true
-        } : null
+        menuInsetsBottom
+        // Don't include backgroundImage here - it will be saved by saveProjectImage
       });
     } else {
-      // Save project-level data
-      saveProject({
-        name: skinName,
-        identifier: skinIdentifier,
-        console: selectedConsoleData,
-        device: selectedDeviceData
-      });
+      // Save the image to the project if one was uploaded
+      if (uploadedImage) {
+        console.log('Saving image for existing project...');
+        try {
+          console.log('Calling saveProjectImage');
+          await saveProjectImage(uploadedImage.file, getCurrentOrientation());
+          console.log('Image saved successfully');
+        } catch (error) {
+          console.error('Failed to save image to project:', error);
+        }
+      }
       
-      // Save orientation-specific data
-      saveOrientationData({
+      // Save project and orientation data together atomically
+      const projectData = {
+        name: skinName || 'Untitled Skin',
+        identifier: skinIdentifier || 'com.playcase.default.skin',
+        console: selectedConsoleData,
+        device: selectedDeviceData,
+        hasBeenConfigured: !!(selectedConsoleData && selectedDeviceData)
+      };
+      
+      const orientationData = {
         controls,
         screens,
         menuInsetsEnabled,
-        menuInsetsBottom,
-        // Don't save the blob URL, just mark that we have an image
-        backgroundImage: uploadedImage ? {
-          fileName: uploadedImage.file.name,
-          url: null, // Don't save blob URLs to localStorage
-          hasStoredImage: true
-        } : null
+        menuInsetsBottom
+        // Don't include backgroundImage here - saveProjectImage already handles it
+      };
+      
+      console.log('Saving project and orientation data together:', {
+        project: {
+          name: projectData.name,
+          identifier: projectData.identifier,
+          consoleShortName: projectData.console?.shortName,
+          deviceModel: projectData.device?.model,
+          hasBeenConfigured: projectData.hasBeenConfigured
+        },
+        orientation: {
+          orientation: getCurrentOrientation(),
+          numControls: orientationData.controls.length,
+          numScreens: orientationData.screens.length,
+          menuInsetsEnabled: orientationData.menuInsetsEnabled,
+          menuInsetsBottom: orientationData.menuInsetsBottom
+        }
       });
+      
+      // Use the combined save function for atomic update
+      saveProjectWithOrientation(projectData, orientationData);
     }
     
     // Update UI state
+    console.log('Save complete - updating UI state');
     setHasUnsavedChanges(false);
     setShowSavedMessage(true);
     
-    // Hide saved message after 2 seconds and reset saving flag
+    // Reset saving flag immediately after save completes
+    isSavingRef.current = false;
+    
+    // Hide saved message after 2 seconds
     setTimeout(() => {
       setShowSavedMessage(false);
-      isSavingRef.current = false;
+      console.log('Save message hidden');
     }, 2000);
-  }, [currentProject, createProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProject, saveOrientationData]);
+  }, [currentProject, createProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProjectImage, saveProjectWithOrientation, saveOrientationData, getCurrentOrientation]);
 
   // Track if component has mounted
   const hasMountedRef = useRef(false);
   // Track if we've shown the edit panel for this project
   const hasShownEditPanelRef = useRef<string | null>(null);
+  
+  // Reset the edit panel tracking when currentProject changes
+  useEffect(() => {
+    if (currentProject && hasShownEditPanelRef.current !== currentProject.id) {
+      // Reset the ref when we switch to a different project
+      hasShownEditPanelRef.current = null;
+    }
+  }, [currentProject?.id]);
+  // Track if we need to save an image after project creation
+  const pendingImageSaveRef = useRef<{ file: File; orientation: 'portrait' | 'landscape' } | null>(null);
   
   // Track changes to mark as unsaved (but not on initial load or during saves)
   useEffect(() => {
@@ -428,14 +601,23 @@ const Editor: React.FC = () => {
   }, [selectedConsole, consoles, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
+    // Clean up previous blob URL if it exists
+    if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
+      URL.revokeObjectURL(uploadedImage.url);
+    }
+    
+    // Set the uploaded image with the data URL for immediate display
+    console.log('Setting uploaded image with URL:', previewUrl.substring(0, 50) + '...');
     setUploadedImage({ file, url: previewUrl });
     
-    // Save image to IndexedDB if we have a current project
+    // Store image temporarily in IndexedDB if we have a current project
+    // This ensures the image data is preserved but doesn't update the project state
     if (currentProject) {
       try {
-        await saveProjectImage(file, getCurrentOrientation());
+        // Store in IndexedDB but keep using the data URL for display
+        await storeTemporaryImage(file, getCurrentOrientation());
       } catch (error) {
-        console.error('Failed to save image:', error);
+        console.error('Failed to store image temporarily:', error);
         // Still allow the image to be used even if storage fails
       }
     }

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { indexedDBManager } from '../utils/indexedDB';
 import ImportButton from '../components/ImportButton';
 import LoginModal from '../components/LoginModal';
+import ConsoleIcon from '../components/ConsoleIcon';
 import { ControlMapping, ScreenMapping } from '../types';
 
 const Home: React.FC = () => {
@@ -30,12 +31,30 @@ const Home: React.FC = () => {
       const images: { [key: string]: string } = {};
       
       for (const project of userProjects) {
-        if (project.backgroundImage?.hasStoredImage && project.id) {
+        // Check for image in the new orientation-based structure
+        const hasPortraitImage = project.orientations?.portrait?.backgroundImage?.hasStoredImage;
+        const hasLandscapeImage = project.orientations?.landscape?.backgroundImage?.hasStoredImage;
+        // Also check legacy structure for backward compatibility
+        const hasLegacyImage = project.backgroundImage?.hasStoredImage;
+        
+        if (project.id && (hasPortraitImage || hasLandscapeImage || hasLegacyImage)) {
           try {
-            const imageData = await indexedDBManager.getImage(project.id);
+            // Try portrait image first (most common)
+            let imageData = null;
+            if (hasPortraitImage) {
+              imageData = await indexedDBManager.getImage(`${project.id}-portrait`);
+            }
+            // Fall back to landscape if no portrait
+            if (!imageData && hasLandscapeImage) {
+              imageData = await indexedDBManager.getImage(`${project.id}-landscape`);
+            }
+            // Fall back to legacy format
+            if (!imageData && hasLegacyImage) {
+              imageData = await indexedDBManager.getImage(project.id);
+            }
+            
             if (imageData) {
-              const blob = new Blob([imageData.data]);
-              images[project.id] = URL.createObjectURL(blob);
+              images[project.id] = imageData.url;
             }
           } catch (error) {
             console.error('Failed to load image for project:', project.id, error);
@@ -48,28 +67,22 @@ const Home: React.FC = () => {
 
     loadImages();
 
-    // Cleanup URLs on unmount
-    return () => {
-      setProjectImages(prevImages => {
-        Object.values(prevImages).forEach(url => URL.revokeObjectURL(url));
-        return {};
-      });
-    };
+    // No cleanup needed as we're using IndexedDB URLs directly
   }, [userProjects]);
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
       return;
     }
     clearProject(); // Clear any current project
     const projectId = createProject('New Skin');
-    loadProject(projectId);
+    await loadProject(projectId);
     navigate('/editor');
   };
 
-  const handleOpenProject = (projectId: string) => {
-    loadProject(projectId);
+  const handleOpenProject = async (projectId: string) => {
+    await loadProject(projectId);
     navigate('/editor');
   };
 
@@ -84,19 +97,6 @@ const Home: React.FC = () => {
     }
   };
 
-  const getConsoleDisplayName = (shortName: string): string => {
-    const consoleNames: { [key: string]: string } = {
-      'gbc': 'Game Boy Color',
-      'gba': 'Game Boy Advance',
-      'nds': 'Nintendo DS',
-      'nes': 'NES',
-      'snes': 'Super Nintendo',
-      'n64': 'Nintendo 64',
-      'sg': 'Sega Genesis',
-      'ps1': 'PlayStation'
-    };
-    return consoleNames[shortName] || shortName.toUpperCase();
-  };
 
   const handleImport = async (
     importedName: string,
@@ -301,6 +301,13 @@ const Home: React.FC = () => {
                     </div>
                   )}
                   
+                  {/* Console Icon Badge */}
+                  {project.console && (
+                    <div className="absolute top-2 right-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-1.5">
+                      <ConsoleIcon console={project.console.shortName} className="w-6 h-6" />
+                    </div>
+                  )}
+                  
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <span className="text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -317,8 +324,9 @@ const Home: React.FC = () => {
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                       {project.console && (
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                          {getConsoleDisplayName(project.console.shortName)}
+                        <span className="flex items-center space-x-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                          <ConsoleIcon console={project.console.shortName} className="w-4 h-4" />
+                          <span>{project.console.shortName.toUpperCase()}</span>
                         </span>
                       )}
                       {project.device && (
