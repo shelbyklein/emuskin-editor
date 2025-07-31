@@ -138,6 +138,8 @@
 - [x] Create ControlList component for control management
 - [x] Create ScreenList component for screen management
 - [x] Add clickable screen pills in Game Screens panel
+- [x] Implement lock feature for controls and screens
+- [x] Implement undo/redo functionality with history stack
 
 - [x] Implement landscape orientation support
 - [x] Add orientation toggle with separate data storage

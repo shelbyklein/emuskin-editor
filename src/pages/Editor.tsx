@@ -100,6 +100,15 @@ const Editor: React.FC = () => {
       setMenuInsetsEnabled(orientationData.menuInsetsEnabled || false);
       setMenuInsetsBottom(orientationData.menuInsetsBottom || 0);
       
+      // Initialize history with loaded state
+      setHistory([{
+        controls: orientationData.controls || [],
+        screens: orientationData.screens || [],
+        timestamp: Date.now(),
+        description: 'Load project'
+      }]);
+      setHistoryIndex(0);
+      
       // Handle background image
       if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
         setUploadedImage({
@@ -471,14 +480,115 @@ const Editor: React.FC = () => {
     alert(`Layout copied from ${sourceOrientation} to ${currentOrientation} successfully!`);
   };
 
+  // Initialize history tracking state
+  const [history, setHistory] = useState<Array<{ controls: ControlMapping[]; screens: ScreenMapping[]; timestamp: number; description: string }>>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isHistoryUpdate = useRef(false);
+  const lastPushTime = useRef(0);
+
+  // Push state to history
+  const pushToHistory = useCallback((description: string) => {
+    // Debounce history pushes to avoid too many entries
+    const now = Date.now();
+    if (now - lastPushTime.current < 100) return;
+    lastPushTime.current = now;
+
+    if (isHistoryUpdate.current) return;
+    
+    setHistory(prev => {
+      const newHistory = historyIndex < prev.length - 1 
+        ? prev.slice(0, historyIndex + 1)
+        : [...prev];
+      
+      const newEntry = {
+        controls: [...controls],
+        screens: [...screens],
+        timestamp: now,
+        description
+      };
+      
+      newHistory.push(newEntry);
+      
+      // Limit history to 50 entries
+      if (newHistory.length > 50) {
+        return newHistory.slice(newHistory.length - 50);
+      }
+      
+      return newHistory;
+    });
+    
+    setHistoryIndex(prev => Math.min(prev + 1, 49));
+  }, [controls, screens, historyIndex]);
+
+  // Undo function
+  const handleUndo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    
+    const newIndex = historyIndex - 1;
+    const state = history[newIndex];
+    
+    if (state) {
+      isHistoryUpdate.current = true;
+      setControls(state.controls);
+      setScreens(state.screens);
+      setHistoryIndex(newIndex);
+      setTimeout(() => {
+        isHistoryUpdate.current = false;
+      }, 0);
+    }
+  }, [historyIndex, history]);
+
+  // Redo function
+  const handleRedo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return;
+    
+    const newIndex = historyIndex + 1;
+    const state = history[newIndex];
+    
+    if (state) {
+      isHistoryUpdate.current = true;
+      setControls(state.controls);
+      setScreens(state.screens);
+      setHistoryIndex(newIndex);
+      setTimeout(() => {
+        isHistoryUpdate.current = false;
+      }, 0);
+    }
+  }, [historyIndex, history]);
+
+  // Keyboard event handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Undo: Cmd/Ctrl + Z
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Redo: Cmd/Ctrl + Shift + Z
+      else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   const handleControlsUpdate = (newControls: ControlMapping[]) => {
     // Force a new array reference to ensure React detects the change
     setControls([...newControls]);
+    if (!isHistoryUpdate.current) {
+      pushToHistory('Update controls');
+    }
   };
 
   const handleScreensUpdate = (newScreens: ScreenMapping[]) => {
     // Force a new array reference to ensure React detects the change
     setScreens([...newScreens]);
+    if (!isHistoryUpdate.current) {
+      pushToHistory('Update screens');
+    }
   };
 
   const handleControlSelect = (control: ControlMapping) => {
@@ -492,11 +602,13 @@ const Editor: React.FC = () => {
     }
     // Add new control to the list
     setControls([...controls, control]);
+    pushToHistory('Add control');
   };
 
   const handleControlDelete = (index: number) => {
     const newControls = controls.filter((_, i) => i !== index);
     setControls(newControls);
+    pushToHistory('Delete control');
     // Clear selection if deleted control was selected
     if (selectedControlIndex === index) {
       setSelectedControlIndex(null);
@@ -515,6 +627,7 @@ const Editor: React.FC = () => {
     
     const newScreens = screens.filter((_, i) => i !== index);
     setScreens(newScreens);
+    pushToHistory('Delete screen');
     // Clear selection if deleted screen was selected
     if (selectedScreenIndex === index) {
       setSelectedScreenIndex(null);
@@ -539,6 +652,7 @@ const Editor: React.FC = () => {
     }
     // Add new screen to the list
     setScreens([...screens, screen]);
+    pushToHistory('Add screen');
   };
   
   const handleThumbstickImageUpload = async (file: File, controlIndex: number) => {
@@ -833,7 +947,41 @@ const Editor: React.FC = () => {
           <div id="canvas-section" className="card">
             <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
               <div id="canvas-toolbar" className="flex justify-between items-center">
-                <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
+                <div className="flex items-center space-x-4">
+                  <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
+                  
+                  {/* Undo/Redo Buttons */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={handleUndo}
+                      disabled={historyIndex <= 0}
+                      className={`p-1.5 rounded-lg transition-all duration-200 ${
+                        historyIndex > 0 
+                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' 
+                          : 'bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                      }`}
+                      title="Undo (Cmd/Ctrl+Z)"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={handleRedo}
+                      disabled={historyIndex >= history.length - 1}
+                      className={`p-1.5 rounded-lg transition-all duration-200 ${
+                        historyIndex < history.length - 1 
+                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' 
+                          : 'bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                      }`}
+                      title="Redo (Cmd/Ctrl+Shift+Z)"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
                 
                 {/* Orientation Toggle and Copy */}
                 {currentProject && (

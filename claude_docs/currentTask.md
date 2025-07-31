@@ -19,7 +19,8 @@
 - ✅ Remove auto-save and add manual save button
 - ✅ Fix save button functionality - resolved race condition in state management
 - ✅ Implement WordPress user account integration - JWT authentication fully implemented
-- Implement undo/redo functionality
+- ✅ Implement lock feature for controls and screens - prevents accidental movement
+- ✅ Implement undo/redo functionality - 50-state history with keyboard shortcuts
 - Add keyboard shortcuts for common actions
 
 ## Context
@@ -234,15 +235,26 @@
   - Added createdAt timestamp to track project creation
   - Added AuthButton to mobile menu for mobile authentication
   - All created skins are now tied to user accounts
+- ✅ Implemented lock feature for controls and screens
+  - Added locked boolean property to ControlMapping and ScreenMapping types
+  - Lock button appears in hover menu as yellow circle with lock/unlock icon
+  - Locked items cannot be moved or resized but can still be selected
+  - Prevents accidental movement of carefully positioned elements
+  - Lock state persists with project saves
+  - Visual cursor feedback shows when items are locked (default cursor instead of move)
+  - Works for both controls and screens independently
+- ✅ Implemented undo/redo functionality
+  - Created 50-state history stack tracking all control and screen changes
+  - Keyboard shortcuts: Cmd/Ctrl+Z for undo, Cmd/Ctrl+Shift+Z for redo
+  - Visual undo/redo buttons added to canvas toolbar with hover tooltips
+  - Buttons show disabled state when no more actions to undo/redo
+  - History tracks add, delete, move, resize, and property changes
+  - History initializes when loading projects
+  - Debounced history pushes to avoid excessive entries
+  - Memory-efficient implementation with automatic cleanup
 
 ## Next Steps
-1. Implement undo/redo functionality
-   - Track state changes in history stack (max 50 states)
-   - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
-   - Visual undo/redo buttons in toolbar
-   - Track control/screen add, move, resize, delete actions
-   
-2. Add keyboard shortcuts
+1. Add keyboard shortcuts for common actions
    - Delete/Backspace: Delete selected control/screen
    - Arrow keys: Nudge selected item by 1px (10px with Shift)
    - Cmd/Ctrl+S: Save current project

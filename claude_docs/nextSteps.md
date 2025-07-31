@@ -12,14 +12,14 @@
   - Deploy to cloud platform (Heroku, AWS, etc.)
   - Update ProjectContext to sync with API when authenticated
 
-### 2. Undo/Redo Functionality
-- **Purpose**: Allow users to undo mistakes and redo actions
-- **Implementation**:
-  - Create history stack for all actions (max 50 states)
-  - Track control/screen changes
-  - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
-  - Visual undo/redo buttons in toolbar
-  - Memory-efficient state storage
+### 2. Undo/Redo Functionality ✅ [COMPLETED]
+- **Implemented**:
+  - 50-state history stack tracking all control/screen changes
+  - Keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
+  - Visual undo/redo buttons in canvas toolbar
+  - Tracks add, delete, move, resize, and property changes
+  - Memory-efficient with debounced updates
+- **Status**: Fully functional
 
 ### 3. Keyboard Shortcuts Enhancement
 - **Purpose**: Improve productivity for power users
@@ -48,6 +48,23 @@
   - Visual alignment guides when dragging
 
 ## Completed Features (Recent)
+
+### ✅ Lock Feature for Controls/Screens [COMPLETED]
+- **Implemented**:
+  - Lock button in hover menu prevents movement/resizing
+  - Visual lock/unlock icons with yellow color theme
+  - Locked items can still be selected but not moved
+  - Lock state persists with project saves
+- **Status**: Fully functional
+
+### ✅ Undo/Redo Functionality [COMPLETED] 
+- **Implemented**:
+  - 50-state history stack with automatic cleanup
+  - Visual buttons in canvas toolbar
+  - Keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
+  - Tracks all control/screen modifications
+  - Memory-efficient debounced implementation
+- **Status**: Fully functional
 
 ### ✅ WordPress JWT Authentication [COMPLETED]
 - **Implemented**:
