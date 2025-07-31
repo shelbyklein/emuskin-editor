@@ -90,6 +90,14 @@ const Editor: React.FC = () => {
     
     // Check if this is a project that hasn't been configured yet
     const isUnconfiguredProject = !currentProject.hasBeenConfigured;
+    console.log('Loading project:', {
+      id: currentProject.id,
+      name: currentProject.name,
+      hasConsole: !!currentProject.console,
+      hasDevice: !!currentProject.device,
+      hasBeenConfigured: currentProject.hasBeenConfigured,
+      isUnconfiguredProject
+    });
     
     // Load orientation-specific data
     const orientationData = getOrientationData();
@@ -139,11 +147,18 @@ const Editor: React.FC = () => {
     hasMountedRef.current = false;
     
     // Show edit panel for unconfigured projects (only once per project)
-    if (isUnconfiguredProject && hasShownEditPanelRef.current !== currentProject.id) {
+    // Only show for projects that truly need configuration (no console OR no device)
+    const needsConfiguration = !currentProject.console || !currentProject.device;
+    if (isUnconfiguredProject && needsConfiguration && hasShownEditPanelRef.current !== currentProject.id) {
+      console.log('Opening edit panel for unconfigured project:', currentProject.id);
       setIsEditPanelOpen(true);
       hasShownEditPanelRef.current = currentProject.id;
+    } else if (!needsConfiguration && !currentProject.hasBeenConfigured) {
+      // Mark project as configured if it has both console and device but wasn't marked yet
+      console.log('Marking project as configured:', currentProject.id);
+      saveProject({ hasBeenConfigured: true });
     }
-  }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
+  }, [currentProject, currentProject?.currentOrientation, getOrientationData, saveProject]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
