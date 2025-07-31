@@ -1450,46 +1450,63 @@ const Canvas: React.FC<CanvasProps> = ({
                     </div>
                   )}
 
-                  {/* Lock icon - visible on hover */}
-                  <button
-                    id={`screen-lock-${index}`}
-                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                    style={{ bottom: '3px', left: '33px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const updatedScreens = [...screens];
-                      updatedScreens[index] = { ...screen, locked: !screen.locked };
-                      onScreenUpdate(updatedScreens);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    aria-label={`${screen.locked ? 'Unlock' : 'Lock'} ${screen.label || 'screen'}`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {screen.locked ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                      )}
-                    </svg>
-                  </button>
-
-                  {/* Settings cog icon - visible on hover */}
-                  <button
-                    id={`screen-settings-${index}`}
-                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                    style={{ bottom: '3px', left: '3px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateScreenSelection(index, true);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    aria-label={`Settings for ${screen.label || 'screen'}`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
+                  {/* Control buttons in top-left like macOS stoplight */}
+                  <div className="absolute top-2 left-2 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Settings button - green */}
+                    <button
+                      id={`screen-settings-${index}`}
+                      className="w-4 h-4 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateScreenSelection(index, true);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`Settings for ${screen.label || 'screen'}`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                    
+                    {/* Lock button - yellow */}
+                    <button
+                      id={`screen-lock-${index}`}
+                      className="w-4 h-4 bg-yellow-500 hover:bg-yellow-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updatedScreens = [...screens];
+                        updatedScreens[index] = { ...screen, locked: !screen.locked };
+                        onScreenUpdate(updatedScreens);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`${screen.locked ? 'Unlock' : 'Lock'} ${screen.label || 'screen'}`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {screen.locked ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        )}
+                      </svg>
+                    </button>
+                    
+                    {/* Delete button - red */}
+                    <button
+                      id={`screen-delete-${index}`}
+                      className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteScreen(index);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`Delete ${screen.label || 'screen'}`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
                   {/* Resize handles (visible when selected and not locked) */}
                   {isSelected && !screen.locked && (
@@ -1538,19 +1555,6 @@ const Canvas: React.FC<CanvasProps> = ({
                         onTouchStart={(e) => handleResizeTouchStart(e, index, 'e', 'screen')}
                       />
                       
-                      {/* Delete button */}
-                      <button
-                        className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteScreen(index);
-                        }}
-                        aria-label={`Delete ${screen.label || 'screen'}`}
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
                     </>
                   )}
                 </div>
@@ -1671,46 +1675,63 @@ const Canvas: React.FC<CanvasProps> = ({
                     />
                   ) : null}
 
-                  {/* Lock icon - visible on hover */}
-                  <button
-                    id={`control-lock-${index}`}
-                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                    style={{ bottom: '3px', left: '33px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const updatedControls = [...controls];
-                      updatedControls[index] = { ...control, locked: !control.locked };
-                      onControlUpdate(updatedControls);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    aria-label={`${control.locked ? 'Unlock' : 'Lock'} ${label} control`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {control.locked ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                      )}
-                    </svg>
-                  </button>
-
-                  {/* Settings cog icon - visible on hover */}
-                  <button
-                    id={`control-settings-${index}`}
-                    className="absolute w-6 h-6 bg-gray-700 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                    style={{ bottom: '3px', left: '3px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateControlSelection(index, true);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    aria-label={`Settings for ${label} control`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
+                  {/* Control buttons in top-left like macOS stoplight */}
+                  <div className="absolute top-2 left-2 flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Settings button - green */}
+                    <button
+                      id={`control-settings-${index}`}
+                      className="w-4 h-4 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateControlSelection(index, true);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`Settings for ${label} control`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                    
+                    {/* Lock button - yellow */}
+                    <button
+                      id={`control-lock-${index}`}
+                      className="w-4 h-4 bg-yellow-500 hover:bg-yellow-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updatedControls = [...controls];
+                        updatedControls[index] = { ...control, locked: !control.locked };
+                        onControlUpdate(updatedControls);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`${control.locked ? 'Unlock' : 'Lock'} ${label} control`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {control.locked ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        )}
+                      </svg>
+                    </button>
+                    
+                    {/* Delete button - red */}
+                    <button
+                      id={`control-delete-${index}`}
+                      className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteControl(index);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      aria-label={`Delete ${label} control`}
+                    >
+                      <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
                   {/* Resize handles (visible when selected and not locked) */}
                   {isSelected && !isLocked && (
@@ -1763,20 +1784,6 @@ const Canvas: React.FC<CanvasProps> = ({
                         onTouchStart={(e) => handleResizeTouchStart(e, index, 'e', 'control')}
                       />
                       
-                      {/* Delete button */}
-                      <button
-                        id={`control-delete-${index}`}
-                        className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteControl(index);
-                        }}
-                        aria-label={`Delete ${label} control`}
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
                     </>
                   )}
                 </div>
