@@ -16,6 +16,7 @@
 - ✅ Fix Nintendo DS screen management (prevent deletion)
 - ✅ Add thumbstick image storage to IndexedDB
 - ✅ Add copy layout between orientations feature
+- ✅ Remove auto-save and add manual save button
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
 
@@ -159,6 +160,11 @@
   - saveProject, saveOrientationData, getOrientationData, getCurrentOrientation, setOrientation, saveProjectImage
   - Prevents functions from being recreated on every render
   - Fixes the auto-save useEffect dependency issue
+- ✅ Fixed canvas element position jump issue
+  - Removed auto-save functionality completely
+  - Added manual save button with visual feedback
+  - Added Cmd/Ctrl+S keyboard shortcut for quick saving
+  - Simplified state management and removed race conditions
 
 ## Next Steps
 1. Implement undo/redo functionality

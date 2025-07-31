@@ -18,7 +18,6 @@ interface CanvasProps {
   menuInsetsBottom?: number;
   onControlUpdate: (controls: ControlMapping[]) => void;
   onScreenUpdate: (screens: ScreenMapping[]) => void;
-  onInteractionChange?: (isInteracting: boolean) => void;
   thumbstickImages?: { [controlId: string]: string }; // URLs for thumbstick images
   onThumbstickImageUpload?: (file: File, controlIndex: number) => void;
   selectedControlIndex?: number | null;
@@ -61,7 +60,6 @@ const Canvas: React.FC<CanvasProps> = ({
   menuInsetsBottom = 0,
   onControlUpdate,
   onScreenUpdate,
-  onInteractionChange,
   thumbstickImages = {},
   onThumbstickImageUpload,
   selectedControlIndex,
@@ -126,18 +124,6 @@ const Canvas: React.FC<CanvasProps> = ({
   const resizeThrottleRef = useRef<number | null>(null);
   const lastResizeUpdateRef = useRef<number>(0);
   
-  // Refs to always have latest values in callbacks
-  const controlsRef = useRef(controls);
-  const screensRef = useRef(screens);
-  
-  // Update refs when props change
-  useEffect(() => {
-    controlsRef.current = controls;
-  }, [controls]);
-  
-  useEffect(() => {
-    screensRef.current = screens;
-  }, [screens]);
 
   // Function to update screens and sync mirrored touchscreen controls
   const updateScreensWithMirroredControls = useCallback((updatedScreens: ScreenMapping[]) => {
@@ -149,7 +135,7 @@ const Canvas: React.FC<CanvasProps> = ({
     
     if (bottomScreen && bottomScreen.outputFrame) {
       // Check if any controls need to be updated
-      const updatedControls = controlsRef.current.map(control => {
+      const updatedControls = controls.map(control => {
         if (control.mirrorBottomScreen && control.inputs && 
             typeof control.inputs === 'object' && !Array.isArray(control.inputs) &&
             'x' in control.inputs && 'y' in control.inputs) {
@@ -169,10 +155,10 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Check if any controls were actually updated
       const controlsChanged = updatedControls.some((control, index) => 
-        control.frame?.x !== controlsRef.current[index].frame?.x ||
-        control.frame?.y !== controlsRef.current[index].frame?.y ||
-        control.frame?.width !== controlsRef.current[index].frame?.width ||
-        control.frame?.height !== controlsRef.current[index].frame?.height
+        control.frame?.x !== controls[index].frame?.x ||
+        control.frame?.y !== controls[index].frame?.y ||
+        control.frame?.width !== controls[index].frame?.width ||
+        control.frame?.height !== controls[index].frame?.height
       );
       
       if (controlsChanged) {
@@ -404,11 +390,11 @@ const Canvas: React.FC<CanvasProps> = ({
       
       let width, height;
       if (dragState.itemType === 'control') {
-        const control = controlsRef.current[dragState.itemIndex];
+        const control = controls[dragState.itemIndex];
         width = control.frame?.width || 50;
         height = control.frame?.height || 50;
       } else {
-        const screen = screensRef.current[dragState.itemIndex];
+        const screen = screens[dragState.itemIndex];
         width = screen.outputFrame?.width || 200;
         height = screen.outputFrame?.height || 150;
       }
@@ -433,9 +419,9 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Update the appropriate item
       if (dragState.itemType === 'control') {
-        const control = controlsRef.current[dragState.itemIndex];
+        const control = controls[dragState.itemIndex];
         if (clampedX !== control.frame?.x || clampedY !== control.frame?.y) {
-          const updatedControls = [...controlsRef.current];
+          const updatedControls = [...controls];
           updatedControls[dragState.itemIndex] = {
             ...control,
             frame: {
@@ -447,9 +433,9 @@ const Canvas: React.FC<CanvasProps> = ({
           onControlUpdate(updatedControls);
         }
       } else {
-        const screen = screensRef.current[dragState.itemIndex];
+        const screen = screens[dragState.itemIndex];
         if (clampedX !== screen.outputFrame?.x || clampedY !== screen.outputFrame?.y) {
-          const updatedScreens = [...screensRef.current];
+          const updatedScreens = [...screens];
           updatedScreens[dragState.itemIndex] = {
             ...screen,
             outputFrame: {
@@ -478,11 +464,11 @@ const Canvas: React.FC<CanvasProps> = ({
 
     // Check if we need to maintain aspect ratio for screens
     const shouldMaintainAspectRatio = resizeState.itemType === 'screen' && 
-      screensRef.current[resizeState.itemIndex]?.maintainAspectRatio;
+      screens[resizeState.itemIndex]?.maintainAspectRatio;
     
     let aspectRatio = 1;
     if (shouldMaintainAspectRatio) {
-      const screen = screensRef.current[resizeState.itemIndex];
+      const screen = screens[resizeState.itemIndex];
       if (screen.inputFrame) {
         aspectRatio = screen.inputFrame.width / screen.inputFrame.height;
       } else {
@@ -673,16 +659,16 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Update the appropriate item
       if (resizeState.itemType === 'control') {
-        const updatedControls = [...controlsRef.current];
+        const updatedControls = [...controls];
         updatedControls[resizeState.itemIndex] = {
-          ...controlsRef.current[resizeState.itemIndex],
+          ...controls[resizeState.itemIndex],
           frame: resizePositionRef.current
         };
         onControlUpdate(updatedControls);
       } else {
-        const updatedScreens = [...screensRef.current];
+        const updatedScreens = [...screens];
         updatedScreens[resizeState.itemIndex] = {
-          ...screensRef.current[resizeState.itemIndex],
+          ...screens[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
         updateScreensWithMirroredControls(updatedScreens);
@@ -794,11 +780,11 @@ const Canvas: React.FC<CanvasProps> = ({
       
       let width, height;
       if (dragState.itemType === 'control') {
-        const control = controlsRef.current[dragState.itemIndex];
+        const control = controls[dragState.itemIndex];
         width = control.frame?.width || 50;
         height = control.frame?.height || 50;
       } else {
-        const screen = screensRef.current[dragState.itemIndex];
+        const screen = screens[dragState.itemIndex];
         width = screen.outputFrame?.width || 200;
         height = screen.outputFrame?.height || 150;
       }
@@ -825,16 +811,16 @@ const Canvas: React.FC<CanvasProps> = ({
       };
       
       if (dragState.itemType === 'control') {
-        const updatedControls = [...controlsRef.current];
+        const updatedControls = [...controls];
         updatedControls[dragState.itemIndex] = {
-          ...controlsRef.current[dragState.itemIndex],
+          ...controls[dragState.itemIndex],
           frame: newPosition
         };
         onControlUpdate(updatedControls);
       } else {
-        const updatedScreens = [...screensRef.current];
+        const updatedScreens = [...screens];
         updatedScreens[dragState.itemIndex] = {
-          ...screensRef.current[dragState.itemIndex],
+          ...screens[dragState.itemIndex],
           outputFrame: newPosition
         };
         updateScreensWithMirroredControls(updatedScreens);
@@ -857,11 +843,11 @@ const Canvas: React.FC<CanvasProps> = ({
 
     // Check if we need to maintain aspect ratio for screens
     const shouldMaintainAspectRatio = resizeState.itemType === 'screen' && 
-      screensRef.current[resizeState.itemIndex]?.maintainAspectRatio;
+      screens[resizeState.itemIndex]?.maintainAspectRatio;
     
     let aspectRatio = 1;
     if (shouldMaintainAspectRatio) {
-      const screen = screensRef.current[resizeState.itemIndex];
+      const screen = screens[resizeState.itemIndex];
       if (screen.inputFrame) {
         aspectRatio = screen.inputFrame.width / screen.inputFrame.height;
       } else {
@@ -1046,16 +1032,16 @@ const Canvas: React.FC<CanvasProps> = ({
       
       // Update the appropriate item
       if (resizeState.itemType === 'control') {
-        const updatedControls = [...controlsRef.current];
+        const updatedControls = [...controls];
         updatedControls[resizeState.itemIndex] = {
-          ...controlsRef.current[resizeState.itemIndex],
+          ...controls[resizeState.itemIndex],
           frame: resizePositionRef.current
         };
         onControlUpdate(updatedControls);
       } else {
-        const updatedScreens = [...screensRef.current];
+        const updatedScreens = [...screens];
         updatedScreens[resizeState.itemIndex] = {
-          ...screensRef.current[resizeState.itemIndex],
+          ...screens[resizeState.itemIndex],
           outputFrame: resizePositionRef.current
         };
         updateScreensWithMirroredControls(updatedScreens);
@@ -1151,9 +1137,6 @@ const Canvas: React.FC<CanvasProps> = ({
   // Add global mouse and touch event listeners
   useEffect(() => {
     if (dragState.isDragging || resizeState.isResizing) {
-      // Notify parent that interaction has started
-      onInteractionChange?.(true);
-      
       const moveHandler = resizeState.isResizing ? handleResize : handleMouseMove;
       const touchMoveHandler = resizeState.isResizing ? handleTouchResize : handleTouchMove;
       
@@ -1176,31 +1159,28 @@ const Canvas: React.FC<CanvasProps> = ({
         window.removeEventListener('touchend', handleTouchEnd);
         window.removeEventListener('touchcancel', handleTouchEnd);
       };
-    } else {
-      // Notify parent that interaction has ended
-      onInteractionChange?.(false);
     }
-  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp, handleTouchMove, handleTouchResize, handleTouchEnd, onInteractionChange]);
+  }, [dragState.isDragging, resizeState.isResizing, handleMouseMove, handleResize, handleMouseUp, handleTouchMove, handleTouchResize, handleTouchEnd]);
 
   // Handle control deletion
   const handleDeleteControl = useCallback((index: number) => {
-    const updatedControls = controlsRef.current.filter((_, i) => i !== index);
+    const updatedControls = controls.filter((_, i) => i !== index);
     onControlUpdate(updatedControls);
     updateControlSelection(null);
     setShowPropertiesPanel(false);
-  }, [onControlUpdate]);
+  }, [controls, onControlUpdate, updateControlSelection]);
 
   // Handle screen deletion
   const handleDeleteScreen = useCallback((index: number) => {
-    const updatedScreens = screensRef.current.filter((_, i) => i !== index);
+    const updatedScreens = screens.filter((_, i) => i !== index);
     updateScreensWithMirroredControls(updatedScreens);
     updateScreenSelection(null);
     setShowScreenPropertiesPanel(false);
-  }, [updateScreensWithMirroredControls]);
+  }, [screens, updateScreensWithMirroredControls, updateScreenSelection]);
 
   // Handle control properties update
   const handleControlPropertiesUpdate = useCallback((index: number, updates: ControlMapping) => {
-    const updatedControls = controlsRef.current.map((control, i) => {
+    const updatedControls = controls.map((control, i) => {
       if (i === index) {
         return { ...updates };
       }
@@ -1208,11 +1188,11 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     onControlUpdate(updatedControls);
-  }, [onControlUpdate]);
+  }, [controls, onControlUpdate]);
 
   // Handle screen properties update
   const handleScreenPropertiesUpdate = useCallback((index: number, updates: ScreenMapping) => {
-    const updatedScreens = screensRef.current.map((screen, i) => {
+    const updatedScreens = screens.map((screen, i) => {
       if (i === index) {
         return updates; // Use the updates directly, as they should already be complete
       }
@@ -1220,7 +1200,7 @@ const Canvas: React.FC<CanvasProps> = ({
     });
     
     updateScreensWithMirroredControls(updatedScreens);
-  }, [updateScreensWithMirroredControls]);
+  }, [screens, updateScreensWithMirroredControls]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

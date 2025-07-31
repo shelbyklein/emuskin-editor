@@ -1,5 +1,5 @@
 // Main editor page for creating emulator skins
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import ImageUploader from '../components/ImageUploader';
@@ -41,9 +41,10 @@ const Editor: React.FC = () => {
   const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
   const [selectedScreenIndex, setSelectedScreenIndex] = useState<number | null>(null);
   
-  // Clean up thumbstick URLs on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
+      // Clean up thumbstick URLs
       Object.values(thumbstickImages).forEach(url => {
         URL.revokeObjectURL(url);
       });
@@ -68,7 +69,6 @@ const Editor: React.FC = () => {
       
       // Load orientation-specific data
       const orientationData = getOrientationData();
-      console.log('Loading orientation data for', getCurrentOrientation(), ':', orientationData);
       
       if (orientationData) {
         setControls(orientationData.controls || []);
@@ -78,18 +78,16 @@ const Editor: React.FC = () => {
         
         // Handle background image
         if (orientationData.backgroundImage && orientationData.backgroundImage.url) {
-          console.log('Setting uploaded image from orientation data:', orientationData.backgroundImage);
           setUploadedImage({
             file: new File([], orientationData.backgroundImage.fileName || 'image'),
             url: orientationData.backgroundImage.url
           });
         } else if (!orientationData.backgroundImage || !orientationData.backgroundImage.hasStoredImage) {
           // Only clear if there's truly no image for this orientation
-          console.log('No background image for this orientation, clearing uploadedImage');
           setUploadedImage(null);
         }
         // If hasStoredImage is true but URL is null, keep the current uploadedImage
-        // This happens during auto-save when we don't save blob URLs
+        // This happens when we don't save blob URLs
       }
       
       if (currentProject.console) {
@@ -101,8 +99,13 @@ const Editor: React.FC = () => {
       
       // Load thumbstick images from IndexedDB
       loadThumbstickImages(currentProject.id);
+      
+      // Mark as saved when loading a project
+      setHasUnsavedChanges(false);
+      // Reset the mounted flag to prevent marking as unsaved during load
+      hasMountedRef.current = false;
     }
-  }, [currentProject, currentProject?.currentOrientation]);
+  }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
@@ -125,52 +128,57 @@ const Editor: React.FC = () => {
     }
   };
 
-  // Track if we're actively interacting
-  const [isInteracting, setIsInteracting] = useState(false);
+  // State to track if there are unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSavedMessage, setShowSavedMessage] = useState(false);
 
-  // Auto-save when data changes (except image which is saved separately)
+  // Manual save function
+  const handleSave = useCallback(() => {
+    if (!currentProject) return;
+    
+    // Save project-level data
+    saveProject({
+      name: skinName,
+      identifier: skinIdentifier,
+      console: selectedConsoleData,
+      device: selectedDeviceData
+    });
+    
+    // Save orientation-specific data
+    saveOrientationData({
+      controls,
+      screens,
+      menuInsetsEnabled,
+      menuInsetsBottom,
+      // Don't save the blob URL, just mark that we have an image
+      backgroundImage: uploadedImage ? {
+        fileName: uploadedImage.file.name,
+        url: null, // Don't save blob URLs to localStorage
+        hasStoredImage: true
+      } : null
+    });
+    
+    setHasUnsavedChanges(false);
+    setShowSavedMessage(true);
+    
+    // Hide saved message after 2 seconds
+    setTimeout(() => {
+      setShowSavedMessage(false);
+    }, 2000);
+  }, [currentProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProject, saveOrientationData]);
+
+  // Track if component has mounted
+  const hasMountedRef = useRef(false);
+  
+  // Track changes to mark as unsaved (but not on initial load)
   useEffect(() => {
-    if (currentProject && !isInteracting) {
-      const timer = setTimeout(() => {
-        // Save project-level data
-        saveProject({
-          name: skinName,
-          identifier: skinIdentifier,
-          console: selectedConsoleData,
-          device: selectedDeviceData
-        });
-        
-        // Save orientation-specific data
-        saveOrientationData({
-          controls,
-          screens,
-          menuInsetsEnabled,
-          menuInsetsBottom,
-          // Don't save the blob URL, just mark that we have an image
-          backgroundImage: uploadedImage ? {
-            fileName: uploadedImage.file.name,
-            url: null, // Don't save blob URLs to localStorage
-            hasStoredImage: true
-          } : null
-        });
-      }, 1000); // Debounce saves by 1 second
-
-      return () => clearTimeout(timer);
+    if (hasMountedRef.current && currentProject) {
+      setHasUnsavedChanges(true);
+    } else {
+      hasMountedRef.current = true;
     }
-  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, currentProject, saveProject, saveOrientationData, isInteracting, uploadedImage]);
+  }, [skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage]);
 
-  // Add debug logging to check data
-  useEffect(() => {
-    console.log('Consoles data:', consoles);
-    console.log('Devices data:', devices);
-    // Check for duplicate keys
-    const consoleKeys = consoles.map(c => c.shortName);
-    const deviceKeys = devices.map(d => d.model);
-    console.log('Console keys:', consoleKeys);
-    console.log('Device keys:', deviceKeys);
-    console.log('Duplicate console keys:', consoleKeys.filter((item, index) => consoleKeys.indexOf(item) !== index));
-    console.log('Duplicate device keys:', deviceKeys.filter((item, index) => deviceKeys.indexOf(item) !== index));
-  }, [consoles, devices]);
 
   // Load console and device data
   useEffect(() => {
@@ -313,14 +321,12 @@ const Editor: React.FC = () => {
   }, [selectedConsole, consoles, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
-    console.log('handleImageUpload called:', { fileName: file.name, orientation: getCurrentOrientation() });
     setUploadedImage({ file, url: previewUrl });
     
     // Save image to IndexedDB if we have a current project
     if (currentProject) {
       try {
         await saveProjectImage(file, getCurrentOrientation());
-        console.log('Image saved to IndexedDB successfully');
       } catch (error) {
         console.error('Failed to save image:', error);
         // Still allow the image to be used even if storage fails
@@ -331,9 +337,6 @@ const Editor: React.FC = () => {
   const handleOrientationToggle = () => {
     if (!currentProject) return;
     
-    console.log('Toggling orientation from', getCurrentOrientation());
-    console.log('Current uploadedImage:', uploadedImage);
-    
     // Save current orientation data before switching
     const orientationData = getOrientationData();
     if (orientationData) {
@@ -342,8 +345,6 @@ const Editor: React.FC = () => {
         url: null,
         hasStoredImage: true
       } : orientationData.backgroundImage;
-      
-      console.log('Saving orientation data with image:', imageData);
       
       saveOrientationData({
         controls,
@@ -356,7 +357,6 @@ const Editor: React.FC = () => {
     
     // Toggle orientation
     const newOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
-    console.log('Switching to orientation:', newOrientation);
     setOrientation(newOrientation);
   };
 
@@ -618,6 +618,19 @@ const Editor: React.FC = () => {
     }
   }, [location.state, devices]);
 
+  // Add keyboard shortcut for save (Cmd/Ctrl + S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSave]);
+
   return (
     <div id="editor-container">
       {/* Header with Title and Project Manager */}
@@ -661,9 +674,28 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
-        {/* Orientation Toggle and Copy */}
+        {/* Save Button, Orientation Toggle and Copy */}
         {currentProject && (
           <div className="flex items-center space-x-2">
+            {/* Save Button */}
+            <button
+              onClick={handleSave}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                hasUnsavedChanges
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+              }`}
+              title="Save project"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+              </svg>
+              <span className="text-sm font-medium">
+                {showSavedMessage ? 'Saved!' : hasUnsavedChanges ? 'Save' : 'Saved'}
+              </span>
+            </button>
+            
+            {/* Orientation Toggle */}
             <button
               onClick={handleOrientationToggle}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
@@ -685,6 +717,7 @@ const Editor: React.FC = () => {
               </span>
             </button>
             
+            {/* Copy Layout Button */}
             <button
               onClick={handleCopyOrientationLayout}
               className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
@@ -797,7 +830,6 @@ const Editor: React.FC = () => {
               menuInsetsBottom={menuInsetsBottom}
               onControlUpdate={handleControlsUpdate}
               onScreenUpdate={handleScreensUpdate}
-              onInteractionChange={setIsInteracting}
               thumbstickImages={thumbstickImages}
               onThumbstickImageUpload={handleThumbstickImageUpload}
               selectedControlIndex={selectedControlIndex}
