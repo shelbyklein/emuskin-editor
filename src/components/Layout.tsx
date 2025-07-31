@@ -38,18 +38,6 @@ const Layout: React.FC = () => {
                 Home
               </Link>
               <Link
-                id="nav-editor-desktop"
-                to="/editor"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/editor')
-                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-                aria-label="Navigate to Editor page"
-              >
-                Editor
-              </Link>
-              <Link
                 id="nav-settings-desktop"
                 to="/settings"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -147,19 +135,6 @@ const Layout: React.FC = () => {
                 aria-label="Navigate to Home page"
               >
                 Home
-              </Link>
-              <Link
-                id="nav-editor-mobile"
-                to="/editor"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
-                  isActive('/editor')
-                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-                aria-label="Navigate to Editor page"
-              >
-                Editor
               </Link>
               <Link
                 id="nav-settings-mobile"
