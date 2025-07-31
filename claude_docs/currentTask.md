@@ -154,6 +154,11 @@
   - Copies controls, screens, settings between portrait/landscape
   - Maintains control IDs for thumbstick associations
   - Includes confirmation dialog
+- ✅ Fixed infinite loop in portrait orientation data
+  - Memoized all functions in ProjectContext with useCallback
+  - saveProject, saveOrientationData, getOrientationData, getCurrentOrientation, setOrientation, saveProjectImage
+  - Prevents functions from being recreated on every render
+  - Fixes the auto-save useEffect dependency issue
 
 ## Next Steps
 1. Implement undo/redo functionality

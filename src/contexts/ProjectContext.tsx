@@ -1,5 +1,5 @@
 // Project context for managing skin projects with local storage
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
@@ -227,7 +227,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   };
 
-  const saveProject = (updates: Partial<Project>) => {
+  const saveProject = useCallback((updates: Partial<Project>) => {
     if (!currentProjectId) return;
 
     setProjects(prev => prev.map(project => {
@@ -240,9 +240,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       }
       return project;
     }));
-  };
+  }, [currentProjectId]);
 
-  const saveProjectImage = async (file: File, orientation: 'portrait' | 'landscape' = 'portrait') => {
+  const saveProjectImage = useCallback(async (file: File, orientation: 'portrait' | 'landscape' = 'portrait') => {
     if (!currentProjectId || !currentProject) return;
     
     try {
@@ -275,7 +275,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       console.error('Failed to save image to IndexedDB:', error);
       throw error;
     }
-  };
+  }, [currentProjectId, currentProject]);
 
   const deleteProject = async (id: string) => {
     // Delete associated images from IndexedDB
@@ -295,11 +295,11 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     setCurrentProjectId(null);
   };
 
-  const getCurrentOrientation = (): 'portrait' | 'landscape' => {
+  const getCurrentOrientation = useCallback((): 'portrait' | 'landscape' => {
     return currentProject?.currentOrientation || 'portrait';
-  };
+  }, [currentProject?.currentOrientation]);
 
-  const setOrientation = (orientation: 'portrait' | 'landscape') => {
+  const setOrientation = useCallback((orientation: 'portrait' | 'landscape') => {
     if (!currentProjectId || !currentProject) return;
     
     setProjects(prev => prev.map(project => {
@@ -312,15 +312,15 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       }
       return project;
     }));
-  };
+  }, [currentProjectId, currentProject]);
 
-  const getOrientationData = (orientation?: 'portrait' | 'landscape'): OrientationData | null => {
+  const getOrientationData = useCallback((orientation?: 'portrait' | 'landscape'): OrientationData | null => {
     if (!currentProject?.orientations) return null;
     const targetOrientation = orientation || getCurrentOrientation();
     return currentProject.orientations[targetOrientation] || null;
-  };
+  }, [currentProject?.orientations, getCurrentOrientation]);
 
-  const saveOrientationData = (data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => {
+  const saveOrientationData = useCallback((data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => {
     if (!currentProjectId || !currentProject?.orientations) return;
     
     const targetOrientation = orientation || getCurrentOrientation();
@@ -341,7 +341,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       }
       return project;
     }));
-  };
+  }, [currentProjectId, currentProject?.orientations, getCurrentOrientation]);
 
   return (
     <ProjectContext.Provider value={{
