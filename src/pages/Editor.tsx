@@ -687,49 +687,6 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
-        {/* Orientation Toggle and Copy */}
-        {currentProject && (
-          <div className="flex items-center space-x-2">
-            {/* Orientation Toggle */}
-            <button
-              onClick={handleOrientationToggle}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
-              title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
-            >
-              <svg 
-                className={`w-5 h-5 transition-transform duration-300 ${
-                  getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
-                }`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
-                <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
-              </svg>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
-              </span>
-            </button>
-            
-            {/* Copy Layout Button */}
-            <button
-              onClick={handleCopyOrientationLayout}
-              className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
-              title={`Copy layout from ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} to ${getCurrentOrientation()}`}
-            >
-              <svg 
-                className="w-5 h-5 text-blue-600 dark:text-blue-400" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-          </div>
-        )}
-        
         {/* Right side - Project Manager */}
         <ProjectManager 
           onSave={handleSave}
@@ -828,6 +785,44 @@ const Editor: React.FC = () => {
             <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
               <div id="canvas-toolbar" className="flex justify-between items-center">
                 <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
+                
+                {/* Orientation Toggle and Copy */}
+                {currentProject && (
+                  <div className="flex items-center space-x-2">
+                    {/* Orientation Toggle */}
+                    <button
+                      onClick={handleOrientationToggle}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm"
+                      title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
+                    >
+                      <svg 
+                        className={`w-4 h-4 transition-transform duration-300 ${
+                          getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
+                        <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
+                      </svg>
+                      <span className="font-medium">
+                        {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
+                      </span>
+                    </button>
+                    
+                    {/* Copy Layout Button */}
+                    <button
+                      onClick={handleCopyOrientationLayout}
+                      className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
+                      title={`Copy layout from ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} to ${getCurrentOrientation()}`}
+                    >
+                      <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
               {/* Grid Controls */}
               {selectedDeviceData && (
