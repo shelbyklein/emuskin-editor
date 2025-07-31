@@ -1,7 +1,6 @@
 // Import button component for loading existing .deltaskin/.gammaskin files
 import React, { useRef } from 'react';
 import JSZip from 'jszip';
-import { useProject } from '../contexts/ProjectContext';
 import { ControlMapping, ScreenMapping } from '../types';
 
 interface ImportedSkinData {
@@ -57,7 +56,6 @@ interface ImportButtonProps {
 
 const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { clearProject, createProject, saveProject, saveProjectImage } = useProject();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

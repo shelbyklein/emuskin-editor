@@ -12,9 +12,12 @@
 - ✅ Add menu insets panel with visual overlay
 - ✅ Implement thumbstick support with custom images
 - ✅ Add landscape orientation support
+- ✅ Fix TypeScript build errors
+- ✅ Fix Nintendo DS screen management (prevent deletion)
+- ✅ Add thumbstick image storage to IndexedDB
+- ✅ Add copy layout between orientations feature
 - Implement undo/redo functionality
 - Add keyboard shortcuts for common actions
-- Add thumbstick image storage to IndexedDB
 
 ## Context
 - Full-featured skin editor with visual control and screen placement
@@ -133,38 +136,48 @@
   - Import handles both single and dual-orientation files
   - DeviceInfo shows correct dimensions for current orientation
   - Menu insets and all constraints respect orientation
+- ✅ Fixed all TypeScript build errors across components
+  - Fixed type issues in Canvas.tsx with ControlMapping vs ScreenMapping
+  - Fixed arithmetic operators in ControlPropertiesPanel  
+  - Removed all unused imports and variables
+  - Clean build for production deployment
+- ✅ Fixed Nintendo DS screen management bug
+  - DS screens can no longer be deleted
+  - Visual indicator shows DS screens are required
+  - Alert prevents deletion attempts
+  - Improved DS screen initialization logic
+- ✅ Verified thumbstick image persistence to IndexedDB
+  - System was already properly implemented
+  - Images save when uploaded and load when project opens
+- ✅ Added copy layout between orientations feature
+  - New button next to orientation toggle
+  - Copies controls, screens, settings between portrait/landscape
+  - Maintains control IDs for thumbstick associations
+  - Includes confirmation dialog
 
 ## Next Steps
-1. Fix Nintendo DS screen management (BUG-001)
-   - Prevent deletion of DS screens
-   - Ensure exactly 2 screens for DS at all times
-   - Add validation in ScreenPalette and Canvas
-   
-2. Add thumbstick images to IndexedDB
-   - Store thumbstick images like background images
-   - Update project save/load to handle thumbstick data
-   - Ensure persistence across sessions
-   
-3. Add copy layout feature between orientations
-   - Add button to copy current orientation's layout
-   - Useful for starting landscape from portrait layout
-   - Adjust positions after copying as needed
-   
-4. Fix TypeScript build errors
-   - Fix type issues in Canvas, ControlPropertiesPanel
-   - Remove unused imports and variables
-   - Ensure clean build for production
-   
-5. Implement undo/redo functionality
-   - Track state changes in history
+1. Implement undo/redo functionality
+   - Track state changes in history stack (max 50 states)
    - Add keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
-   - Visual indicators in UI
+   - Visual undo/redo buttons in toolbar
+   - Track control/screen add, move, resize, delete actions
    
-5. Add keyboard shortcuts
-   - Cmd/Ctrl+S: Save project
+2. Add keyboard shortcuts
+   - Delete/Backspace: Delete selected control/screen
+   - Arrow keys: Nudge selected item by 1px (10px with Shift)
+   - Cmd/Ctrl+S: Save current project
    - Cmd/Ctrl+E: Export skin
-   - Delete/Backspace: Delete selected item
-   - Arrow keys: Nudge selected item
+   - Escape: Deselect current item
+   
+3. Add success/error toasts
+   - Replace alert() calls with toast notifications
+   - Better UX for save/export/import operations
+   - Non-blocking user feedback
+   
+4. Control alignment tools (future)
+   - Align selected controls (left, right, center, top, bottom)
+   - Distribute controls evenly
+   - Visual guides when dragging
 
 ## Technical Debt
 - Consider migrating from localStorage to IndexedDB for all project data

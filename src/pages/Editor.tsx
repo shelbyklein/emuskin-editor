@@ -57,8 +57,7 @@ const Editor: React.FC = () => {
     getCurrentOrientation, 
     setOrientation, 
     getOrientationData, 
-    saveOrientationData,
-    createProject 
+    saveOrientationData
   } = useProject();
 
   // Load project data when current project changes or orientation changes
@@ -142,7 +141,6 @@ const Editor: React.FC = () => {
         });
         
         // Save orientation-specific data
-        const orientationData = getOrientationData();
         saveOrientationData({
           controls,
           screens,
@@ -234,27 +232,33 @@ const Editor: React.FC = () => {
       setSelectedConsoleData(console || null);
       
       // Auto-initialize screens based on console type (unless already loaded from project)
-      if (console && screens.length === 0 && !currentProject) {
+      if (console && !currentProject) {
         if (selectedConsole === 'nds') {
-          // Nintendo DS needs two screens
-          const newScreens = [
-            {
-              id: `screen-top-${Date.now()}`,
-              label: 'Top Screen',
-              inputFrame: { x: 0, y: 0, width: 256, height: 192 },
-              outputFrame: { x: 100, y: 100, width: 200, height: 150 },
-              maintainAspectRatio: true
-            },
-            {
-              id: `screen-bottom-${Date.now() + 1}`,
-              label: 'Bottom Screen',
-              inputFrame: { x: 0, y: 192, width: 256, height: 192 },
-              outputFrame: { x: 100, y: 270, width: 200, height: 150 },
-              maintainAspectRatio: true
-            }
-          ];
-          setScreens(newScreens);
-        } else if (selectedConsole === 'sg') {
+          // Nintendo DS needs exactly two screens
+          const hasTopScreen = screens.some(s => s.label === 'Top Screen');
+          const hasBottomScreen = screens.some(s => s.label === 'Bottom Screen');
+          
+          if (!hasTopScreen && !hasBottomScreen && screens.length === 0) {
+            // Initialize both screens
+            const newScreens = [
+              {
+                id: `screen-top-${Date.now()}`,
+                label: 'Top Screen',
+                inputFrame: { x: 0, y: 0, width: 256, height: 192 },
+                outputFrame: { x: 100, y: 100, width: 200, height: 150 },
+                maintainAspectRatio: true
+              },
+              {
+                id: `screen-bottom-${Date.now() + 1}`,
+                label: 'Bottom Screen',
+                inputFrame: { x: 0, y: 192, width: 256, height: 192 },
+                outputFrame: { x: 100, y: 270, width: 200, height: 150 },
+                maintainAspectRatio: true
+              }
+            ];
+            setScreens(newScreens);
+          }
+        } else if (selectedConsole === 'sg' && screens.length === 0) {
           // SEGA Genesis - no inputFrame
           setScreens([
             {
@@ -356,6 +360,55 @@ const Editor: React.FC = () => {
     setOrientation(newOrientation);
   };
 
+  const handleCopyOrientationLayout = () => {
+    if (!currentProject) return;
+    
+    const currentOrientation = getCurrentOrientation();
+    const sourceOrientation = currentOrientation === 'portrait' ? 'landscape' : 'portrait';
+    
+    // Get the source orientation data
+    const sourceData = getOrientationData(sourceOrientation);
+    
+    if (!sourceData || (!sourceData.controls?.length && !sourceData.screens?.length)) {
+      alert(`No layout found in ${sourceOrientation} orientation to copy from.`);
+      return;
+    }
+    
+    // Ask for confirmation
+    if (!confirm(`Copy layout from ${sourceOrientation} to ${currentOrientation}? This will replace the current ${currentOrientation} layout.`)) {
+      return;
+    }
+    
+    // Copy controls with adjusted positions if needed
+    const copiedControls = sourceData.controls?.map((control: ControlMapping) => ({
+      ...control,
+      id: control.id, // Keep the same IDs to maintain thumbstick image associations
+    })) || [];
+    
+    // Copy screens
+    const copiedScreens = sourceData.screens?.map((screen: ScreenMapping) => ({
+      ...screen,
+      id: screen.id, // Keep the same IDs
+    })) || [];
+    
+    // Update current orientation with copied data
+    setControls(copiedControls);
+    setScreens(copiedScreens);
+    setMenuInsetsEnabled(sourceData.menuInsetsEnabled || false);
+    setMenuInsetsBottom(sourceData.menuInsetsBottom || 0);
+    
+    // Copy background image if it exists
+    if (sourceData.backgroundImage && sourceData.backgroundImage.hasStoredImage) {
+      // The image is already in IndexedDB, just update the reference
+      setUploadedImage({
+        file: new File([], sourceData.backgroundImage.fileName || 'image'),
+        url: sourceData.backgroundImage.url || ''
+      });
+    }
+    
+    alert(`Layout copied from ${sourceOrientation} to ${currentOrientation} successfully!`);
+  };
+
   const handleControlsUpdate = (newControls: ControlMapping[]) => {
     // Force a new array reference to ensure React detects the change
     setControls([...newControls]);
@@ -392,6 +445,12 @@ const Editor: React.FC = () => {
   };
 
   const handleDeleteScreen = (index: number) => {
+    // Prevent deletion of Nintendo DS screens
+    if (selectedConsole === 'nds') {
+      alert('Nintendo DS screens cannot be deleted. The system requires both top and bottom screens.');
+      return;
+    }
+    
     const newScreens = screens.filter((_, i) => i !== index);
     setScreens(newScreens);
     // Clear selection if deleted screen was selected
@@ -602,28 +661,45 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
-        {/* Orientation Toggle */}
+        {/* Orientation Toggle and Copy */}
         {currentProject && (
-          <button
-            onClick={handleOrientationToggle}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
-            title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
-          >
-            <svg 
-              className={`w-5 h-5 transition-transform duration-300 ${
-                getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
-              }`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleOrientationToggle}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+              title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
             >
-              <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
-              <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
-            </svg>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
-            </span>
-          </button>
+              <svg 
+                className={`w-5 h-5 transition-transform duration-300 ${
+                  getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
+                }`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
+                <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
+              </svg>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
+              </span>
+            </button>
+            
+            <button
+              onClick={handleCopyOrientationLayout}
+              className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
+              title={`Copy layout from ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} to ${getCurrentOrientation()}`}
+            >
+              <svg 
+                className="w-5 h-5 text-blue-600 dark:text-blue-400" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+          </div>
         )}
         
         {/* Right side - Project Manager */}
@@ -679,6 +755,7 @@ const Editor: React.FC = () => {
                     onScreenDelete={handleDeleteScreen}
                     onScreenSelect={setSelectedScreenIndex}
                     selectedScreen={selectedScreenIndex}
+                    consoleType={selectedConsole}
                   />
                 </div>
               )}

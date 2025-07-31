@@ -326,7 +326,7 @@ const Canvas: React.FC<CanvasProps> = ({
     e.stopPropagation();
     
     const item = itemType === 'control' ? controls[index] : screens[index];
-    const frame = itemType === 'control' ? item.frame : (item as ScreenMapping).outputFrame;
+    const frame = itemType === 'control' ? (item as ControlMapping).frame : (item as ScreenMapping).outputFrame;
     
     setHasResized(true); // Set flag when resize starts
     
@@ -359,7 +359,7 @@ const Canvas: React.FC<CanvasProps> = ({
     
     const touch = e.touches[0];
     const item = itemType === 'control' ? controls[index] : screens[index];
-    const frame = itemType === 'control' ? item.frame : (item as ScreenMapping).outputFrame;
+    const frame = itemType === 'control' ? (item as ControlMapping).frame : (item as ScreenMapping).outputFrame;
     
     setHasResized(true); // Set flag when resize starts
     

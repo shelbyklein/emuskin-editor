@@ -167,11 +167,13 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       const increment = e.shiftKey ? 10 : 1;
-      handleInputChange(field, String(formData[field] + increment));
+      const currentValue = Number(formData[field]);
+      handleInputChange(field, String(currentValue + increment));
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       const decrement = e.shiftKey ? 10 : 1;
-      handleInputChange(field, String(formData[field] - decrement));
+      const currentValue = Number(formData[field]);
+      handleInputChange(field, String(currentValue - decrement));
     } else if (e.key === 'Enter') {
       handleApply();
     }
@@ -352,7 +354,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               value={formData.x}
               onChange={(e) => handleInputChange('x', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'x')}
-              disabled={isTouchscreen && mirrorBottomScreen}
+              disabled={!!(isTouchscreen && mirrorBottomScreen)}
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
@@ -364,7 +366,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               value={formData.y}
               onChange={(e) => handleInputChange('y', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'y')}
-              disabled={isTouchscreen && mirrorBottomScreen}
+              disabled={!!(isTouchscreen && mirrorBottomScreen)}
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
@@ -384,7 +386,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               onChange={(e) => handleInputChange('width', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'width')}
               min="20"
-              disabled={isTouchscreen && mirrorBottomScreen}
+              disabled={!!(isTouchscreen && mirrorBottomScreen)}
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>
@@ -397,7 +399,7 @@ const ControlPropertiesPanel: React.FC<ControlPropertiesPanelProps> = ({
               onChange={(e) => handleInputChange('height', e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'height')}
               min="20"
-              disabled={isTouchscreen && mirrorBottomScreen}
+              disabled={!!(isTouchscreen && mirrorBottomScreen)}
               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
             />
           </div>

@@ -8,7 +8,7 @@ interface DeviceInfoProps {
   orientation?: 'portrait' | 'landscape';
 }
 
-const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, scale, orientation = 'portrait' }) => {
+const DeviceInfo: React.FC<DeviceInfoProps> = ({ device, orientation = 'portrait' }) => {
   if (!device) return null;
 
   // Swap dimensions for landscape

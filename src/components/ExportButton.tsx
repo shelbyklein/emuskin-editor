@@ -23,12 +23,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   skinIdentifier,
   selectedConsole,
   selectedDevice,
-  controls,
-  screens,
-  backgroundImage,
-  menuInsetsEnabled = false,
-  menuInsetsBottom = 0,
-  thumbstickFiles = {}
+  controls
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'deltaskin' | 'gammaskin'>('deltaskin');

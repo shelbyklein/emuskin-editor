@@ -7,13 +7,15 @@ interface ScreenListProps {
   onScreenDelete: (index: number) => void;
   onScreenSelect?: (index: number) => void;
   selectedScreen?: number | null;
+  consoleType?: string;
 }
 
 const ScreenList: React.FC<ScreenListProps> = ({ 
   screens, 
   onScreenDelete,
   onScreenSelect,
-  selectedScreen 
+  selectedScreen,
+  consoleType 
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; name: string } | null>(null);
@@ -78,7 +80,7 @@ const ScreenList: React.FC<ScreenListProps> = ({
                   )}
                 </span>
                 
-                {isHovered && (
+                {isHovered && consoleType !== 'nds' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -106,6 +108,14 @@ const ScreenList: React.FC<ScreenListProps> = ({
             );
           })}
         </div>
+        
+        {consoleType === 'nds' && (
+          <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-md">
+            <p className="text-xs text-green-700 dark:text-green-300">
+              <strong>Note:</strong> Nintendo DS screens are required and cannot be deleted.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

@@ -1,6 +1,6 @@
 // Home page displaying all saved skin projects
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContext';
 import { indexedDBManager } from '../utils/indexedDB';
 import ImportButton from '../components/ImportButton';
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
   ) => {
     // Create a new project with imported data
     clearProject();
-    const projectId = createProject(importedName);
+    createProject(importedName);
     
     // Navigate to editor with the imported data
     navigate('/editor', { 
