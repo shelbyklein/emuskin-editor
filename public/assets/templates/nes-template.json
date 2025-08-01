@@ -1,0 +1,136 @@
+{
+  "name": "NES Template",
+  "identifier": "com.playcase.nes.template",
+  "gameTypeIdentifier": "com.rileytestut.delta.game.nes",
+  "debug": false,
+  "representations": {
+    "iphone": {
+      "edgeToEdge": {
+        "portrait": {
+          "assets": {},
+          "items": [
+            {
+              "inputs": ["a"],
+              "frame": {
+                "x": 320,
+                "y": 650,
+                "width": 80,
+                "height": 80
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["b"],
+              "frame": {
+                "x": 220,
+                "y": 650,
+                "width": 80,
+                "height": 80
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["dpad"],
+              "frame": {
+                "x": 40,
+                "y": 620,
+                "width": 120,
+                "height": 120
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["start"],
+              "frame": {
+                "x": 240,
+                "y": 780,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["select"],
+              "frame": {
+                "x": 140,
+                "y": 780,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["menu"],
+              "frame": {
+                "x": 190,
+                "y": 840,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            }
+          ],
+          "screens": [
+            {
+              "inputFrame": {
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 956
+              },
+              "outputFrame": {
+                "x": 47,
+                "y": 150,
+                "width": 346,
+                "height": 260
+              }
+            }
+          ],
+          "mappingSize": {
+            "width": 440,
+            "height": 956
+          },
+          "extendedEdges": { 
+            "top": 0,
+            "bottom": 0,
+            "left": 0,
+            "right": 0
+          },
+          "menuInsets": {
+            "bottom": 0.1
+          }
+        }
+      }
+    }
+  }
+}

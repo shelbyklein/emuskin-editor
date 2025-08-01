@@ -113,6 +113,41 @@ const Home: React.FC = () => {
     });
   };
 
+  const handleTemplateSelect = async (templateName: string) => {
+    try {
+      // Load the template JSON file
+      const response = await fetch(`/assets/templates/${templateName}-template.json`);
+      if (!response.ok) {
+        throw new Error('Failed to load template');
+      }
+      
+      const templateData = await response.json();
+      
+      // Create a new project with template data
+      clearProject();
+      const projectId = createProject(templateData.name);
+      
+      // Navigate to editor with the template data
+      navigate('/editor', {
+        state: {
+          templateData: {
+            name: templateData.name,
+            identifier: templateData.identifier,
+            gameTypeIdentifier: templateData.gameTypeIdentifier,
+            items: templateData.representations.iphone.edgeToEdge.portrait.items,
+            screens: templateData.representations.iphone.edgeToEdge.portrait.screens,
+            mappingSize: templateData.representations.iphone.edgeToEdge.portrait.mappingSize,
+            extendedEdges: templateData.representations.iphone.edgeToEdge.portrait.extendedEdges,
+            menuInsets: templateData.representations.iphone.edgeToEdge.portrait.menuInsets
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error loading template:', error);
+      alert('Failed to load template. Please try again.');
+    }
+  };
+
   return (
     <div id="home-container" className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -257,6 +292,37 @@ const Home: React.FC = () => {
                 </div>
               </div>
             )}
+            
+            {/* Template Section */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Start with a template:</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                {[
+                  { shortName: 'gbc', displayName: 'GameBoy Color' },
+                  { shortName: 'gba', displayName: 'GameBoy Advance' },
+                  { shortName: 'nds', displayName: 'Nintendo DS' },
+                  { shortName: 'nes', displayName: 'NES' },
+                  { shortName: 'snes', displayName: 'SNES' },
+                  { shortName: 'n64', displayName: 'Nintendo 64' },
+                  { shortName: 'sg', displayName: 'Genesis' },
+                  { shortName: 'ps1', displayName: 'PlayStation' }
+                ].map((console) => (
+                  <button
+                    key={console.shortName}
+                    onClick={() => handleTemplateSelect(console.shortName)}
+                    className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 group hover:scale-105"
+                  >
+                    <ConsoleIcon 
+                      console={console.shortName} 
+                      className="w-12 h-12 mb-2 group-hover:scale-110 transition-transform duration-200" 
+                    />
+                    <span className="text-xs text-center text-gray-700 dark:text-gray-300 font-medium">
+                      {console.displayName}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
             
             {/* Projects Section */}
             <div className="mb-4">

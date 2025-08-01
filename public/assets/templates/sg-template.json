@@ -1,0 +1,181 @@
+{
+  "name": "Sega Genesis Template",
+  "identifier": "com.playcase.sg.template",
+  "gameTypeIdentifier": "com.rileytestut.delta.game.genesis",
+  "debug": false,
+  "representations": {
+    "iphone": {
+      "edgeToEdge": {
+        "portrait": {
+          "assets": {},
+          "items": [
+            {
+              "inputs": ["a"],
+              "frame": {
+                "x": 280,
+                "y": 650,
+                "width": 70,
+                "height": 70
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["b"],
+              "frame": {
+                "x": 340,
+                "y": 620,
+                "width": 70,
+                "height": 70
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["c"],
+              "frame": {
+                "x": 400,
+                "y": 590,
+                "width": 60,
+                "height": 60
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["x"],
+              "frame": {
+                "x": 220,
+                "y": 620,
+                "width": 60,
+                "height": 60
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["y"],
+              "frame": {
+                "x": 280,
+                "y": 590,
+                "width": 60,
+                "height": 60
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["z"],
+              "frame": {
+                "x": 340,
+                "y": 560,
+                "width": 60,
+                "height": 60
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["dpad"],
+              "frame": {
+                "x": 40,
+                "y": 630,
+                "width": 120,
+                "height": 120
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["start"],
+              "frame": {
+                "x": 190,
+                "y": 760,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["menu"],
+              "frame": {
+                "x": 190,
+                "y": 840,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            }
+          ],
+          "screens": [
+            {
+              "inputFrame": {
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 956
+              },
+              "outputFrame": {
+                "x": 55,
+                "y": 150,
+                "width": 330,
+                "height": 248
+              }
+            }
+          ],
+          "mappingSize": {
+            "width": 440,
+            "height": 956
+          },
+          "extendedEdges": { 
+            "top": 0,
+            "bottom": 0,
+            "left": 0,
+            "right": 0
+          },
+          "menuInsets": {
+            "bottom": 0.1
+          }
+        }
+      }
+    }
+  }
+}

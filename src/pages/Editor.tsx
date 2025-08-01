@@ -1179,6 +1179,49 @@ const Editor: React.FC = () => {
     }
   }, [location.state, devices]);
 
+  // Handle template data from navigation state
+  useEffect(() => {
+    const templateData = location.state?.templateData;
+    if (templateData && consoles.length > 0 && devices.length > 0) {
+      // Find the console based on gameTypeIdentifier
+      const console = consoles.find(c => c.gameTypeIdentifier === templateData.gameTypeIdentifier);
+      if (console) {
+        // Set the skin data
+        setSkinName(templateData.name);
+        setSkinIdentifier(templateData.identifier);
+        setSelectedConsole(console.shortName);
+        setSelectedConsoleData(console);
+        
+        // Find a default device (using iPhone 16 Pro Max as default)
+        const defaultDevice = devices.find(d => d.model === 'iPhone 16 Pro Max') || devices[0];
+        if (defaultDevice) {
+          setSelectedDevice(defaultDevice.model);
+          setSelectedDeviceData(defaultDevice);
+        }
+        
+        // Set controls and screens
+        setControls(templateData.items || []);
+        setScreens(templateData.screens || []);
+        
+        // Set menu insets if present
+        if (templateData.menuInsets?.bottom) {
+          setMenuInsetsEnabled(true);
+          setMenuInsetsBottom(templateData.menuInsets.bottom);
+        }
+        
+        // Save to project
+        saveOrientationData({
+          controls: templateData.items || [],
+          screens: templateData.screens || [],
+          menuInsetsEnabled: templateData.menuInsets?.bottom > 0,
+          menuInsetsBottom: templateData.menuInsets?.bottom || 0
+        });
+      }
+      // Clear the state to prevent re-loading on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, consoles, devices]);
+
   // Add keyboard shortcut for save (Cmd/Ctrl + S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

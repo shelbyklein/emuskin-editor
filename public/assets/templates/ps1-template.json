@@ -1,0 +1,256 @@
+{
+  "name": "PlayStation Template",
+  "identifier": "com.playcase.ps1.template",
+  "gameTypeIdentifier": "com.Spookysoft.gamma.game.ps1",
+  "debug": false,
+  "representations": {
+    "iphone": {
+      "edgeToEdge": {
+        "portrait": {
+          "assets": {},
+          "items": [
+            {
+              "inputs": ["circle"],
+              "frame": {
+                "x": 340,
+                "y": 650,
+                "width": 65,
+                "height": 65
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["x"],
+              "frame": {
+                "x": 280,
+                "y": 680,
+                "width": 65,
+                "height": 65
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["triangle"],
+              "frame": {
+                "x": 280,
+                "y": 600,
+                "width": 65,
+                "height": 65
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["square"],
+              "frame": {
+                "x": 220,
+                "y": 650,
+                "width": 65,
+                "height": 65
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["dpad"],
+              "frame": {
+                "x": 30,
+                "y": 630,
+                "width": 110,
+                "height": 110
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["thumbstick"],
+              "frame": {
+                "x": 90,
+                "y": 750,
+                "width": 90,
+                "height": 90
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["rightThumbstick"],
+              "frame": {
+                "x": 260,
+                "y": 750,
+                "width": 90,
+                "height": 90
+              },
+              "extendedEdges": {
+                "top": 10,
+                "bottom": 10,
+                "left": 10,
+                "right": 10
+              }
+            },
+            {
+              "inputs": ["l1"],
+              "frame": {
+                "x": 30,
+                "y": 500,
+                "width": 90,
+                "height": 45
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["r1"],
+              "frame": {
+                "x": 320,
+                "y": 500,
+                "width": 90,
+                "height": 45
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["l2"],
+              "frame": {
+                "x": 30,
+                "y": 440,
+                "width": 90,
+                "height": 45
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["r2"],
+              "frame": {
+                "x": 320,
+                "y": 440,
+                "width": 90,
+                "height": 45
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["start"],
+              "frame": {
+                "x": 250,
+                "y": 560,
+                "width": 55,
+                "height": 35
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["select"],
+              "frame": {
+                "x": 135,
+                "y": 560,
+                "width": 55,
+                "height": 35
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            },
+            {
+              "inputs": ["menu"],
+              "frame": {
+                "x": 190,
+                "y": 870,
+                "width": 60,
+                "height": 40
+              },
+              "extendedEdges": {
+                "top": 5,
+                "bottom": 5,
+                "left": 5,
+                "right": 5
+              }
+            }
+          ],
+          "screens": [
+            {
+              "inputFrame": {
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 956
+              },
+              "outputFrame": {
+                "x": 55,
+                "y": 130,
+                "width": 330,
+                "height": 248
+              }
+            }
+          ],
+          "mappingSize": {
+            "width": 440,
+            "height": 956
+          },
+          "extendedEdges": { 
+            "top": 0,
+            "bottom": 0,
+            "left": 0,
+            "right": 0
+          },
+          "menuInsets": {
+            "bottom": 0.1
+          }
+        }
+      }
+    }
+  }
+}

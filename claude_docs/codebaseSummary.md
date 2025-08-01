@@ -255,6 +255,9 @@ emuskin-generator/
 - ✅ Replaced text pills with visual 9:16 and 16:9 aspect ratio icons
 - ✅ Fixed DOM nesting error by restructuring orientation buttons
 - ✅ Moved GridControls into canvas toolbar for better organization
+- ✅ Deployed Cloudflare Worker with user-based R2 storage structure
+- ✅ Added logout redirect to home page for better UX
+- ✅ Fixed grid size dropdown text visibility in dark mode
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

@@ -334,6 +334,9 @@
   - When users log out, they are automatically redirected to the home page
   - Implemented using React Router navigation in AuthButton component
   - AuthContext logout function now accepts optional callback for post-logout actions
+- ✅ Fixed grid size dropdown text color in dark mode
+  - Added proper text color classes (text-gray-900 dark:text-gray-100)
+  - Grid size options now properly visible in both light and dark themes
 
 ## Current Issues
 - None currently reported

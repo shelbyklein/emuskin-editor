@@ -158,6 +158,11 @@
 - [x] Add automatic migration for existing projects
 - [x] Update R2 storage to organize files by user email
 - [x] Simplify R2 paths: [email]/[project]/[orientation].png
+- [x] Deploy Cloudflare Worker with user-based storage structure
+- [x] Improve OrientationManager UI with visual representations
+- [x] Move GridControls to canvas toolbar
+- [x] Add logout redirect to home page
+- [x] Fix UI issues (grid dropdown text color in dark mode)
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)
