@@ -41,22 +41,51 @@ const Editor: React.FC = () => {
   const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
   const [selectedScreenIndex, setSelectedScreenIndex] = useState<number | null>(null);
   
-  // Clean up on unmount
+  // Refs to track blob URLs for cleanup
+  const thumbstickUrlsRef = useRef<{ [controlId: string]: string }>({});
+  const backgroundUrlRef = useRef<string | null>(null);
+  
+  // Clean up on unmount only
   useEffect(() => {
     return () => {
       // Clean up thumbstick URLs
-      Object.values(thumbstickImages).forEach(url => {
+      Object.values(thumbstickUrlsRef.current).forEach(url => {
         if (url && url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
         }
       });
       // Clean up background image URL
-      if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
-        URL.revokeObjectURL(uploadedImage.url);
+      if (backgroundUrlRef.current && backgroundUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(backgroundUrlRef.current);
       }
       // Don't reset edit panel tracking - let it persist across component mounts
     };
-  }, [thumbstickImages, uploadedImage]);
+  }, []); // Empty dependencies - only run on unmount
+  
+  // Track background image blob URL
+  useEffect(() => {
+    if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
+      // Clean up previous URL if it exists and is different
+      if (backgroundUrlRef.current && backgroundUrlRef.current !== uploadedImage.url && backgroundUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(backgroundUrlRef.current);
+      }
+      backgroundUrlRef.current = uploadedImage.url;
+    }
+  }, [uploadedImage]);
+  
+  // Track thumbstick blob URLs
+  useEffect(() => {
+    Object.entries(thumbstickImages).forEach(([controlId, url]) => {
+      if (url && url.startsWith('blob:')) {
+        // Clean up previous URL if it exists and is different
+        if (thumbstickUrlsRef.current[controlId] && thumbstickUrlsRef.current[controlId] !== url && thumbstickUrlsRef.current[controlId].startsWith('blob:')) {
+          URL.revokeObjectURL(thumbstickUrlsRef.current[controlId]);
+        }
+        thumbstickUrlsRef.current[controlId] = url;
+      }
+    });
+  }, [thumbstickImages]);
+  
   const { settings } = useEditor();
   const { 
     currentProject, 
@@ -187,10 +216,25 @@ const Editor: React.FC = () => {
       
       // Handle background image
       if (orientationData.backgroundImage && orientationData.backgroundImage.hasStoredImage) {
-        // Image exists in IndexedDB
-        console.log('Project has stored image, will load from IndexedDB...');
-        // Don't set the image here even if we have a URL - it might be stale
-        // The watcher useEffect will handle loading a fresh blob URL
+        // Image exists in IndexedDB - load it
+        console.log('Loading image from IndexedDB for orientation:', getCurrentOrientation());
+        indexedDBManager.getImage(`${currentProject.id}-${getCurrentOrientation()}`, 'background')
+          .then(storedImage => {
+            if (storedImage && storedImage.url) {
+              console.log('Loaded image from IndexedDB:', storedImage.fileName);
+              setUploadedImage({
+                file: new File([], storedImage.fileName),
+                url: storedImage.url
+              });
+            } else {
+              console.error('Failed to load image from IndexedDB');
+              setUploadedImage(null);
+            }
+          })
+          .catch(error => {
+            console.error('Error loading image from IndexedDB:', error);
+            setUploadedImage(null);
+          });
       } else {
         // No image stored
         setUploadedImage(null);
@@ -244,82 +288,6 @@ const Editor: React.FC = () => {
       setSkinIdentifier(currentProject.identifier);
     }
   }, [currentProject?.name, currentProject?.identifier, currentProject?.lastModified]);
-  
-  // Watch for background image URL updates from IndexedDB loading
-  useEffect(() => {
-    if (currentProject && !isSavingRef.current) {
-      const orientationData = getOrientationData();
-      console.log('Checking for background image update:', {
-        hasOrientationData: !!orientationData,
-        hasBackgroundImage: !!orientationData?.backgroundImage,
-        backgroundImageUrl: orientationData?.backgroundImage?.url,
-        currentUploadedImageUrl: uploadedImage?.url,
-        hasStoredImage: orientationData?.backgroundImage?.hasStoredImage
-      });
-      
-      if (orientationData?.backgroundImage?.hasStoredImage) {
-        // Image should exist in IndexedDB
-        const currentUrl = orientationData.backgroundImage.url;
-        
-        if (!currentUrl || currentUrl.startsWith('blob:')) {
-          // URL is null or is a blob URL (which might be stale)
-          // Always load fresh from IndexedDB
-          console.log('Loading fresh image from IndexedDB (URL is null or blob)...');
-          
-          indexedDBManager.getImage(`${currentProject.id}-${getCurrentOrientation()}`, 'background')
-            .then(storedImage => {
-              if (storedImage && storedImage.url) {
-                console.log('Loaded fresh image from IndexedDB:', storedImage.fileName);
-                setUploadedImage({
-                  file: new File([], storedImage.fileName),
-                  url: storedImage.url
-                });
-                
-                // Update the project with null URL to prevent storing blob URLs
-                saveOrientationData({
-                  ...orientationData,
-                  backgroundImage: {
-                    ...orientationData.backgroundImage,
-                    url: null // Never store blob URLs
-                  }
-                });
-              } else {
-                console.error('Failed to load image from IndexedDB - removing image reference');
-                setUploadedImage(null);
-                // Remove the image reference from the project
-                saveOrientationData({
-                  ...orientationData,
-                  backgroundImage: null
-                });
-              }
-            })
-            .catch(error => {
-              console.error('Error loading image from IndexedDB:', error);
-              setUploadedImage(null);
-              // Remove the image reference from the project
-              saveOrientationData({
-                ...orientationData,
-                backgroundImage: null
-              });
-            });
-        } else if (currentUrl !== uploadedImage?.url) {
-          // We have a non-blob URL that's different from what we're showing
-          console.log('Setting uploaded image from loaded URL:', currentUrl);
-          
-          const fileName = orientationData.backgroundImage?.fileName || 'image';
-          
-          setUploadedImage({
-            file: new File([], fileName),
-            url: currentUrl
-          });
-        }
-      } else if (!orientationData?.backgroundImage?.hasStoredImage && uploadedImage) {
-        // No background image in orientation data but we're showing one
-        console.log('No background image in orientation data, clearing uploaded image');
-        setUploadedImage(null);
-      }
-    }
-  }, [currentProject?.orientations, currentProject?.id, getOrientationData, uploadedImage?.url, getCurrentOrientation]);
   
   // Handle pending image save after project creation
   useEffect(() => {
@@ -664,10 +632,7 @@ const Editor: React.FC = () => {
   }, [selectedConsole, consoles, currentProject]);
 
   const handleImageUpload = async (file: File, previewUrl: string) => {
-    // Clean up previous blob URL if it exists
-    if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
-      URL.revokeObjectURL(uploadedImage.url);
-    }
+    // Note: Cleanup of previous blob URL is now handled by the tracking effect
     
     // Set the uploaded image with the data URL for immediate display
     console.log('Setting uploaded image with URL:', previewUrl.substring(0, 50) + '...');
@@ -711,6 +676,30 @@ const Editor: React.FC = () => {
     // Toggle orientation
     const newOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
     setOrientation(newOrientation);
+    
+    // Load image for the new orientation
+    const newOrientationData = getOrientationData(newOrientation);
+    if (newOrientationData?.backgroundImage?.hasStoredImage) {
+      console.log('Loading image for new orientation:', newOrientation);
+      indexedDBManager.getImage(`${currentProject.id}-${newOrientation}`, 'background')
+        .then(storedImage => {
+          if (storedImage && storedImage.url) {
+            setUploadedImage({
+              file: new File([], storedImage.fileName),
+              url: storedImage.url
+            });
+          } else {
+            setUploadedImage(null);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading image for new orientation:', error);
+          setUploadedImage(null);
+        });
+    } else {
+      // No image for new orientation
+      setUploadedImage(null);
+    }
   };
 
   const handleCopyOrientationLayout = () => {
@@ -750,14 +739,7 @@ const Editor: React.FC = () => {
     setMenuInsetsEnabled(sourceData.menuInsetsEnabled || false);
     setMenuInsetsBottom(sourceData.menuInsetsBottom || 0);
     
-    // Copy background image if it exists
-    if (sourceData.backgroundImage && sourceData.backgroundImage.hasStoredImage) {
-      // The image is already in IndexedDB, just update the reference
-      setUploadedImage({
-        file: new File([], sourceData.backgroundImage.fileName || 'image'),
-        url: sourceData.backgroundImage.url || ''
-      });
-    }
+    // Don't copy background image - each orientation should have its own image
     
     alert(`Layout copied from ${sourceOrientation} to ${currentOrientation} successfully!`);
   };
@@ -1166,8 +1148,13 @@ const Editor: React.FC = () => {
               {/* Image Upload Section */}
               {!uploadedImage && (
                 <div id="image-upload-section" className="card animate-slide-up">
-                  <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Upload Skin Image</h3>
-                  <ImageUploader onImageUpload={handleImageUpload} />
+                  <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    Upload {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Skin Image
+                  </h3>
+                  <ImageUploader 
+                    onImageUpload={handleImageUpload} 
+                    currentOrientation={getCurrentOrientation()}
+                  />
                 </div>
               )}
 
@@ -1271,9 +1258,40 @@ const Editor: React.FC = () => {
                     {/* Orientation Toggle */}
                     <button
                       onClick={handleOrientationToggle}
-                      className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm"
+                      className="relative flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm"
                       title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
                     >
+                      {/* Image indicators */}
+                      <div className="absolute -top-1 -right-1 flex gap-0.5">
+                        {(() => {
+                          const portraitData = getOrientationData('portrait');
+                          const landscapeData = getOrientationData('landscape');
+                          const hasPortraitImage = portraitData?.backgroundImage?.hasStoredImage || false;
+                          const hasLandscapeImage = landscapeData?.backgroundImage?.hasStoredImage || false;
+                          
+                          return (
+                            <>
+                              {hasPortraitImage && (
+                                <div 
+                                  className={`w-2 h-2 rounded-full ${
+                                    getCurrentOrientation() === 'portrait' ? 'bg-green-500' : 'bg-gray-400'
+                                  }`}
+                                  title="Portrait has image"
+                                />
+                              )}
+                              {hasLandscapeImage && (
+                                <div 
+                                  className={`w-2 h-2 rounded-full ${
+                                    getCurrentOrientation() === 'landscape' ? 'bg-green-500' : 'bg-gray-400'
+                                  }`}
+                                  title="Landscape has image"
+                                />
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                      
                       <svg 
                         className={`w-4 h-4 transition-transform duration-300 ${
                           getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
@@ -1310,24 +1328,69 @@ const Editor: React.FC = () => {
             </div>
             {/* Show canvas only when console and device are selected */}
             {selectedConsole && selectedDevice ? (
-              <Canvas 
-                device={selectedDeviceData}
-                backgroundImage={uploadedImage?.url || null}
-                controls={controls}
-                screens={screens}
-                consoleType={selectedConsole}
-                orientation={getCurrentOrientation()}
-                menuInsetsEnabled={menuInsetsEnabled}
-                menuInsetsBottom={menuInsetsBottom}
-                onControlUpdate={handleControlsUpdate}
-                onScreenUpdate={handleScreensUpdate}
-                thumbstickImages={thumbstickImages}
-                onThumbstickImageUpload={handleThumbstickImageUpload}
-                selectedControlIndex={selectedControlIndex}
-                onControlSelectionChange={setSelectedControlIndex}
-                selectedScreenIndex={selectedScreenIndex}
-                onScreenSelectionChange={setSelectedScreenIndex}
-              />
+              <>
+                <Canvas 
+                  device={selectedDeviceData}
+                  backgroundImage={uploadedImage?.url || null}
+                  controls={controls}
+                  screens={screens}
+                  consoleType={selectedConsole}
+                  orientation={getCurrentOrientation()}
+                  menuInsetsEnabled={menuInsetsEnabled}
+                  menuInsetsBottom={menuInsetsBottom}
+                  onControlUpdate={handleControlsUpdate}
+                  onScreenUpdate={handleScreensUpdate}
+                  thumbstickImages={thumbstickImages}
+                  onThumbstickImageUpload={handleThumbstickImageUpload}
+                  selectedControlIndex={selectedControlIndex}
+                  onControlSelectionChange={setSelectedControlIndex}
+                  selectedScreenIndex={selectedScreenIndex}
+                  onScreenSelectionChange={setSelectedScreenIndex}
+                />
+                
+                {/* Orientation Image Status */}
+                {currentProject && !uploadedImage && (
+                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        No image for {getCurrentOrientation()} orientation
+                      </p>
+                      {(() => {
+                        const otherOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
+                        const otherData = getOrientationData(otherOrientation);
+                        if (otherData?.backgroundImage?.hasStoredImage) {
+                          return (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  // Copy image from other orientation
+                                  const sourceKey = `${currentProject.id}-${otherOrientation}`;
+                                  const storedImage = await indexedDBManager.getImage(sourceKey, 'background');
+                                  
+                                  if (storedImage) {
+                                    // Create a new file from the stored image data
+                                    const file = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
+                                    
+                                    // Use handleImageUpload to properly save and display the image
+                                    handleImageUpload(file, storedImage.url);
+                                  }
+                                } catch (error) {
+                                  console.error('Failed to copy image:', error);
+                                  alert('Failed to copy image from other orientation');
+                                }
+                              }}
+                              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              Copy from {otherOrientation}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                 <div className="text-center">
@@ -1345,10 +1408,24 @@ const Editor: React.FC = () => {
                 {uploadedImage && (
                   <button
                     id="remove-image-button"
-                    onClick={() => setUploadedImage(null)}
+                    onClick={() => {
+                      // Note: Blob URL cleanup is now handled by the tracking effect
+                      
+                      // Clear UI first
+                      setUploadedImage(null);
+                      
+                      // Clear image data for current orientation
+                      const orientationData = getOrientationData();
+                      if (orientationData) {
+                        saveOrientationData({
+                          ...orientationData,
+                          backgroundImage: null
+                        });
+                      }
+                    }}
                     className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                   >
-                    Remove Image
+                    Remove {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Image
                   </button>
                 )}
                 <ImportButton onImport={handleImport} />

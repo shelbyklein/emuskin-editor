@@ -5,12 +5,14 @@ interface ImageUploaderProps {
   onImageUpload: (file: File, previewUrl: string) => void;
   acceptedFormats?: string[];
   maxSizeMB?: number;
+  currentOrientation?: 'portrait' | 'landscape';
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageUpload,
   acceptedFormats = ['image/png', 'image/jpeg', 'image/jpg'],
-  maxSizeMB = 10
+  maxSizeMB = 10,
+  currentOrientation = 'portrait'
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +112,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         </svg>
         
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Drop your skin image here, or click to browse
+          Drop your {currentOrientation} skin image here, or click to browse
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
           PNG or JPEG, max {maxSizeMB}MB

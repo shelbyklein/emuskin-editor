@@ -23,6 +23,6 @@
         "-y",
         "@upstash/context7-mcp"
         ]
-        }
-    }   
+      }
+    }
 }
