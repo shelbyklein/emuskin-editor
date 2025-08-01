@@ -1041,7 +1041,7 @@ const Editor: React.FC = () => {
             user.email,
             'thumbstick',
             getCurrentOrientation(),
-            controlId
+            control.id
           );
           url = publicUrl;
           console.log('Thumbstick image uploaded to R2:', url);

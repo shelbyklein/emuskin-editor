@@ -26,7 +26,7 @@ export function useAutosave(
   options: AutosaveOptions = {}
 ) {
   const { delay = 2000, enabled = true } = options;
-  const { currentProject, saveProject, saveProjectWithOrientation } = useProject();
+  const { currentProject, saveProjectWithOrientation } = useProject();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = useRef<string>('');
   
