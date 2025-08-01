@@ -1,5 +1,5 @@
 // Project context for managing skin projects with local storage
-import React, { createContext, useContext, ReactNode, useEffect, useCallback, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
@@ -232,9 +232,43 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
                 }
                 return p;
               }));
+            } else {
+              console.error(`No image found in IndexedDB for ${orientation} - removing reference`);
+              // Remove the invalid image reference
+              setProjects(prev => prev.map(p => {
+                if (p.id === id && p.orientations) {
+                  return {
+                    ...p,
+                    orientations: {
+                      ...p.orientations,
+                      [orientation]: {
+                        ...p.orientations[orientation],
+                        backgroundImage: null
+                      }
+                    }
+                  };
+                }
+                return p;
+              }));
             }
           } catch (error) {
             console.error(`Failed to load ${orientation} image from IndexedDB:`, error);
+            // Remove the invalid image reference
+            setProjects(prev => prev.map(p => {
+              if (p.id === id && p.orientations) {
+                return {
+                  ...p,
+                  orientations: {
+                    ...p.orientations,
+                    [orientation]: {
+                      ...p.orientations[orientation],
+                      backgroundImage: null
+                    }
+                  }
+                };
+              }
+              return p;
+            }));
           }
         }
       }
@@ -344,7 +378,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
                 ...project.orientations[orientation],
                 backgroundImage: {
                   fileName: file.name,
-                  url,
+                  url: null, // Don't store blob URLs - they expire
                   hasStoredImage: true
                 }
               }

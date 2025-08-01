@@ -115,11 +115,9 @@ class IndexedDBManager {
                 }
               }
             }
-            // Recreate object URL if needed
-            if (!image.url || image.url.startsWith('blob:')) {
-              console.log('Creating new blob URL for image:', image.fileName);
-              image.url = URL.createObjectURL(image.data);
-            }
+            // Always create a fresh blob URL since they expire
+            console.log('Creating fresh blob URL for image:', image.fileName);
+            image.url = URL.createObjectURL(image.data);
             console.log('Returning image:', image.fileName, 'url:', image.url);
             resolve(image);
           } else {
@@ -150,10 +148,8 @@ class IndexedDBManager {
         if (cursor) {
           const image = cursor.value as StoredImage;
           if (image.imageType === 'thumbstick') {
-            // Recreate object URL if needed
-            if (!image.url || image.url.startsWith('blob:')) {
-              image.url = URL.createObjectURL(image.data);
-            }
+            // Always create a fresh blob URL since they expire
+            image.url = URL.createObjectURL(image.data);
             images.push(image);
           }
           cursor.continue();

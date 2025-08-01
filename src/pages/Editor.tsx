@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
+import { indexedDBManager } from '../utils/indexedDB';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
@@ -18,7 +19,6 @@ import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
-import { indexedDBManager } from '../utils/indexedDB';
 
 const Editor: React.FC = () => {
   const location = useLocation();
@@ -63,7 +63,6 @@ const Editor: React.FC = () => {
     createProject,
     saveProject, 
     saveProjectImage,
-    storeTemporaryImage,
     getCurrentOrientation, 
     setOrientation, 
     getOrientationData, 
@@ -187,22 +186,13 @@ const Editor: React.FC = () => {
       setHistoryIndex(0);
       
       // Handle background image
-      if (orientationData.backgroundImage) {
-        if (orientationData.backgroundImage.url && !orientationData.backgroundImage.url.startsWith('blob:')) {
-          // Only set if we have a valid non-blob URL (from IndexedDB)
-          setUploadedImage({
-            file: new File([], orientationData.backgroundImage.fileName || 'image'),
-            url: orientationData.backgroundImage.url
-          });
-        } else if (orientationData.backgroundImage.hasStoredImage) {
-          // Image should be in IndexedDB but URL is missing or is a blob URL
-          // The loadProject function should have already loaded it
-          console.log('Waiting for image to be loaded from IndexedDB...');
-        } else {
-          // No image stored
-          setUploadedImage(null);
-        }
+      if (orientationData.backgroundImage && orientationData.backgroundImage.hasStoredImage) {
+        // Image exists in IndexedDB
+        console.log('Project has stored image, will load from IndexedDB...');
+        // Don't set the image here even if we have a URL - it might be stale
+        // The watcher useEffect will handle loading a fresh blob URL
       } else {
+        // No image stored
         setUploadedImage(null);
       }
     }
@@ -263,19 +253,73 @@ const Editor: React.FC = () => {
         hasOrientationData: !!orientationData,
         hasBackgroundImage: !!orientationData?.backgroundImage,
         backgroundImageUrl: orientationData?.backgroundImage?.url,
-        currentUploadedImageUrl: uploadedImage?.url
+        currentUploadedImageUrl: uploadedImage?.url,
+        hasStoredImage: orientationData?.backgroundImage?.hasStoredImage
       });
-      if (orientationData?.backgroundImage?.url && 
-          orientationData.backgroundImage.url !== uploadedImage?.url) {
-        console.log('Setting uploaded image from loaded URL:', orientationData.backgroundImage.url);
-        // Update with the newly loaded URL from IndexedDB
-        setUploadedImage({
-          file: new File([], orientationData.backgroundImage.fileName || 'image'),
-          url: orientationData.backgroundImage.url
-        });
+      
+      if (orientationData?.backgroundImage?.hasStoredImage) {
+        // Image should exist in IndexedDB
+        const currentUrl = orientationData.backgroundImage.url;
+        
+        if (!currentUrl || currentUrl.startsWith('blob:')) {
+          // URL is null or is a blob URL (which might be stale)
+          // Always load fresh from IndexedDB
+          console.log('Loading fresh image from IndexedDB (URL is null or blob)...');
+          
+          indexedDBManager.getImage(`${currentProject.id}-${getCurrentOrientation()}`, 'background')
+            .then(storedImage => {
+              if (storedImage && storedImage.url) {
+                console.log('Loaded fresh image from IndexedDB:', storedImage.fileName);
+                setUploadedImage({
+                  file: new File([], storedImage.fileName),
+                  url: storedImage.url
+                });
+                
+                // Update the project with null URL to prevent storing blob URLs
+                saveOrientationData({
+                  ...orientationData,
+                  backgroundImage: {
+                    ...orientationData.backgroundImage,
+                    url: null // Never store blob URLs
+                  }
+                });
+              } else {
+                console.error('Failed to load image from IndexedDB - removing image reference');
+                setUploadedImage(null);
+                // Remove the image reference from the project
+                saveOrientationData({
+                  ...orientationData,
+                  backgroundImage: null
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error loading image from IndexedDB:', error);
+              setUploadedImage(null);
+              // Remove the image reference from the project
+              saveOrientationData({
+                ...orientationData,
+                backgroundImage: null
+              });
+            });
+        } else if (currentUrl !== uploadedImage?.url) {
+          // We have a non-blob URL that's different from what we're showing
+          console.log('Setting uploaded image from loaded URL:', currentUrl);
+          
+          const fileName = orientationData.backgroundImage?.fileName || 'image';
+          
+          setUploadedImage({
+            file: new File([], fileName),
+            url: currentUrl
+          });
+        }
+      } else if (!orientationData?.backgroundImage?.hasStoredImage && uploadedImage) {
+        // No background image in orientation data but we're showing one
+        console.log('No background image in orientation data, clearing uploaded image');
+        setUploadedImage(null);
       }
     }
-  }, [currentProject?.orientations, getOrientationData, uploadedImage?.url]);
+  }, [currentProject?.orientations, currentProject?.id, getOrientationData, uploadedImage?.url, getCurrentOrientation]);
   
   // Handle pending image save after project creation
   useEffect(() => {
@@ -287,13 +331,27 @@ const Editor: React.FC = () => {
         .then(() => {
           console.log('Pending image saved successfully');
           pendingImageSaveRef.current = null;
+          
+          // Update orientation data with the saved image reference
+          // This ensures the image URL is properly stored in the project
+          const orientationData = getOrientationData();
+          if (orientationData) {
+            saveOrientationData({
+              ...orientationData,
+              backgroundImage: {
+                fileName: pendingImage.file.name,
+                url: null, // The URL is now in IndexedDB
+                hasStoredImage: true
+              }
+            }, pendingImage.orientation);
+          }
         })
         .catch(error => {
           console.error('Failed to save pending image:', error);
           pendingImageSaveRef.current = null;
         });
     }
-  }, [currentProject?.id, saveProjectImage]);
+  }, [currentProject?.id, saveProjectImage, getOrientationData, saveOrientationData]);
   
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
@@ -340,7 +398,7 @@ const Editor: React.FC = () => {
     // If no current project, create one with all the current data
     if (!currentProject) {
       // Create project with current form data - use state values directly
-      const projectId = createProject(skinName || 'Untitled Skin', {
+      createProject(skinName || 'Untitled Skin', {
         identifier: skinIdentifier || 'com.playcase.default.skin',
         console: selectedConsoleData,
         device: selectedDeviceData,
@@ -356,27 +414,20 @@ const Editor: React.FC = () => {
         };
       }
       
-      // Immediately save orientation data (but not the image - that's handled separately)
+      // Immediately save orientation data with image metadata
       saveOrientationData({
         controls,
         screens,
         menuInsetsEnabled,
-        menuInsetsBottom
-        // Don't include backgroundImage here - it will be saved by saveProjectImage
+        menuInsetsBottom,
+        // Include backgroundImage metadata so it can be loaded later
+        backgroundImage: uploadedImage ? {
+          fileName: uploadedImage.file.name,
+          url: null, // URL will be set when saveProjectImage completes
+          hasStoredImage: true
+        } : null
       });
     } else {
-      // Save the image to the project if one was uploaded
-      if (uploadedImage) {
-        console.log('Saving image for existing project...');
-        try {
-          console.log('Calling saveProjectImage');
-          await saveProjectImage(uploadedImage.file, getCurrentOrientation());
-          console.log('Image saved successfully');
-        } catch (error) {
-          console.error('Failed to save image to project:', error);
-        }
-      }
-      
       // Save project and orientation data together atomically
       const projectData = {
         name: skinName || 'Untitled Skin',
@@ -386,15 +437,15 @@ const Editor: React.FC = () => {
         hasBeenConfigured: !!(selectedConsoleData && selectedDeviceData)
       };
       
+      // Don't include backgroundImage in orientation data - it will be handled separately
       const orientationData = {
         controls,
         screens,
         menuInsetsEnabled,
         menuInsetsBottom
-        // Don't include backgroundImage here - saveProjectImage already handles it
       };
       
-      console.log('Saving project and orientation data together:', {
+      console.log('Saving project and orientation data:', {
         project: {
           name: projectData.name,
           identifier: projectData.identifier,
@@ -411,8 +462,20 @@ const Editor: React.FC = () => {
         }
       });
       
-      // Use the combined save function for atomic update
+      // Save project and orientation data first
       saveProjectWithOrientation(projectData, orientationData);
+      
+      // Then save the image if one was uploaded
+      if (uploadedImage) {
+        console.log('Saving image for existing project...');
+        try {
+          console.log('Calling saveProjectImage');
+          await saveProjectImage(uploadedImage.file, getCurrentOrientation());
+          console.log('Image saved successfully');
+        } catch (error) {
+          console.error('Failed to save image to project:', error);
+        }
+      }
     }
     
     // Update UI state
@@ -610,14 +673,15 @@ const Editor: React.FC = () => {
     console.log('Setting uploaded image with URL:', previewUrl.substring(0, 50) + '...');
     setUploadedImage({ file, url: previewUrl });
     
-    // Store image temporarily in IndexedDB if we have a current project
-    // This ensures the image data is preserved but doesn't update the project state
+    // Save image to project if we have a current project
     if (currentProject) {
       try {
-        // Store in IndexedDB but keep using the data URL for display
-        await storeTemporaryImage(file, getCurrentOrientation());
+        // Save the image to the project - this updates both IndexedDB and project state
+        console.log('Saving image to project...');
+        await saveProjectImage(file, getCurrentOrientation());
+        console.log('Image saved to project successfully');
       } catch (error) {
-        console.error('Failed to store image temporarily:', error);
+        console.error('Failed to save image to project:', error);
         // Still allow the image to be used even if storage fails
       }
     }
