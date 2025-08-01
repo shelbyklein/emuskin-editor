@@ -701,33 +701,38 @@ const Editor: React.FC = () => {
   };
 
 
-  const handleAddOrientation = (orientation: 'portrait' | 'landscape') => {
+  const handleAddOrientation = useCallback((orientation: 'portrait' | 'landscape') => {
     if (!currentProject) return;
     
     const updatedOrientations = [...(currentProject.availableOrientations || ['portrait']), orientation];
     
-    // Save the new available orientations
-    saveProject({
-      availableOrientations: updatedOrientations
-    });
+    // Check if we need to initialize orientation data
+    const needsInitialization = !currentProject.orientations?.[orientation];
     
-    // Initialize empty orientation data if it doesn't exist
-    if (!currentProject.orientations?.[orientation]) {
-      saveOrientationData({
-        controls: [],
-        screens: [],
-        backgroundImage: null,
-        menuInsetsEnabled: false,
-        menuInsetsBottom: 0
-      }, orientation);
-    }
+    // Prepare orientation data if needed
+    const defaultOrientationData = needsInitialization ? {
+      controls: [],
+      screens: [],
+      backgroundImage: null,
+      menuInsetsEnabled: false,
+      menuInsetsBottom: 0
+    } : undefined;
     
-    // Offer to copy layout from existing orientation
-    const otherOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
-    const hasOtherOrientation = currentProject.availableOrientations?.includes(otherOrientation);
+    // Save both project updates and orientation data in a single call
+    saveProjectWithOrientation(
+      {
+        availableOrientations: updatedOrientations
+      },
+      defaultOrientationData,
+      orientation
+    );
     
-    if (hasOtherOrientation) {
+    // After state updates are processed, offer to copy layout and switch orientation
+    setTimeout(() => {
+      const otherOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
       const sourceData = getOrientationData(otherOrientation);
+      
+      // Check if other orientation has data to copy
       if (sourceData && (sourceData.controls?.length > 0 || sourceData.screens?.length > 0)) {
         if (window.confirm(`Would you like to copy the layout from ${otherOrientation} to ${orientation}?`)) {
           saveOrientationData({
@@ -739,13 +744,10 @@ const Editor: React.FC = () => {
           }, orientation);
         }
       }
-    }
-    
-    // Switch to the new orientation
-    setOrientation(orientation);
-  };
+    }, 100); // Small delay to ensure state updates have propagated
+  }, [currentProject, saveProjectWithOrientation, getOrientationData, saveOrientationData, setOrientation]);
   
-  const handleRemoveOrientation = (orientation: 'portrait' | 'landscape') => {
+  const handleRemoveOrientation = useCallback((orientation: 'portrait' | 'landscape') => {
     if (!currentProject) return;
     
     const currentOrientations = currentProject.availableOrientations || ['portrait'];
@@ -753,26 +755,27 @@ const Editor: React.FC = () => {
     
     const updatedOrientations = currentOrientations.filter(o => o !== orientation);
     
-    // If removing current orientation, switch to the other one
+    // If removing current orientation, switch to the other one first
     if (getCurrentOrientation() === orientation) {
       const newOrientation = updatedOrientations[0];
       setOrientation(newOrientation);
     }
     
-    // Clear the orientation data
-    saveOrientationData({
-      controls: [],
-      screens: [],
-      backgroundImage: null,
-      menuInsetsEnabled: false,
-      menuInsetsBottom: 0
-    }, orientation);
-    
-    // Update available orientations
-    saveProject({
-      availableOrientations: updatedOrientations
-    });
-  };
+    // Clear the orientation data and update available orientations in a single call
+    saveProjectWithOrientation(
+      {
+        availableOrientations: updatedOrientations
+      },
+      {
+        controls: [],
+        screens: [],
+        backgroundImage: null,
+        menuInsetsEnabled: false,
+        menuInsetsBottom: 0
+      },
+      orientation
+    );
+  }, [currentProject, getCurrentOrientation, setOrientation, saveProjectWithOrientation]);
 
   // Initialize history tracking state
   const [history, setHistory] = useState<Array<{ controls: ControlMapping[]; screens: ScreenMapping[]; timestamp: number; description: string }>>([]);
@@ -1225,6 +1228,7 @@ const Editor: React.FC = () => {
               {currentProject && (
                 <div id="orientation-manager-section" className="card animate-slide-up">
                   <OrientationManager
+                    key={`orientation-manager-${currentProject.availableOrientations?.length || 0}-${currentProject.availableOrientations?.join(',') || 'portrait'}`}
                     availableOrientations={currentProject.availableOrientations || ['portrait']}
                     currentOrientation={getCurrentOrientation()}
                     onOrientationChange={setOrientation}
