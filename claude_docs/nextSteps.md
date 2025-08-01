@@ -7,6 +7,10 @@
   - Templates include default control layouts and screen positions
   - Quick start workflow for new users
   - Integrated template loading into Editor component
+- ✅ Menu Insets JSON Preview Fix
+  - Fixed menu insets not appearing in JSON output
+  - Updated MenuInsetsPanel callbacks to save to project context
+  - Menu insets now persist and export correctly
 
 ## Immediate Priorities (Next Session)
 

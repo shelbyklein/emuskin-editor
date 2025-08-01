@@ -343,6 +343,11 @@
   - Each template includes pre-configured control layouts and screen positions
   - Templates load automatically when selected, navigating to editor with data
   - Quick start workflow significantly improves new user experience
+- ✅ Fixed menu insets not appearing in JSON preview
+  - Issue: Menu insets changes were only updating local state, not project context
+  - Updated MenuInsetsPanel callbacks to save changes via saveOrientationData
+  - Menu insets now persist to project and appear correctly in JSON output
+  - Follows same pattern as controls/screens with immediate saves on change
 
 ## Current Issues
 - None currently reported

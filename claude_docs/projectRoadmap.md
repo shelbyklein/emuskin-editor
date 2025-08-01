@@ -167,6 +167,9 @@
   - Pre-configured layouts for all 8 consoles
   - Quick start for new projects
   - Templates include controls, screens, and settings
+- [x] Fix menu insets not appearing in JSON preview
+  - Menu insets now save to project context
+  - Proper data persistence and JSON generation
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)
