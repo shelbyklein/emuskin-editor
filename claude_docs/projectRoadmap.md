@@ -150,6 +150,9 @@
 - [x] Switch from OAuth to JWT for simpler authentication
 - [x] Create LoginModal for email/password login
 - [x] Fix WordPress API endpoint format issues
+- [x] Fix lock button functionality
+- [x] Clear screens when console changes
+- [x] Fix save functionality with explicit saves
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth foundation complete)

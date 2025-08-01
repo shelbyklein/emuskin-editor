@@ -1228,18 +1228,40 @@ const Editor: React.FC = () => {
           ) : (
             <>
               {/* Image Upload Section */}
-              {!uploadedImage && (
-                <div id="image-upload-section" className="card animate-slide-up">
-                  <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Upload {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Skin Image
-                  </h3>
+              <div id="image-upload-section" className="card animate-slide-up">
+                <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Upload {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Skin Image
+                </h3>
+                {!uploadedImage ? (
                   <ImageUploader 
                     onImageUpload={handleImageUpload} 
                     currentOrientation={getCurrentOrientation()}
                     isUploading={isUploadingImage}
                   />
-                </div>
-              )}
+                ) : (
+                  <button
+                    id="remove-image-button"
+                    onClick={() => {
+                      // Note: Blob URL cleanup is now handled by the tracking effect
+                      
+                      // Clear UI first
+                      setUploadedImage(null);
+                      
+                      // Update orientation data to clear the image
+                      const orientationData = getOrientationData();
+                      if (orientationData) {
+                        saveOrientationData({
+                          ...orientationData,
+                          backgroundImage: null
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Remove {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Image
+                  </button>
+                )}
+              </div>
 
               {/* Control Palette */}
               <div id="control-palette-section" className="card animate-slide-up">
@@ -1484,29 +1506,6 @@ const Editor: React.FC = () => {
             {/* Canvas Actions - Moved to bottom */}
             {selectedConsole && selectedDevice && (
               <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
-                {uploadedImage && (
-                  <button
-                    id="remove-image-button"
-                    onClick={() => {
-                      // Note: Blob URL cleanup is now handled by the tracking effect
-                      
-                      // Clear UI first
-                      setUploadedImage(null);
-                      
-                      // Clear image data for current orientation
-                      const orientationData = getOrientationData();
-                      if (orientationData) {
-                        saveOrientationData({
-                          ...orientationData,
-                          backgroundImage: null
-                        });
-                      }
-                    }}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                  >
-                    Remove {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Image
-                  </button>
-                )}
                 <ImportButton onImport={handleImport} />
                 <ExportButton
                   skinName={skinName}

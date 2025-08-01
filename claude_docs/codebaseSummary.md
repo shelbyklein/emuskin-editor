@@ -236,6 +236,9 @@ emuskin-generator/
 - ✅ Implemented lock feature for controls and screens preventing accidental movement
 - ✅ Implemented undo/redo functionality with 50-state history and keyboard shortcuts
 - ✅ Fixed JWT authentication 400 error by implementing local token validation
+- ✅ Fixed lock button functionality - now properly prevents drag/drop with visual feedback
+- ✅ Added screen clearing when console changes to prevent invalid configurations
+- ✅ Fixed save functionality by replacing autosave with explicit saves on all actions
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

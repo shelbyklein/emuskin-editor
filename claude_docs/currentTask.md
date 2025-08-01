@@ -22,6 +22,9 @@
 - ✅ Implement lock feature for controls and screens - prevents accidental movement
 - ✅ Implement undo/redo functionality - 50-state history with keyboard shortcuts
 - ✅ Fix JWT authentication 400 error on reload - removed broken validate endpoint
+- ✅ Fix lock button functionality - now properly prevents drag/drop and shows visual feedback
+- ✅ Clear screens when console changes - prevents incorrect screen configurations
+- ✅ Fix save functionality - replaced buggy autosave with explicit saves on all changes
 - Add keyboard shortcuts for common actions
 
 ## Context
@@ -259,6 +262,23 @@
   - Check token expiration and extract user data from payload
   - Authentication now persists correctly across page reloads
   - Better error handling and logging for auth issues
+- ✅ Fixed lock button functionality
+  - Controls were checking wrong variable (isLocked instead of control.locked)
+  - Added proper lock checks to prevent drag/drop event handlers
+  - Implemented visual feedback: purple for locked controls, gray for locked screens
+  - Resize handles now properly hide when elements are locked
+  - Cursor shows 'default' instead of 'move' for locked elements
+- ✅ Clear screens when changing console type
+  - Screens now automatically clear when switching consoles
+  - Nintendo DS automatically creates two required screens
+  - Prevents screen configurations from persisting across incompatible consoles
+  - Added history tracking for console changes
+- ✅ Fixed save functionality issues
+  - Removed constantly-running autosave that was causing performance problems
+  - Added explicit saves after every user action (add/update/delete controls or screens)
+  - Fixed autosave cleanup effect dependencies to prevent stale closures
+  - Added comprehensive debug logging to track save operations
+  - All changes now save immediately without relying on timers
 
 ## Next Steps
 1. Add keyboard shortcuts for common actions
