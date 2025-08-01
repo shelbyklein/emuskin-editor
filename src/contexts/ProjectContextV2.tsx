@@ -2,9 +2,9 @@
 import React, { createContext, useContext, ReactNode, useEffect, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
-import { indexedDBManager } from '../utils/indexedDB';
 import { MinimalProject } from '../types/SaveFormat';
 import { toMinimalProject, fromMinimalProject } from '../utils/projectConverter';
+import { isR2Enabled } from '../utils/r2Client';
 
 interface OrientationData {
   controls: ControlMapping[];
@@ -31,6 +31,7 @@ interface Project {
   currentOrientation?: 'portrait' | 'landscape';
   hasBeenConfigured?: boolean;
   lastModified: number;
+  userId?: string;
 }
 
 interface ProjectContextType {
@@ -82,11 +83,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [consoles, setConsoles] = useState<Console[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
 
-  // Initialize IndexedDB and load consoles/devices
+  // Load consoles/devices
   useEffect(() => {
-    indexedDBManager.init().catch(console.error);
-    indexedDBManager.clearOldImages(30).catch(console.error);
-    
     // Load consoles and devices
     const loadData = async () => {
       try {
@@ -124,23 +122,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       for (const minimal of minimalProjects) {
         const full = await fromMinimalProject(minimal, consoles, devices);
         if (full) {
-          // Load background images from IndexedDB
-          if (full.orientations) {
-            for (const orientation of ['portrait', 'landscape'] as const) {
-              const orientationData = full.orientations[orientation];
-              if (orientationData.backgroundImage?.hasStoredImage) {
-                try {
-                  const storedImage = await indexedDBManager.getImage(`${full.id}-${orientation}`, 'background');
-                  if (storedImage) {
-                    orientationData.backgroundImage.url = storedImage.url;
-                    orientationData.backgroundImage.fileName = storedImage.fileName;
-                  }
-                } catch (error) {
-                  console.error(`Failed to load ${orientation} image for project ${full.id}:`, error);
-                }
-              }
-            }
-          }
+          // R2 URLs are already stored in the project data
           converted.push(full);
         }
       }
@@ -213,19 +195,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       throw new Error('No current project to save image to');
     }
     
-    const targetOrientation = orientation || getCurrentOrientation();
-    
-    // Store image in IndexedDB
-    const url = await indexedDBManager.storeImage(`${currentProjectId}-${targetOrientation}`, file, 'background');
-    
-    // Update orientation data
-    saveOrientationData({
-      backgroundImage: {
-        fileName: file.name,
-        url,
-        hasStoredImage: true
-      }
-    }, targetOrientation);
+    // R2 is required - image upload is handled by Editor component
+    console.log('saveProjectImage called - R2 upload should be handled by Editor component');
   };
   
   const storeTemporaryImage = async (file: File, orientation?: 'portrait' | 'landscape') => {
@@ -233,21 +204,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       throw new Error('No current project to store image for');
     }
     
-    const targetOrientation = orientation || getCurrentOrientation();
-    
-    // Store image in IndexedDB but don't update project state
-    const url = await indexedDBManager.storeImage(`${currentProjectId}-${targetOrientation}`, file, 'background');
-    return url;
+    // Create a temporary URL for the file
+    return URL.createObjectURL(file);
   };
 
   const deleteProject = async (id: string) => {
-    // Delete images from IndexedDB
-    try {
-      await indexedDBManager.deleteProjectImages(id);
-    } catch (error) {
-      console.error('Failed to delete project images:', error);
-    }
-    
+    // Remove project from storage
     setMinimalProjects(prev => prev.filter(p => p.id !== id));
     if (currentProjectId === id) {
       setCurrentProjectId(null);

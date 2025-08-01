@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { indexedDBManager } from '../utils/indexedDB';
+import { dataURLToFile } from '../utils/imageUtils';
+import { uploadImage, isR2Enabled } from '../utils/r2Client';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
@@ -42,50 +43,22 @@ const Editor: React.FC = () => {
   const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
   const [selectedScreenIndex, setSelectedScreenIndex] = useState<number | null>(null);
   
-  // Refs to track blob URLs for cleanup
-  const thumbstickUrlsRef = useRef<{ [controlId: string]: string }>({});
-  const backgroundUrlRef = useRef<string | null>(null);
-  
-  // Clean up on unmount only
+  // Clean up blob URLs on unmount only if R2 is not enabled
   useEffect(() => {
-    return () => {
-      // Clean up thumbstick URLs
-      Object.values(thumbstickUrlsRef.current).forEach(url => {
-        if (url && url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
+    if (!isR2Enabled()) {
+      return () => {
+        // Clean up any local blob URLs on unmount
+        if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
+          URL.revokeObjectURL(uploadedImage.url);
         }
-      });
-      // Clean up background image URL
-      if (backgroundUrlRef.current && backgroundUrlRef.current.startsWith('blob:')) {
-        URL.revokeObjectURL(backgroundUrlRef.current);
-      }
-      // Don't reset edit panel tracking - let it persist across component mounts
-    };
-  }, []); // Empty dependencies - only run on unmount
-  
-  // Track background image blob URL
-  useEffect(() => {
-    if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
-      // Clean up previous URL if it exists and is different
-      if (backgroundUrlRef.current && backgroundUrlRef.current !== uploadedImage.url && backgroundUrlRef.current.startsWith('blob:')) {
-        URL.revokeObjectURL(backgroundUrlRef.current);
-      }
-      backgroundUrlRef.current = uploadedImage.url;
+        Object.values(thumbstickImages).forEach(url => {
+          if (url && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+          }
+        });
+      };
     }
-  }, [uploadedImage]);
-  
-  // Track thumbstick blob URLs
-  useEffect(() => {
-    Object.entries(thumbstickImages).forEach(([controlId, url]) => {
-      if (url && url.startsWith('blob:')) {
-        // Clean up previous URL if it exists and is different
-        if (thumbstickUrlsRef.current[controlId] && thumbstickUrlsRef.current[controlId] !== url && thumbstickUrlsRef.current[controlId].startsWith('blob:')) {
-          URL.revokeObjectURL(thumbstickUrlsRef.current[controlId]);
-        }
-        thumbstickUrlsRef.current[controlId] = url;
-      }
-    });
-  }, [thumbstickImages]);
+  }, []); // Empty dependencies - only run on unmount
   
   const { settings } = useEditor();
   const { 
@@ -229,26 +202,13 @@ const Editor: React.FC = () => {
       setHistoryIndex(0);
       
       // Handle background image
-      if (orientationData.backgroundImage && orientationData.backgroundImage.hasStoredImage) {
-        // Image exists in IndexedDB - load it
-        console.log('Loading image from IndexedDB for orientation:', getCurrentOrientation());
-        indexedDBManager.getImage(`${currentProject.id}-${getCurrentOrientation()}`, 'background')
-          .then(storedImage => {
-            if (storedImage && storedImage.url) {
-              console.log('Loaded image from IndexedDB:', storedImage.fileName);
-              setUploadedImage({
-                file: new File([], storedImage.fileName),
-                url: storedImage.url
-              });
-            } else {
-              console.error('Failed to load image from IndexedDB');
-              setUploadedImage(null);
-            }
-          })
-          .catch(error => {
-            console.error('Error loading image from IndexedDB:', error);
-            setUploadedImage(null);
-          });
+      if (orientationData.backgroundImage?.url) {
+        // R2 URL available - use it directly
+        console.log('Loading image from R2 URL:', orientationData.backgroundImage.url);
+        setUploadedImage({
+          file: new File([], orientationData.backgroundImage.fileName),
+          url: orientationData.backgroundImage.url
+        });
       } else {
         // No image stored
         setUploadedImage(null);
@@ -262,7 +222,7 @@ const Editor: React.FC = () => {
       setSelectedDevice(currentProject.device.model);
     }
     
-    // Load thumbstick images from IndexedDB
+    // Load thumbstick images
     loadThumbstickImages(currentProject.id);
     
     // Mark as saved when loading a project
@@ -322,8 +282,8 @@ const Editor: React.FC = () => {
               ...orientationData,
               backgroundImage: {
                 fileName: pendingImage.file.name,
-                url: null, // The URL is now in IndexedDB
-                hasStoredImage: true
+                url: pendingImage.url || null,
+                hasStoredImage: false
               }
             }, pendingImage.orientation);
           }
@@ -338,14 +298,17 @@ const Editor: React.FC = () => {
   // Load thumbstick images for a project
   const loadThumbstickImages = async (projectId: string) => {
     try {
-      const thumbstickImages = await indexedDBManager.getAllThumbstickImages(projectId);
       const imageMap: { [controlId: string]: string } = {};
       const fileMap: { [controlId: string]: File } = {};
       
-      for (const image of thumbstickImages) {
-        if (image.controlId) {
-          imageMap[image.controlId] = image.url;
-          fileMap[image.controlId] = new File([image.data], image.fileName, { type: image.data.type });
+      // Check controls for R2 URLs
+      const orientationData = getOrientationData();
+      if (orientationData?.controls) {
+        for (const control of orientationData.controls) {
+          if (control.thumbstick?.url && control.id) {
+            imageMap[control.id] = control.thumbstick.url;
+            fileMap[control.id] = new File([], control.thumbstick.name || 'thumbstick.png');
+          }
         }
       }
       
@@ -645,24 +608,55 @@ const Editor: React.FC = () => {
     }
   }, [selectedConsole, consoles, currentProject]);
 
-  const handleImageUpload = async (file: File, previewUrl: string) => {
-    // Note: Cleanup of previous blob URL is now handled by the tracking effect
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    if (!currentProject) {
+      console.error('No current project to upload image to');
+      return;
+    }
+
+    setIsUploadingImage(true);
     
-    // Set the uploaded image with the data URL for immediate display
-    console.log('Setting uploaded image with URL:', previewUrl.substring(0, 50) + '...');
-    setUploadedImage({ file, url: previewUrl });
-    
-    // Save image to project if we have a current project
-    if (currentProject) {
-      try {
-        // Save the image to the project - this updates both IndexedDB and project state
-        console.log('Saving image to project...');
-        await saveProjectImage(file, getCurrentOrientation());
-        console.log('Image saved to project successfully');
-      } catch (error) {
-        console.error('Failed to save image to project:', error);
-        // Still allow the image to be used even if storage fails
+    try {
+      let imageUrl: string;
+      
+      if (isR2Enabled()) {
+        // Upload to R2
+        console.log('Uploading image to R2...');
+        const { publicUrl } = await uploadImage(
+          currentProject.id,
+          file,
+          'background',
+          getCurrentOrientation()
+        );
+        imageUrl = publicUrl;
+        console.log('Image uploaded to R2:', imageUrl);
+      } else {
+        console.error('R2 storage is required for image uploads');
+        throw new Error('R2 storage is not enabled');
       }
+      
+      // Set the uploaded image for display
+      setUploadedImage({ file, url: imageUrl });
+      
+      // Save the URL to project data
+      if (isR2Enabled()) {
+        saveOrientationData({
+          backgroundImage: {
+            fileName: file.name,
+            url: imageUrl,
+            hasStoredImage: true
+          }
+        }, getCurrentOrientation());
+      }
+      
+      console.log('Image upload completed successfully');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -693,23 +687,12 @@ const Editor: React.FC = () => {
     
     // Load image for the new orientation
     const newOrientationData = getOrientationData(newOrientation);
-    if (newOrientationData?.backgroundImage?.hasStoredImage) {
+    if (newOrientationData?.backgroundImage?.url) {
       console.log('Loading image for new orientation:', newOrientation);
-      indexedDBManager.getImage(`${currentProject.id}-${newOrientation}`, 'background')
-        .then(storedImage => {
-          if (storedImage && storedImage.url) {
-            setUploadedImage({
-              file: new File([], storedImage.fileName),
-              url: storedImage.url
-            });
-          } else {
-            setUploadedImage(null);
-          }
-        })
-        .catch(error => {
-          console.error('Error loading image for new orientation:', error);
-          setUploadedImage(null);
-        });
+      setUploadedImage({
+        file: new File([], newOrientationData.backgroundImage.fileName),
+        url: newOrientationData.backgroundImage.url
+      });
     } else {
       // No image for new orientation
       setUploadedImage(null);
@@ -937,13 +920,23 @@ const Editor: React.FC = () => {
     const control = controls[controlIndex];
     if (control && control.id && currentProject) {
       try {
-        // Store in IndexedDB
-        const url = await indexedDBManager.storeImage(
-          currentProject.id, 
-          file, 
-          'thumbstick', 
-          control.id
-        );
+        let url: string;
+        
+        if (isR2Enabled()) {
+          // Upload to R2
+          console.log('Uploading thumbstick image to R2...');
+          const { publicUrl } = await uploadImage(
+            currentProject.id,
+            file,
+            'thumbstick',
+            getCurrentOrientation()
+          );
+          url = publicUrl;
+          console.log('Thumbstick image uploaded to R2:', url);
+        } else {
+          console.error('R2 storage is required for thumbstick uploads');
+          throw new Error('R2 storage is not enabled');
+        }
         
         // Update thumbstick images state
         setThumbstickImages(prev => ({
@@ -964,6 +957,7 @@ const Editor: React.FC = () => {
           thumbstick: {
             name: file.name,
             width: control.thumbstick?.width || 85,
+            url: isR2Enabled() ? url : undefined,
             height: control.thumbstick?.height || 87
           }
         };
@@ -1017,12 +1011,12 @@ const Editor: React.FC = () => {
     // Set background image
     if (importedImage) {
       setUploadedImage(importedImage);
-      // Save to IndexedDB if we have a project
-      if (currentProject) {
+      // Upload to R2 if we have a project
+      if (currentProject && isR2Enabled()) {
         try {
-          await saveProjectImage(importedImage.file, getCurrentOrientation());
+          handleImageUpload(importedImage.file);
         } catch (error) {
-          console.error('Failed to save imported image:', error);
+          console.error('Failed to upload imported image:', error);
         }
       }
     }
@@ -1036,16 +1030,17 @@ const Editor: React.FC = () => {
         imageMap[thumbstickData.controlId] = thumbstickData.url;
         fileMap[thumbstickData.controlId] = thumbstickData.file;
         
-        // Save to IndexedDB
-        try {
-          await indexedDBManager.storeImage(
-            currentProject.id,
-            thumbstickData.file,
-            'thumbstick',
-            thumbstickData.controlId
-          );
-        } catch (error) {
-          console.error(`Failed to save thumbstick image for control ${thumbstickData.controlId}:`, error);
+        // Upload to R2
+        if (isR2Enabled()) {
+          try {
+            const control = controls.find(c => c.id === thumbstickData.controlId);
+            if (control) {
+              const controlIndex = controls.indexOf(control);
+              await handleThumbstickImageUpload(thumbstickData.file, controlIndex);
+            }
+          } catch (error) {
+            console.error(`Failed to upload thumbstick image for control ${thumbstickData.controlId}:`, error);
+          }
         }
       }
       
@@ -1168,6 +1163,7 @@ const Editor: React.FC = () => {
                   <ImageUploader 
                     onImageUpload={handleImageUpload} 
                     currentOrientation={getCurrentOrientation()}
+                    isUploading={isUploadingImage}
                   />
                 </div>
               )}
@@ -1372,21 +1368,17 @@ const Editor: React.FC = () => {
                       {(() => {
                         const otherOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
                         const otherData = getOrientationData(otherOrientation);
-                        if (otherData?.backgroundImage?.hasStoredImage) {
+                        if (otherData?.backgroundImage) {
                           return (
                             <button
                               onClick={async () => {
                                 try {
-                                  // Copy image from other orientation
-                                  const sourceKey = `${currentProject.id}-${otherOrientation}`;
-                                  const storedImage = await indexedDBManager.getImage(sourceKey, 'background');
-                                  
-                                  if (storedImage) {
-                                    // Create a new file from the stored image data
-                                    const file = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
-                                    
-                                    // Use handleImageUpload to properly save and display the image
-                                    handleImageUpload(file, storedImage.url);
+                                  if (otherData.backgroundImage.url) {
+                                    // R2 URL - fetch the image
+                                    const response = await fetch(otherData.backgroundImage.url);
+                                    const blob = await response.blob();
+                                    const file = new File([blob], otherData.backgroundImage.fileName, { type: blob.type });
+                                    handleImageUpload(file);
                                   }
                                 } catch (error) {
                                   console.error('Failed to copy image:', error);

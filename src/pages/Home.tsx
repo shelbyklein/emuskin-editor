@@ -3,7 +3,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContextV2';
 import { useAuth } from '../contexts/AuthContext';
-import { indexedDBManager } from '../utils/indexedDB';
 import ImportButton from '../components/ImportButton';
 import LoginModal from '../components/LoginModal';
 import ConsoleIcon from '../components/ConsoleIcon';
@@ -31,34 +30,13 @@ const Home: React.FC = () => {
       const images: { [key: string]: string } = {};
       
       for (const project of userProjects) {
-        // Check for image in the new orientation-based structure
-        const hasPortraitImage = project.orientations?.portrait?.backgroundImage?.hasStoredImage;
-        const hasLandscapeImage = project.orientations?.landscape?.backgroundImage?.hasStoredImage;
-        // Also check legacy structure for backward compatibility
-        const hasLegacyImage = project.backgroundImage?.hasStoredImage;
+        // Check for R2 image URLs in the orientation-based structure
+        const portraitUrl = project.orientations?.portrait?.backgroundImage?.url;
+        const landscapeUrl = project.orientations?.landscape?.backgroundImage?.url;
         
-        if (project.id && (hasPortraitImage || hasLandscapeImage || hasLegacyImage)) {
-          try {
-            // Try portrait image first (most common)
-            let imageData = null;
-            if (hasPortraitImage) {
-              imageData = await indexedDBManager.getImage(`${project.id}-portrait`);
-            }
-            // Fall back to landscape if no portrait
-            if (!imageData && hasLandscapeImage) {
-              imageData = await indexedDBManager.getImage(`${project.id}-landscape`);
-            }
-            // Fall back to legacy format
-            if (!imageData && hasLegacyImage) {
-              imageData = await indexedDBManager.getImage(project.id);
-            }
-            
-            if (imageData) {
-              images[project.id] = imageData.url;
-            }
-          } catch (error) {
-            console.error('Failed to load image for project:', project.id, error);
-          }
+        if (project.id && (portraitUrl || landscapeUrl)) {
+          // Prefer portrait image, fall back to landscape
+          images[project.id] = portraitUrl || landscapeUrl;
         }
       }
       
@@ -66,8 +44,6 @@ const Home: React.FC = () => {
     };
 
     loadImages();
-
-    // No cleanup needed as we're using IndexedDB URLs directly
   }, [userProjects]);
 
   const handleCreateNew = async () => {

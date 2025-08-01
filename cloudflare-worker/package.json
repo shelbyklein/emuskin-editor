@@ -1,0 +1,21 @@
+{
+  "name": "emuskin-images-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for handling Emuskin Generator image uploads",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "keywords": [
+    "cloudflare-worker",
+    "r2",
+    "image-upload"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.27.0"
+  }
+}

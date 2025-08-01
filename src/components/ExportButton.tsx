@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { useProject } from '../contexts/ProjectContextV2';
-import { indexedDBManager } from '../utils/indexedDB';
+import { dataURLToFile } from '../utils/imageUtils';
 
 interface ExportButtonProps {
   skinName: string;
@@ -269,26 +269,24 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       const landscapeData = currentProject?.orientations?.landscape;
       
       // Add portrait background image
-      if (portraitData?.backgroundImage?.hasStoredImage && currentProject?.id) {
+      if (portraitData?.backgroundImage?.url && currentProject?.id) {
         try {
-          const storedImage = await indexedDBManager.getImage(`${currentProject.id}-portrait`);
-          if (storedImage) {
-            const imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
-            zip.file(imageFile.name, imageFile);
-          }
+          const response = await fetch(portraitData.backgroundImage.url);
+          const blob = await response.blob();
+          const fileName = portraitData.backgroundImage.fileName || 'portrait.png';
+          zip.file(fileName, blob);
         } catch (error) {
           console.error('Failed to retrieve portrait background image:', error);
         }
       }
       
       // Add landscape background image
-      if (landscapeData?.backgroundImage?.hasStoredImage && currentProject?.id) {
+      if (landscapeData?.backgroundImage?.url && currentProject?.id) {
         try {
-          const storedImage = await indexedDBManager.getImage(`${currentProject.id}-landscape`);
-          if (storedImage) {
-            const imageFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
-            zip.file(imageFile.name, imageFile);
-          }
+          const response = await fetch(landscapeData.backgroundImage.url);
+          const blob = await response.blob();
+          const fileName = landscapeData.backgroundImage.fileName || 'landscape.png';
+          zip.file(fileName, blob);
         } catch (error) {
           console.error('Failed to retrieve landscape background image:', error);
         }
@@ -301,17 +299,11 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       ];
       
       for (const control of allControls) {
-        if (control.thumbstick && control.id && currentProject?.id) {
+        if (control.thumbstick?.url && control.id && currentProject?.id) {
           try {
-            const storedImage = await indexedDBManager.getImage(
-              currentProject.id, 
-              'thumbstick', 
-              control.id
-            );
-            if (storedImage) {
-              const thumbstickFile = new File([storedImage.data], storedImage.fileName, { type: storedImage.data.type });
-              zip.file(control.thumbstick.name, thumbstickFile);
-            }
+            const response = await fetch(control.thumbstick.url);
+            const blob = await response.blob();
+            zip.file(control.thumbstick.name, blob);
           } catch (error) {
             console.error(`Failed to retrieve thumbstick image for control ${control.id}:`, error);
           }

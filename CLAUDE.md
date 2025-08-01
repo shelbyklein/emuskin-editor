@@ -166,8 +166,6 @@ This is a mobile-first web application for creating custom emulator skin files (
 ## Development Setup
 
 This is currently a planning-stage project. The MVP will be:
-- Frontend-only (no backend required)
-- Uses LocalStorage/IndexedDB for persistence  
 - Client-side ZIP generation for exports
 - Built with React/Vue/Angular + mobile-first CSS framework
 
