@@ -80,6 +80,7 @@ export interface ScreenMapping {
   label?: string; // For DS: "Top Screen" or "Bottom Screen"
   maintainAspectRatio?: boolean; // Lock aspect ratio during resize
   locked?: boolean; // Prevents moving/resizing when true
+  resizable?: boolean; // Whether the screen can be resized
 }
 
 export interface SkinOrientation {

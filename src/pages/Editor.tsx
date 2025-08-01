@@ -18,7 +18,8 @@ import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
-import { useProject } from '../contexts/ProjectContext';
+import { useProject } from '../contexts/ProjectContextV2';
+import { useAutosave } from '../hooks/useAutosave';
 
 const Editor: React.FC = () => {
   const location = useLocation();
@@ -98,6 +99,19 @@ const Editor: React.FC = () => {
     saveOrientationData,
     saveProjectWithOrientation
   } = useProject();
+  
+  // Autosave when data changes
+  useAutosave({
+    controls,
+    screens,
+    menuInsetsEnabled,
+    menuInsetsBottom,
+    skinName,
+    skinIdentifier
+  }, {
+    enabled: !!currentProject,
+    delay: 3000 // Save after 3 seconds of inactivity
+  });
   
   // Debug log current project changes
   useEffect(() => {
