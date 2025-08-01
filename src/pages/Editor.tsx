@@ -19,7 +19,7 @@ import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContextV2';
-import { useAutosave } from '../hooks/useAutosave';
+// import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves
 
 const Editor: React.FC = () => {
   const location = useLocation();
@@ -72,28 +72,35 @@ const Editor: React.FC = () => {
     saveProjectWithOrientation
   } = useProject();
   
-  // Autosave when data changes
-  const orientationDataForAutosave = getOrientationData();
-  console.log('🔄 Autosave: Getting orientation data for autosave:', {
-    orientation: getCurrentOrientation(),
-    hasOrientationData: !!orientationDataForAutosave,
-    hasBackgroundImage: !!orientationDataForAutosave?.backgroundImage,
-    backgroundImageUrl: orientationDataForAutosave?.backgroundImage?.url,
-    backgroundImageFileName: orientationDataForAutosave?.backgroundImage?.fileName
-  });
+  // Autosave disabled - using explicit saves instead
+  // All changes are now saved immediately when:
+  // - Controls are added/updated/deleted
+  // - Screens are added/updated/deleted
+  // - Console or device changes
+  // - Manual save button is clicked
+  // - Project name/identifier changes
   
-  useAutosave({
-    controls,
-    screens,
-    menuInsetsEnabled,
-    menuInsetsBottom,
-    skinName,
-    skinIdentifier,
-    backgroundImage: getOrientationData()?.backgroundImage || null
-  }, {
-    enabled: !!currentProject,
-    delay: 3000 // Save after 3 seconds of inactivity
-  });
+  // const orientationDataForAutosave = getOrientationData();
+  // console.log('🔄 Autosave: Getting orientation data for autosave:', {
+  //   orientation: getCurrentOrientation(),
+  //   hasOrientationData: !!orientationDataForAutosave,
+  //   hasBackgroundImage: !!orientationDataForAutosave?.backgroundImage,
+  //   backgroundImageUrl: orientationDataForAutosave?.backgroundImage?.url,
+  //   backgroundImageFileName: orientationDataForAutosave?.backgroundImage?.fileName
+  // });
+  
+  // useAutosave({
+  //   controls,
+  //   screens,
+  //   menuInsetsEnabled,
+  //   menuInsetsBottom,
+  //   skinName,
+  //   skinIdentifier,
+  //   backgroundImage: getOrientationData()?.backgroundImage || null
+  // }, {
+  //   enabled: !!currentProject,
+  //   delay: 3000 // Save after 3 seconds of inactivity
+  // });
   
   // Debug log current project changes
   useEffect(() => {
@@ -874,6 +881,14 @@ const Editor: React.FC = () => {
     if (!isHistoryUpdate.current) {
       pushToHistory('Update controls');
     }
+    
+    // Explicitly save the updated controls
+    if (currentProject) {
+      console.log('💾 Explicitly saving controls after update:', newControls.length, 'controls');
+      saveOrientationData({
+        controls: newControls
+      });
+    }
   };
 
   const handleScreensUpdate = (newScreens: ScreenMapping[]) => {
@@ -881,6 +896,14 @@ const Editor: React.FC = () => {
     setScreens([...newScreens]);
     if (!isHistoryUpdate.current) {
       pushToHistory('Update screens');
+    }
+    
+    // Explicitly save the updated screens
+    if (currentProject) {
+      console.log('💾 Explicitly saving screens after update:', newScreens.length, 'screens');
+      saveOrientationData({
+        screens: newScreens
+      });
     }
   };
 
@@ -894,8 +917,17 @@ const Editor: React.FC = () => {
       control.frame.height = snapToGrid(control.frame.height);
     }
     // Add new control to the list
-    setControls([...controls, control]);
+    const newControls = [...controls, control];
+    setControls(newControls);
     pushToHistory('Add control');
+    
+    // Explicitly save after adding control
+    if (currentProject) {
+      console.log('💾 Explicitly saving after adding control');
+      saveOrientationData({
+        controls: newControls
+      });
+    }
   };
 
   const handleControlDelete = (index: number) => {
@@ -944,8 +976,17 @@ const Editor: React.FC = () => {
       screen.outputFrame.height = snapToGrid(screen.outputFrame.height);
     }
     // Add new screen to the list
-    setScreens([...screens, screen]);
+    const newScreens = [...screens, screen];
+    setScreens(newScreens);
     pushToHistory('Add screen');
+    
+    // Explicitly save after adding screen
+    if (currentProject) {
+      console.log('💾 Explicitly saving after adding screen');
+      saveOrientationData({
+        screens: newScreens
+      });
+    }
   };
   
   const handleThumbstickImageUpload = async (file: File, controlIndex: number) => {
@@ -1550,9 +1591,36 @@ const Editor: React.FC = () => {
           latestSkinData.current.console = newConsole;
           
           setSelectedConsole(newConsole);
-          // Clear controls when console changes
+          // Clear controls and screens when console changes
           if (newConsole !== selectedConsole) {
             setControls([]);
+            
+            // Clear screens but prepare to re-initialize for specific consoles
+            if (newConsole === 'nds') {
+              // Nintendo DS needs exactly two screens
+              const newScreens = [
+                {
+                  id: `screen-top-${Date.now()}`,
+                  label: 'Top Screen',
+                  inputFrame: { x: 0, y: 0, width: 256, height: 192 },
+                  outputFrame: { x: 100, y: 100, width: 200, height: 150 },
+                  maintainAspectRatio: true
+                },
+                {
+                  id: `screen-bottom-${Date.now() + 1}`,
+                  label: 'Bottom Screen',
+                  inputFrame: { x: 0, y: 192, width: 256, height: 192 },
+                  outputFrame: { x: 100, y: 270, width: 200, height: 150 },
+                  maintainAspectRatio: true
+                }
+              ];
+              setScreens(newScreens);
+            } else {
+              // For other consoles, just clear screens
+              setScreens([]);
+            }
+            
+            pushToHistory('Change console');
           }
           
           // Don't save here - wait for all data to be collected

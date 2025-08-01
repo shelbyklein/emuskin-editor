@@ -93,9 +93,24 @@ export function useAutosave(
         const dataString = JSON.stringify(data);
         if (dataString !== lastSavedDataRef.current && currentProject) {
           console.log('Autosaving on unmount...');
-          saveProject({});
+          
+          // Save project and orientation data
+          const projectData = {
+            name: data.skinName || currentProject.name,
+            identifier: data.skinIdentifier || currentProject.identifier
+          };
+          
+          const orientationData = {
+            controls: data.controls || [],
+            screens: data.screens || [],
+            menuInsetsEnabled: data.menuInsetsEnabled,
+            menuInsetsBottom: data.menuInsetsBottom,
+            backgroundImage: data.backgroundImage || null
+          };
+          
+          saveProjectWithOrientation(projectData, orientationData);
         }
       }
     };
-  }, []);
+  }, [data, currentProject, saveProjectWithOrientation]);
 }

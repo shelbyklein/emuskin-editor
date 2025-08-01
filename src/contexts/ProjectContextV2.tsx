@@ -166,7 +166,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   };
 
   const saveProject = (updates: Partial<Project>) => {
-    if (!currentProject) return;
+    if (!currentProject) {
+      console.log('🚫 saveProject: No current project to save');
+      return;
+    }
+    
+    console.log('💾 saveProject called with updates:', Object.keys(updates));
     
     const updated = {
       ...currentProject,
@@ -174,18 +179,37 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       lastModified: Date.now()
     };
     
+    // Log orientation data if present
+    if (updates.orientations) {
+      const orientation = updated.currentOrientation || 'portrait';
+      const orientationData = updates.orientations[orientation];
+      if (orientationData) {
+        console.log('📋 Orientation data being saved:', {
+          orientation,
+          controls: orientationData.controls?.length || 0,
+          screens: orientationData.screens?.length || 0,
+          hasBackgroundImage: !!orientationData.backgroundImage
+        });
+      }
+    }
+    
     // Convert to minimal and save
     const minimal = toMinimalProject(updated);
     if (minimal) {
+      console.log('✅ Converted to minimal project:', minimal.id);
       setMinimalProjects(prev => {
         const index = prev.findIndex(p => p.id === minimal.id);
         if (index >= 0) {
           const newProjects = [...prev];
           newProjects[index] = minimal;
+          console.log('✅ Updated existing project in storage');
           return newProjects;
         }
+        console.log('❌ Project not found in storage - this should not happen!');
         return prev;
       });
+    } else {
+      console.log('❌ Failed to convert to minimal project');
     }
   };
 
