@@ -11,6 +11,18 @@ interface ProjectManagerProps {
 const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChanges = false, showSavedMessage = false }) => {
   const { currentProject, projects, loadProject, deleteProject } = useProject();
   const [showProjectList, setShowProjectList] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
+
+  // Handle fade out animation
+  React.useEffect(() => {
+    if (showSavedMessage) {
+      setFadeOut(false);
+      const timer = setTimeout(() => {
+        setFadeOut(true);
+      }, 2500); // Start fade out 500ms before hiding
+      return () => clearTimeout(timer);
+    }
+  }, [showSavedMessage]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString('en-US', {
@@ -37,6 +49,15 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ onSave, hasUnsavedChang
             <span className="italic">No project loaded</span>
           )}
         </div>
+
+        {/* Saved Message */}
+        {showSavedMessage && currentProject && (
+          <div className={`absolute -top-8 right-0 bg-green-500 text-white px-3 py-1 rounded-md text-sm shadow-lg ${
+            fadeOut ? 'animate-fade-out' : 'animate-fade-in'
+          }`}>
+            ✓ Saved "{currentProject.name}"
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div id="project-actions" className="flex items-center space-x-1">

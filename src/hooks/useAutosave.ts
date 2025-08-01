@@ -14,6 +14,11 @@ interface AutosaveData {
   menuInsetsBottom?: number;
   skinName?: string;
   skinIdentifier?: string;
+  backgroundImage?: {
+    fileName?: string;
+    url: string | null;
+    hasStoredImage?: boolean;
+  } | null;
 }
 
 export function useAutosave(
@@ -41,7 +46,7 @@ export function useAutosave(
     
     // Set new timeout for autosave
     timeoutRef.current = setTimeout(() => {
-      console.log('Autosaving project...');
+      console.log('=== AUTOSAVE TRIGGERED ===');
       
       // Save project and orientation data
       const projectData = {
@@ -53,11 +58,22 @@ export function useAutosave(
         controls: data.controls || [],
         screens: data.screens || [],
         menuInsetsEnabled: data.menuInsetsEnabled,
-        menuInsetsBottom: data.menuInsetsBottom
+        menuInsetsBottom: data.menuInsetsBottom,
+        backgroundImage: data.backgroundImage || null
       };
+      
+      console.log('Autosave - Project data:', projectData);
+      console.log('Autosave - Orientation data:', {
+        numControls: orientationData.controls.length,
+        numScreens: orientationData.screens.length,
+        menuInsetsEnabled: orientationData.menuInsetsEnabled,
+        menuInsetsBottom: orientationData.menuInsetsBottom,
+        hasBackgroundImage: !!orientationData.backgroundImage?.url
+      });
       
       saveProjectWithOrientation(projectData, orientationData);
       lastSavedDataRef.current = dataString;
+      console.log('Autosave complete');
     }, delay);
     
     // Cleanup on unmount or when data changes

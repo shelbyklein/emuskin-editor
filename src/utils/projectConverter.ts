@@ -53,7 +53,9 @@ export function toMinimalProject(project: Project): MinimalProject | null {
         project.orientations.portrait.menuInsetsEnabled,
         project.orientations.portrait.menuInsetsBottom,
         project.orientations.portrait.backgroundImage?.hasStoredImage ? 
-          `${project.id}-portrait` : undefined
+          `${project.id}-portrait` : undefined,
+        project.orientations.portrait.backgroundImage?.url || undefined,
+        project.orientations.portrait.backgroundImage?.fileName || undefined
       ),
       landscape: toMinimalOrientationData(
         project.orientations.landscape.controls,
@@ -61,7 +63,9 @@ export function toMinimalProject(project: Project): MinimalProject | null {
         project.orientations.landscape.menuInsetsEnabled,
         project.orientations.landscape.menuInsetsBottom,
         project.orientations.landscape.backgroundImage?.hasStoredImage ? 
-          `${project.id}-landscape` : undefined
+          `${project.id}-landscape` : undefined,
+        project.orientations.landscape.backgroundImage?.url || undefined,
+        project.orientations.landscape.backgroundImage?.fileName || undefined
       )
     },
     currentOrientation: project.currentOrientation || 'portrait',
@@ -97,18 +101,18 @@ export async function fromMinimalProject(
     orientations: {
       portrait: {
         ...portraitData,
-        backgroundImage: minimal.orientations.portrait.backgroundImageRef ? {
+        backgroundImage: (minimal.orientations.portrait.backgroundImageUrl || minimal.orientations.portrait.backgroundImageRef) ? {
           hasStoredImage: true,
-          url: null,  // Will be loaded separately from IndexedDB
-          fileName: 'background.png'
+          url: minimal.orientations.portrait.backgroundImageUrl || null,
+          fileName: minimal.orientations.portrait.backgroundImageFileName || 'background.png'
         } : null
       },
       landscape: {
         ...landscapeData,
-        backgroundImage: minimal.orientations.landscape.backgroundImageRef ? {
+        backgroundImage: (minimal.orientations.landscape.backgroundImageUrl || minimal.orientations.landscape.backgroundImageRef) ? {
           hasStoredImage: true,
-          url: null,  // Will be loaded separately from IndexedDB
-          fileName: 'background.png'
+          url: minimal.orientations.landscape.backgroundImageUrl || null,
+          fileName: minimal.orientations.landscape.backgroundImageFileName || 'background.png'
         } : null
       }
     },

@@ -73,13 +73,23 @@ const Editor: React.FC = () => {
   } = useProject();
   
   // Autosave when data changes
+  const orientationDataForAutosave = getOrientationData();
+  console.log('🔄 Autosave: Getting orientation data for autosave:', {
+    orientation: getCurrentOrientation(),
+    hasOrientationData: !!orientationDataForAutosave,
+    hasBackgroundImage: !!orientationDataForAutosave?.backgroundImage,
+    backgroundImageUrl: orientationDataForAutosave?.backgroundImage?.url,
+    backgroundImageFileName: orientationDataForAutosave?.backgroundImage?.fileName
+  });
+  
   useAutosave({
     controls,
     screens,
     menuInsetsEnabled,
     menuInsetsBottom,
     skinName,
-    skinIdentifier
+    skinIdentifier,
+    backgroundImage: getOrientationData()?.backgroundImage || null
   }, {
     enabled: !!currentProject,
     delay: 3000 // Save after 3 seconds of inactivity
@@ -201,15 +211,23 @@ const Editor: React.FC = () => {
       setHistoryIndex(0);
       
       // Handle background image
+      console.log('🖼️ Loading background image state:', {
+        hasOrientationData: !!orientationData,
+        hasBackgroundImage: !!orientationData.backgroundImage,
+        backgroundImageDetails: orientationData.backgroundImage,
+        currentProjectStructure: JSON.stringify(currentProject, null, 2)
+      });
+      
       if (orientationData.backgroundImage?.url) {
         // R2 URL available - use it directly
-        console.log('Loading image from R2 URL:', orientationData.backgroundImage.url);
+        console.log('✅ Loading image from R2 URL:', orientationData.backgroundImage.url);
         setUploadedImage({
           file: new File([], orientationData.backgroundImage.fileName || 'image.png'),
           url: orientationData.backgroundImage.url
         });
       } else {
         // No image stored
+        console.log('❌ No background image found for', getCurrentOrientation());
         setUploadedImage(null);
       }
     }
@@ -406,6 +424,13 @@ const Editor: React.FC = () => {
         }
       });
       
+      // Log the actual data being saved
+      console.log('=== SAVE DETAILS ===');
+      console.log('Project Data:', projectData);
+      console.log('Orientation Data:', orientationData);
+      console.log('Controls being saved:', orientationData.controls);
+      console.log('Screens being saved:', orientationData.screens);
+      
       // Save project and orientation data first
       saveProjectWithOrientation(projectData, orientationData);
       
@@ -430,11 +455,19 @@ const Editor: React.FC = () => {
     // Reset saving flag immediately after save completes
     isSavingRef.current = false;
     
-    // Hide saved message after 2 seconds
+    // Log what's currently in the database
+    console.log('=== DATABASE STATE AFTER SAVE ===');
+    const currentOrientationData = getOrientationData();
+    console.log('Current orientation data in DB:', currentOrientationData);
+    console.log('Background image URL:', currentOrientationData?.backgroundImage?.url);
+    console.log('Total controls:', currentOrientationData?.controls?.length || 0);
+    console.log('Total screens:', currentOrientationData?.screens?.length || 0);
+    
+    // Hide saved message after 3 seconds
     setTimeout(() => {
       setShowSavedMessage(false);
-      console.log('Save message hidden');
-    }, 2000);
+      console.log('Save message hidden - Project "' + (currentProject?.name || 'Unknown') + '" successfully saved');
+    }, 3000);
   }, [currentProject, createProject, skinName, skinIdentifier, selectedConsoleData, selectedDeviceData, controls, screens, menuInsetsEnabled, menuInsetsBottom, uploadedImage, saveProjectImage, saveProjectWithOrientation, saveOrientationData, getCurrentOrientation]);
 
   // Track if component has mounted

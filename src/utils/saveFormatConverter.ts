@@ -100,14 +100,18 @@ export function toMinimalOrientationData(
   screens: ScreenMapping[],
   menuInsetsEnabled?: boolean,
   menuInsetsBottom?: number,
-  backgroundImageRef?: string
+  backgroundImageRef?: string,
+  backgroundImageUrl?: string,
+  backgroundImageFileName?: string
 ): MinimalOrientationData {
   return {
     controls: controls.map(toMinimalControl),
     screens: screens.map(toMinimalScreen),
     menuInsetsEnabled,
     menuInsetsBottom,
-    backgroundImageRef
+    backgroundImageRef,
+    backgroundImageUrl,
+    backgroundImageFileName
   };
 }
 
