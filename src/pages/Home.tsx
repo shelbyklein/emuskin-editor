@@ -36,7 +36,7 @@ const Home: React.FC = () => {
         
         if (project.id && (portraitUrl || landscapeUrl)) {
           // Prefer portrait image, fall back to landscape
-          images[project.id] = portraitUrl || landscapeUrl;
+          images[project.id] = portraitUrl || landscapeUrl || '';
         }
       }
       

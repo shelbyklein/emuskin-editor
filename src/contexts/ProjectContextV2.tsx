@@ -4,7 +4,6 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { MinimalProject } from '../types/SaveFormat';
 import { toMinimalProject, fromMinimalProject } from '../utils/projectConverter';
-import { isR2Enabled } from '../utils/r2Client';
 
 interface OrientationData {
   controls: ControlMapping[];
@@ -190,7 +189,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   };
 
-  const saveProjectImage = async (file: File, orientation?: 'portrait' | 'landscape') => {
+  const saveProjectImage = async (_file: File, _orientation?: 'portrait' | 'landscape') => {
     if (!currentProjectId) {
       throw new Error('No current project to save image to');
     }
@@ -199,7 +198,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     console.log('saveProjectImage called - R2 upload should be handled by Editor component');
   };
   
-  const storeTemporaryImage = async (file: File, orientation?: 'portrait' | 'landscape') => {
+  const storeTemporaryImage = async (file: File, _orientation?: 'portrait' | 'landscape') => {
     if (!currentProjectId) {
       throw new Error('No current project to store image for');
     }

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { useProject } from '../contexts/ProjectContextV2';
-import { dataURLToFile } from '../utils/imageUtils';
 
 interface ExportButtonProps {
   skinName: string;
@@ -299,7 +298,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       ];
       
       for (const control of allControls) {
-        if (control.thumbstick?.url && control.id && currentProject?.id) {
+        if (control.thumbstick && 'url' in control.thumbstick && control.thumbstick.url && control.id && currentProject?.id) {
           try {
             const response = await fetch(control.thumbstick.url);
             const blob = await response.blob();

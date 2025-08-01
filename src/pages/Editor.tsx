@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { dataURLToFile } from '../utils/imageUtils';
 import { uploadImage, isR2Enabled } from '../utils/r2Client';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
@@ -206,7 +205,7 @@ const Editor: React.FC = () => {
         // R2 URL available - use it directly
         console.log('Loading image from R2 URL:', orientationData.backgroundImage.url);
         setUploadedImage({
-          file: new File([], orientationData.backgroundImage.fileName),
+          file: new File([], orientationData.backgroundImage.fileName || 'image.png'),
           url: orientationData.backgroundImage.url
         });
       } else {
@@ -223,7 +222,7 @@ const Editor: React.FC = () => {
     }
     
     // Load thumbstick images
-    loadThumbstickImages(currentProject.id);
+    loadThumbstickImages();
     
     // Mark as saved when loading a project
     setHasUnsavedChanges(false);
@@ -282,7 +281,7 @@ const Editor: React.FC = () => {
               ...orientationData,
               backgroundImage: {
                 fileName: pendingImage.file.name,
-                url: pendingImage.url || null,
+                url: null,
                 hasStoredImage: false
               }
             }, pendingImage.orientation);
@@ -296,7 +295,7 @@ const Editor: React.FC = () => {
   }, [currentProject?.id, saveProjectImage, getOrientationData, saveOrientationData]);
   
   // Load thumbstick images for a project
-  const loadThumbstickImages = async (projectId: string) => {
+  const loadThumbstickImages = useCallback(async () => {
     try {
       const imageMap: { [controlId: string]: string } = {};
       const fileMap: { [controlId: string]: File } = {};
@@ -317,7 +316,7 @@ const Editor: React.FC = () => {
     } catch (error) {
       console.error('Failed to load thumbstick images:', error);
     }
-  };
+  }, [getOrientationData]);
 
   // State to track if there are unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -690,7 +689,7 @@ const Editor: React.FC = () => {
     if (newOrientationData?.backgroundImage?.url) {
       console.log('Loading image for new orientation:', newOrientation);
       setUploadedImage({
-        file: new File([], newOrientationData.backgroundImage.fileName),
+        file: new File([], newOrientationData.backgroundImage.fileName || 'image.png'),
         url: newOrientationData.backgroundImage.url
       });
     } else {
@@ -1373,11 +1372,11 @@ const Editor: React.FC = () => {
                             <button
                               onClick={async () => {
                                 try {
-                                  if (otherData.backgroundImage.url) {
+                                  if (otherData.backgroundImage?.url) {
                                     // R2 URL - fetch the image
                                     const response = await fetch(otherData.backgroundImage.url);
                                     const blob = await response.blob();
-                                    const file = new File([blob], otherData.backgroundImage.fileName, { type: blob.type });
+                                    const file = new File([blob], otherData.backgroundImage.fileName || 'image.png', { type: blob.type });
                                     handleImageUpload(file);
                                   }
                                 } catch (error) {

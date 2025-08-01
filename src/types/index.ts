@@ -44,6 +44,7 @@ export interface ControlMapping {
     name: string;
     width: number;
     height: number;
+    url?: string;
   };
   mirrorBottomScreen?: boolean; // For touchscreen controls
   locked?: boolean; // Prevents moving/resizing when true
