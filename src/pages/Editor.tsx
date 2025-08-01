@@ -1396,6 +1396,13 @@ const Editor: React.FC = () => {
                   </div>
                 </div>
                 
+                {/* Grid Controls - moved into toolbar */}
+                {selectedDeviceData && (
+                  <div className="flex-shrink-0">
+                    <GridControls />
+                  </div>
+                )}
+                
                 {/* Orientation Manager - moved from left column */}
                 {currentProject && (
                   <div className="flex items-center">
@@ -1423,10 +1430,6 @@ const Editor: React.FC = () => {
                 )}
                 
               </div>
-              {/* Grid Controls */}
-              {selectedDeviceData && (
-                <GridControls />
-              )}
             </div>
             {/* Show canvas only when console and device are selected */}
             {selectedConsole && selectedDevice ? (

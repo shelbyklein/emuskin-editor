@@ -36,62 +36,61 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
     <div id="orientation-manager-container" className="flex items-center space-x-2">
       <div id="orientation-selector-container">
         {/* Pill-style orientation selector - horizontal layout */}
-        <div id="orientation-pill-selector" className="flex flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+        <div id="orientation-pill-selector" className="flex flex-row gap-3">
           {availableOrientations.map((orientation) => (
-            <button
-              key={orientation}
-              id={`orientation-button-${orientation}`}
-              onClick={() => onOrientationChange(orientation)}
-              className={`relative group px-4 py-1.5 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
-                currentOrientation === orientation
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              aria-label={`Switch to ${orientation} orientation`}
-              aria-pressed={currentOrientation === orientation}
-            >
-              <span className="flex items-center justify-between w-full">
-                <span id={`orientation-label-${orientation}`} className="capitalize">{orientation}</span>
-                <span className="relative flex items-center justify-center w-4 h-4">
-                  {orientationInfo[orientation]?.hasContent && (
-                    <span 
-                      id={`orientation-content-indicator-${orientation}`}
-                      className={`w-2 h-2 rounded-full transition-opacity ${
-                        canRemove ? 'group-hover:opacity-0' : ''
-                      } ${
-                        currentOrientation === orientation ? 'bg-white' : 'bg-green-500'
-                      }`} 
-                      title="Has content" 
-                    />
-                  )}
-                  {canRemove && (
-                    <button
-                      id={`orientation-remove-button-${orientation}`}
-                      onClick={(e) => handleRemove(e, orientation)}
-                      className={`absolute inset-0 flex items-center justify-center rounded transition-opacity opacity-0 group-hover:opacity-100 ${
-                        currentOrientation === orientation
-                          ? 'hover:bg-primary-700'
-                          : 'hover:bg-red-100 dark:hover:bg-red-900/30'
-                      }`}
-                      aria-label={`Remove ${orientation} orientation`}
-                    >
-                      <svg 
-                        className={`w-3.5 h-3.5 ${
-                          currentOrientation === orientation
-                            ? 'text-white'
-                            : 'text-red-600 dark:text-red-400'
-                        }`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </span>
-              </span>
-            </button>
+            <div key={orientation} className="relative group">
+              <button
+                id={`orientation-button-${orientation}`}
+                onClick={() => onOrientationChange(orientation)}
+                className={`relative h-16 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 border-2 flex flex-col items-center justify-center ${
+                  currentOrientation === orientation
+                    ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-600 dark:border-primary-500'
+                    : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+                aria-label={`Switch to ${orientation} orientation`}
+                aria-pressed={currentOrientation === orientation}
+              >
+                {/* Visual representation of orientation - 16:9 or 9:16 */}
+                <div className="flex flex-col items-center">
+                  <div className={`relative ${orientation === 'portrait' ? 'w-[10.125px] h-[18px]' : 'w-[18px] h-[10.125px]'} bg-gray-400 dark:bg-gray-600 rounded`}>
+                    {/* Green dot indicator on the icon */}
+                    {orientationInfo[orientation]?.hasContent && (
+                      <span 
+                        id={`orientation-content-indicator-${orientation}`}
+                        className="absolute -top-1 -right-1 block w-2 h-2 bg-green-500 rounded-full"
+                        title="Has content" 
+                      />
+                    )}
+                  </div>
+                  {/* Label */}
+                  <span id={`orientation-label-${orientation}`} className={`text-xs mt-1.5 capitalize ${
+                    currentOrientation === orientation 
+                      ? 'text-primary-700 dark:text-primary-400 font-medium' 
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {orientation}
+                  </span>
+                </div>
+              </button>
+              {/* Remove button at top-right of pill */}
+              {canRemove && (
+                <button
+                  id={`orientation-remove-button-${orientation}`}
+                  onClick={(e) => handleRemove(e, orientation)}
+                  className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full transition-opacity opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600"
+                  aria-label={`Remove ${orientation} orientation`}
+                >
+                  <svg 
+                    className="w-2.5 h-2.5 text-white" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>
@@ -102,13 +101,17 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
             <button
               id="add-portrait-button"
               onClick={() => onAddOrientation('portrait')}
-              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-1"
+              className="h-16 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border-2 border-purple-700 dark:border-purple-500 flex flex-col items-center justify-center"
               title="Add Portrait orientation"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Portrait</span>
+              <div className="flex flex-col items-center">
+                <div className="relative w-[10.125px] h-[18px] border-2 border-white/50 rounded flex items-center justify-center">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <span className="text-xs mt-1.5">Add Portrait</span>
+              </div>
             </button>
           )}
           
@@ -116,13 +119,17 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
             <button
               id="add-landscape-button"
               onClick={() => onAddOrientation('landscape')}
-              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-1"
+              className="h-16 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border-2 border-purple-700 dark:border-purple-500 flex flex-col items-center justify-center"
               title="Add Landscape orientation"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Landscape</span>
+              <div className="flex flex-col items-center">
+                <div className="relative w-[18px] h-[10.125px] border-2 border-white/50 rounded flex items-center justify-center">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <span className="text-xs mt-1.5">Add Landscape</span>
+              </div>
             </button>
           )}
         </div>
