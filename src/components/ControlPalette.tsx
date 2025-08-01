@@ -2,6 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { ControlMapping, Button } from '../types';
 import CustomButtonModal from './CustomButtonModal';
+import ArrowIcon from '../../assets/icons/arrow.svg';
+import DpadIcon from '../../assets/icons/dpad.svg';
+import MenuIcon from '../../assets/icons/menu.svg';
+import FastForwardIcon from '../../assets/icons/fast-forward.svg';
+import FastForwardToggleIcon from '../../assets/icons/fast-forward-toggle.svg';
 
 
 interface ControlPaletteProps {
@@ -91,6 +96,21 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
     const isTouchscreen = button.key === 'touchscreen';
     const isQuicksave = button.key === 'quickSave';
     const isQuickload = button.key === 'quickLoad';
+    const isDirectional = ['up', 'down', 'left', 'right'].includes(button.key);
+    const isMenu = button.key === 'menu';
+    const isFastForward = button.key === 'fastForward';
+    const isToggleFastForward = button.key === 'toggleFastForward';
+    
+    // Determine rotation for directional buttons
+    const getDirectionalRotation = () => {
+      switch (button.key) {
+        case 'up': return 'rotate(0deg)';
+        case 'down': return 'rotate(180deg)';
+        case 'left': return 'rotate(-90deg)';
+        case 'right': return 'rotate(90deg)';
+        default: return 'rotate(0deg)';
+      }
+    };
     
     return (
       <button
@@ -104,9 +124,14 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
         <div id={`control-button-icon-${button.key}`} className="w-10 h-10 flex items-center justify-center">
           {isDpad ? (
             // D-pad icon
-            <svg id={`control-button-svg-${button.key}`} viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-700 dark:text-gray-300">
-              <path d="M9 5v4H5v6h4v4h6v-4h4V9h-4V5H9z" />
-            </svg>
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
+              <img 
+                id={`control-button-dpad-${button.key}`}
+                src={DpadIcon}
+                alt="D-pad"
+                className="w-5 h-5 filter invert"
+              />
+            </div>
           ) : isThumbstick ? (
             // Thumbstick icon
             <svg id={`control-button-svg-${button.key}`} viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-700 dark:text-gray-300">
@@ -120,10 +145,57 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
               <circle cx="12" cy="15" r="2" />
               <path d="M12 13v-3" stroke="currentColor" strokeWidth="2" />
             </svg>
+          ) : isDirectional ? (
+            // Directional arrow icon
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
+              <img 
+                id={`control-button-arrow-${button.key}`}
+                src={ArrowIcon}
+                alt={`${button.label} arrow`}
+                className="w-4 h-4 filter invert"
+                style={{
+                  transform: getDirectionalRotation()
+                }}
+              />
+            </div>
+          ) : isMenu ? (
+            // Menu icon
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
+              <img 
+                id={`control-button-menu-${button.key}`}
+                src={MenuIcon}
+                alt="Menu"
+                className="w-4 h-4 filter invert"
+              />
+            </div>
+          ) : isFastForward ? (
+            // Fast Forward icon
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
+              <img 
+                id={`control-button-fastforward-${button.key}`}
+                src={FastForwardIcon}
+                alt="Fast Forward"
+                className="w-4 h-4 filter invert"
+              />
+            </div>
+          ) : isToggleFastForward ? (
+            // Toggle Fast Forward icon
+            <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
+              <img 
+                id={`control-button-togglefastforward-${button.key}`}
+                src={FastForwardToggleIcon}
+                alt="Toggle Fast Forward"
+                className="w-4 h-4 filter invert"
+              />
+            </div>
           ) : (
             // Regular button
             <div id={`control-button-circle-${button.key}`} className="w-8 h-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
-              {isQuicksave ? 'QS' : isQuickload ? 'QL' : button.label.charAt(0)}
+              {isQuicksave ? 'QS' : 
+               isQuickload ? 'QL' : 
+               button.key === 'start' ? 'ST' :
+               button.key === 'select' ? 'SE' :
+               button.label.charAt(0)}
             </div>
           )}
         </div>
