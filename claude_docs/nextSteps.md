@@ -2,6 +2,15 @@
 
 ## Immediate Priorities (Next Session)
 
+### 0. Deploy Updated Cloudflare Worker (URGENT)
+- **Purpose**: Fix R2 storage to use new user-based folder structure
+- **Issue**: Worker is still using old path structure (projects/[id]/background/[orientation]/)
+- **Solution**: Deploy the already-updated code that uses [email]/[project]/[orientation].png
+- **Implementation**:
+  - cd cloudflare-worker
+  - wrangler deploy
+  - Verify new uploads use correct path structure
+
 ### 1. Keyboard Shortcuts for Common Actions
 - **Purpose**: Improve productivity and accessibility
 - **Implementation**:

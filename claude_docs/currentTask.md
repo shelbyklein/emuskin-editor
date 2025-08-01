@@ -316,8 +316,15 @@
   - Changed control palette from flexbox to 4-column grid layout
   - Updated control buttons to use aspect-square instead of fixed dimensions
 
+## Current Issues
+- **R2 Storage Deployment**: The Cloudflare Worker is still using the old storage structure (projects/[id]/background/[orientation]/) instead of the new user-based structure ([email]/[project]/[orientation].png). The code has been updated locally but the worker needs to be redeployed.
+
 ## Next Steps
-1. Add keyboard shortcuts for common actions
+1. **Deploy updated Cloudflare Worker** (URGENT)
+   - Navigate to cloudflare-worker directory
+   - Run `wrangler deploy` to update the worker with new user-based storage paths
+   
+2. Add keyboard shortcuts for common actions
    - Delete/Backspace: Delete selected control/screen
    - Arrow keys: Nudge selected item by 1px (10px with Shift)
    - Cmd/Ctrl+S: Save current project
