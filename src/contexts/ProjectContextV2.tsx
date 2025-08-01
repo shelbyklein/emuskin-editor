@@ -17,6 +17,8 @@ interface OrientationData {
   } | null;
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
+  menuInsetsLeft?: number;
+  menuInsetsRight?: number;
 }
 
 interface Project {
@@ -58,7 +60,9 @@ const defaultOrientationData: OrientationData = {
   screens: [],
   backgroundImage: null,
   menuInsetsEnabled: false,
-  menuInsetsBottom: 0
+  menuInsetsBottom: 0,
+  menuInsetsLeft: 0,
+  menuInsetsRight: 0
 };
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);

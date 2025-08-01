@@ -20,6 +20,8 @@ interface Project {
       backgroundImage: any;
       menuInsetsEnabled?: boolean;
       menuInsetsBottom?: number;
+      menuInsetsLeft?: number;
+      menuInsetsRight?: number;
     };
     landscape: {
       controls: any[];
@@ -27,6 +29,8 @@ interface Project {
       backgroundImage: any;
       menuInsetsEnabled?: boolean;
       menuInsetsBottom?: number;
+      menuInsetsLeft?: number;
+      menuInsetsRight?: number;
     };
   };
   availableOrientations?: Array<'portrait' | 'landscape'>;
@@ -53,6 +57,8 @@ export function toMinimalProject(project: Project): MinimalProject | null {
         project.orientations.portrait.screens,
         project.orientations.portrait.menuInsetsEnabled,
         project.orientations.portrait.menuInsetsBottom,
+        project.orientations.portrait.menuInsetsLeft,
+        project.orientations.portrait.menuInsetsRight,
         project.orientations.portrait.backgroundImage?.hasStoredImage ? 
           `${project.id}-portrait` : undefined,
         project.orientations.portrait.backgroundImage?.url || undefined,
@@ -63,6 +69,8 @@ export function toMinimalProject(project: Project): MinimalProject | null {
         project.orientations.landscape.screens,
         project.orientations.landscape.menuInsetsEnabled,
         project.orientations.landscape.menuInsetsBottom,
+        project.orientations.landscape.menuInsetsLeft,
+        project.orientations.landscape.menuInsetsRight,
         project.orientations.landscape.backgroundImage?.hasStoredImage ? 
           `${project.id}-landscape` : undefined,
         project.orientations.landscape.backgroundImage?.url || undefined,

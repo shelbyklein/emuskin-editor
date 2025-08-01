@@ -10,6 +10,8 @@ This is a mobile-first web application for creating custom emulator skin files. 
 emuskin-generator/
 ├── public/              
 │   ├── assets/         # JSON configuration files
+│   │   ├── templates/  # Pre-configured console templates
+│   │   └── ...        # Other asset files
 │   └── vite.svg
 ├── src/
 │   ├── components/     # Reusable UI components
@@ -258,6 +260,10 @@ emuskin-generator/
 - ✅ Deployed Cloudflare Worker with user-based R2 storage structure
 - ✅ Added logout redirect to home page for better UX
 - ✅ Fixed grid size dropdown text visibility in dark mode
+- ✅ Implemented template selection feature on home page
+  - Created 8 pre-configured console templates in /public/assets/templates/
+  - Templates provide quick start for new projects with default control layouts
+  - Integrated template loading into Editor component
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

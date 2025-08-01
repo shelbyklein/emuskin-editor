@@ -21,6 +21,8 @@ interface CanvasProps {
   orientation?: 'portrait' | 'landscape';
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
+  menuInsetsLeft?: number;
+  menuInsetsRight?: number;
   onControlUpdate: (controls: ControlMapping[]) => void;
   onScreenUpdate: (screens: ScreenMapping[]) => void;
   thumbstickImages?: { [controlId: string]: string }; // URLs for thumbstick images
@@ -63,6 +65,8 @@ const Canvas: React.FC<CanvasProps> = ({
   orientation = 'portrait',
   menuInsetsEnabled = false,
   menuInsetsBottom = 0,
+  menuInsetsLeft = 0,
+  menuInsetsRight = 0,
   onControlUpdate,
   onScreenUpdate,
   thumbstickImages = {},
@@ -1378,21 +1382,62 @@ const Canvas: React.FC<CanvasProps> = ({
             )}
 
             {/* Menu insets visual overlay */}
-            {menuInsetsEnabled && menuInsetsBottom > 0 && device && (
-              <div 
-                id="menu-insets-overlay"
-                className="absolute left-0 right-0 pointer-events-none"
-                style={{
-                  top: `${(1 - menuInsetsBottom / 100) * canvasSize.height}px`,
-                  height: `${(menuInsetsBottom / 100) * canvasSize.height}px`,
-                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                  borderTop: '1px dashed rgba(255, 255, 255, 0.5)'
-                }}
-              >
-                <div className="absolute top-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
-                  Menu Inset: {menuInsetsBottom}%
-                </div>
-              </div>
+            {menuInsetsEnabled && device && (
+              <>
+                {/* Portrait: Bottom inset */}
+                {orientation === 'portrait' && menuInsetsBottom > 0 && (
+                  <div 
+                    id="menu-insets-overlay-bottom"
+                    className="absolute left-0 right-0 pointer-events-none"
+                    style={{
+                      top: `${(1 - menuInsetsBottom / 100) * canvasSize.height}px`,
+                      height: `${(menuInsetsBottom / 100) * canvasSize.height}px`,
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      borderTop: '1px dashed rgba(255, 255, 255, 0.5)'
+                    }}
+                  >
+                    <div className="absolute top-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                      Bottom: {menuInsetsBottom}%
+                    </div>
+                  </div>
+                )}
+                
+                {/* Landscape: Left inset */}
+                {orientation === 'landscape' && menuInsetsLeft > 0 && (
+                  <div 
+                    id="menu-insets-overlay-left"
+                    className="absolute top-0 bottom-0 pointer-events-none"
+                    style={{
+                      left: 0,
+                      width: `${(menuInsetsLeft / 100) * canvasSize.width}px`,
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      borderRight: '1px dashed rgba(255, 255, 255, 0.5)'
+                    }}
+                  >
+                    <div className="absolute top-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                      Left: {menuInsetsLeft}%
+                    </div>
+                  </div>
+                )}
+                
+                {/* Landscape: Right inset */}
+                {orientation === 'landscape' && menuInsetsRight > 0 && (
+                  <div 
+                    id="menu-insets-overlay-right"
+                    className="absolute top-0 bottom-0 pointer-events-none"
+                    style={{
+                      right: 0,
+                      width: `${(menuInsetsRight / 100) * canvasSize.width}px`,
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      borderLeft: '1px dashed rgba(255, 255, 255, 0.5)'
+                    }}
+                  >
+                    <div className="absolute top-2 right-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                      Right: {menuInsetsRight}%
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Render screens (lower in DOM but higher z-index than controls) */}

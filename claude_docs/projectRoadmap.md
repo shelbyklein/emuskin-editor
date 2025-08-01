@@ -163,6 +163,10 @@
 - [x] Move GridControls to canvas toolbar
 - [x] Add logout redirect to home page
 - [x] Fix UI issues (grid dropdown text color in dark mode)
+- [x] Implement template selection feature
+  - Pre-configured layouts for all 8 consoles
+  - Quick start for new projects
+  - Templates include controls, screens, and settings
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)

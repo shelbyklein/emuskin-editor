@@ -197,7 +197,8 @@ const ExportButton: React.FC<ExportButtonProps> = ({
           right: 0
         },
         menuInsets: landscapeData.menuInsetsEnabled ? {
-          bottom: (landscapeData.menuInsetsBottom || 0) / 100
+          left: (landscapeData.menuInsetsLeft || 0) / 100,
+          right: (landscapeData.menuInsetsRight || 0) / 100
         } : {}
       };
     }

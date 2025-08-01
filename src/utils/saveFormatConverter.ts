@@ -100,6 +100,8 @@ export function toMinimalOrientationData(
   screens: ScreenMapping[],
   menuInsetsEnabled?: boolean,
   menuInsetsBottom?: number,
+  menuInsetsLeft?: number,
+  menuInsetsRight?: number,
   backgroundImageRef?: string,
   backgroundImageUrl?: string,
   backgroundImageFileName?: string
@@ -109,6 +111,8 @@ export function toMinimalOrientationData(
     screens: screens.map(toMinimalScreen),
     menuInsetsEnabled,
     menuInsetsBottom,
+    menuInsetsLeft,
+    menuInsetsRight,
     backgroundImageRef,
     backgroundImageUrl,
     backgroundImageFileName
@@ -121,11 +125,15 @@ export function fromMinimalOrientationData(minimal: MinimalOrientationData): {
   screens: ScreenMapping[];
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
+  menuInsetsLeft?: number;
+  menuInsetsRight?: number;
 } {
   return {
     controls: minimal.controls.map((c, i) => fromMinimalControl(c, i)),
     screens: minimal.screens.map((s, i) => fromMinimalScreen(s, i)),
     menuInsetsEnabled: minimal.menuInsetsEnabled,
-    menuInsetsBottom: minimal.menuInsetsBottom
+    menuInsetsBottom: minimal.menuInsetsBottom,
+    menuInsetsLeft: minimal.menuInsetsLeft,
+    menuInsetsRight: minimal.menuInsetsRight
   };
 }

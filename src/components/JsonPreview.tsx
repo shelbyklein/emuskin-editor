@@ -139,11 +139,22 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       
       // Add menuInsets if enabled
       const insetsEnabled = orientationData?.menuInsetsEnabled || false;
-      const insetsBottom = orientationData?.menuInsetsBottom || 0;
       if (insetsEnabled) {
-        orientation.menuInsets = {
-          bottom: insetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
-        };
+        if (isLandscape) {
+          // Landscape uses left and right
+          const insetsLeft = orientationData?.menuInsetsLeft || 0;
+          const insetsRight = orientationData?.menuInsetsRight || 0;
+          orientation.menuInsets = {
+            left: insetsLeft / 100,
+            right: insetsRight / 100
+          };
+        } else {
+          // Portrait uses bottom
+          const insetsBottom = orientationData?.menuInsetsBottom || 0;
+          orientation.menuInsets = {
+            bottom: insetsBottom / 100
+          };
+        }
       }
       
       return orientation;

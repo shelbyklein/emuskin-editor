@@ -40,6 +40,8 @@ export interface MinimalOrientationData {
   screens: MinimalScreen[];
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
+  menuInsetsLeft?: number;
+  menuInsetsRight?: number;
   backgroundImageRef?: string;  // Reference to IndexedDB key (deprecated)
   backgroundImageUrl?: string;  // R2 URL for background image
   backgroundImageFileName?: string;  // Original filename for the image

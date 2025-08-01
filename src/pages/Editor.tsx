@@ -38,6 +38,8 @@ const Editor: React.FC = () => {
   const [selectedConsoleData, setSelectedConsoleData] = useState<Console | null>(null);
   const [menuInsetsEnabled, setMenuInsetsEnabled] = useState<boolean>(false);
   const [menuInsetsBottom, setMenuInsetsBottom] = useState<number>(0);
+  const [menuInsetsLeft, setMenuInsetsLeft] = useState<number>(0);
+  const [menuInsetsRight, setMenuInsetsRight] = useState<number>(0);
   const [thumbstickImages, setThumbstickImages] = useState<{ [controlId: string]: string }>({});
   const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
   const [isEditPanelOpen, setIsEditPanelOpen] = useState<boolean>(false);
@@ -229,6 +231,8 @@ const Editor: React.FC = () => {
       setScreens(orientationData.screens || []);
       setMenuInsetsEnabled(orientationData.menuInsetsEnabled || false);
       setMenuInsetsBottom(orientationData.menuInsetsBottom || 0);
+      setMenuInsetsLeft(orientationData.menuInsetsLeft || 0);
+      setMenuInsetsRight(orientationData.menuInsetsRight || 0);
       
       // Initialize history with loaded state
       setHistory([{
@@ -266,6 +270,8 @@ const Editor: React.FC = () => {
       setScreens([]);
       setMenuInsetsEnabled(false);
       setMenuInsetsBottom(0);
+      setMenuInsetsLeft(0);
+      setMenuInsetsRight(0);
       setUploadedImage(null);
     }
     
@@ -419,6 +425,8 @@ const Editor: React.FC = () => {
         screens,
         menuInsetsEnabled,
         menuInsetsBottom,
+        menuInsetsLeft,
+        menuInsetsRight,
         // Include backgroundImage metadata so it can be loaded later
         backgroundImage: uploadedImage ? {
           fileName: uploadedImage.file.name,
@@ -776,6 +784,8 @@ const Editor: React.FC = () => {
             screens: sourceData.screens || [],
             menuInsetsEnabled: sourceData.menuInsetsEnabled || false,
             menuInsetsBottom: sourceData.menuInsetsBottom || 0,
+            menuInsetsLeft: sourceData.menuInsetsLeft || 0,
+            menuInsetsRight: sourceData.menuInsetsRight || 0,
             backgroundImage: null // Don't copy image
           }, orientation);
         }
@@ -1390,8 +1400,53 @@ const Editor: React.FC = () => {
               <MenuInsetsPanel
                 menuInsetsEnabled={menuInsetsEnabled}
                 menuInsetsBottom={menuInsetsBottom}
-                onToggle={setMenuInsetsEnabled}
-                onBottomChange={setMenuInsetsBottom}
+                menuInsetsLeft={menuInsetsLeft}
+                menuInsetsRight={menuInsetsRight}
+                orientation={getCurrentOrientation()}
+                onToggle={(enabled) => {
+                  setMenuInsetsEnabled(enabled);
+                  // Save to project context
+                  const orientationData = getOrientationData();
+                  if (orientationData) {
+                    saveOrientationData({
+                      ...orientationData,
+                      menuInsetsEnabled: enabled
+                    });
+                  }
+                }}
+                onBottomChange={(value) => {
+                  setMenuInsetsBottom(value);
+                  // Save to project context
+                  const orientationData = getOrientationData();
+                  if (orientationData) {
+                    saveOrientationData({
+                      ...orientationData,
+                      menuInsetsBottom: value
+                    });
+                  }
+                }}
+                onLeftChange={(value) => {
+                  setMenuInsetsLeft(value);
+                  // Save to project context
+                  const orientationData = getOrientationData();
+                  if (orientationData) {
+                    saveOrientationData({
+                      ...orientationData,
+                      menuInsetsLeft: value
+                    });
+                  }
+                }}
+                onRightChange={(value) => {
+                  setMenuInsetsRight(value);
+                  // Save to project context
+                  const orientationData = getOrientationData();
+                  if (orientationData) {
+                    saveOrientationData({
+                      ...orientationData,
+                      menuInsetsRight: value
+                    });
+                  }
+                }}
               />
             </>
           )}
@@ -1486,6 +1541,8 @@ const Editor: React.FC = () => {
                   orientation={getCurrentOrientation()}
                   menuInsetsEnabled={menuInsetsEnabled}
                   menuInsetsBottom={menuInsetsBottom}
+                  menuInsetsLeft={menuInsetsLeft}
+                  menuInsetsRight={menuInsetsRight}
                   onControlUpdate={handleControlsUpdate}
                   onScreenUpdate={handleScreensUpdate}
                   thumbstickImages={thumbstickImages}
