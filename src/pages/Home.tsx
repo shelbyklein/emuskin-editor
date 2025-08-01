@@ -1,7 +1,7 @@
 // Home page displaying all saved skin projects
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProject } from '../contexts/ProjectContext';
+import { useProject } from '../contexts/ProjectContextV2';
 import { useAuth } from '../contexts/AuthContext';
 import { indexedDBManager } from '../utils/indexedDB';
 import ImportButton from '../components/ImportButton';

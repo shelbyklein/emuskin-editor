@@ -3,7 +3,6 @@ import React, { createContext, useContext, ReactNode, useEffect, useCallback, us
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { indexedDBManager } from '../utils/indexedDB';
-import { useAuth } from './AuthContext';
 import { MinimalProject } from '../types/SaveFormat';
 import { toMinimalProject, fromMinimalProject } from '../utils/projectConverter';
 
