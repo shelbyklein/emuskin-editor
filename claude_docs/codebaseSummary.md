@@ -20,6 +20,7 @@ emuskin-generator/
 │   │   ├── ControlPalette.tsx   # Button selection palette
 │   │   ├── ControlPropertiesPanel.tsx # Bottom-sliding properties editor for controls
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
+│   │   ├── DatabaseDebugger.tsx # Debug component to visualize user database
 │   │   ├── LoginModal.tsx       # Email/password login modal for JWT auth
 │   │   ├── MenuInsetsPanel.tsx  # Menu insets configuration
 │   │   ├── DeviceInfo.tsx       # Device metrics display
@@ -45,7 +46,8 @@ emuskin-generator/
 │   │   └── useLocalStorage.tsx # LocalStorage with JSON parsing
 │   ├── utils/          # Helper functions
 │   │   ├── indexedDB.ts # IndexedDB manager for large file storage
-│   │   └── api.ts      # API utilities for WordPress authentication
+│   │   ├── api.ts      # API utilities for WordPress authentication
+│   │   └── userDatabase.ts # User database for tracking logins and projects
 │   ├── contexts/       # React contexts
 │   │   ├── AuthContext.tsx    # WordPress user authentication state
 │   │   ├── EditorContext.tsx  # Editor settings (grid, etc) with persistence
@@ -239,6 +241,9 @@ emuskin-generator/
 - ✅ Fixed lock button functionality - now properly prevents drag/drop with visual feedback
 - ✅ Added screen clearing when console changes to prevent invalid configurations
 - ✅ Fixed save functionality by replacing autosave with explicit saves on all actions
+- ✅ Implemented user database for tracking logins and project ownership
+- ✅ Home page now filters projects based on user database array (single source of truth)
+- ✅ Added automatic migration for existing projects to user database on login
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

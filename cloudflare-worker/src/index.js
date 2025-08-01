@@ -88,12 +88,12 @@ function getCORSHeaders(request, env) {
 async function handleUploadUrl(request, env, corsHeaders) {
   try {
     const body = await request.json();
-    const { projectId, fileName, fileType, imageType = "background", orientation = "portrait" } = body;
+    const { projectId, fileName, fileType, imageType = "background", orientation = "portrait", userEmail, controlId } = body;
     
     // Validate inputs
-    if (!projectId || !fileName || !fileType) {
+    if (!projectId || !fileName || !fileType || !userEmail) {
       return new Response(JSON.stringify({ 
-        error: "Missing required fields: projectId, fileName, fileType" 
+        error: "Missing required fields: projectId, fileName, fileType, userEmail" 
       }), {
         status: 400,
         headers: { 
@@ -117,10 +117,14 @@ async function handleUploadUrl(request, env, corsHeaders) {
       });
     }
 
-    // Generate unique key
-    const timestamp = Date.now();
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const key = `projects/${projectId}/${imageType}/${orientation}/${timestamp}-${sanitizedFileName}`;
+    // Generate key based on image type
+    let key;
+    if (imageType === "thumbstick" && controlId) {
+      key = `${userEmail}/${projectId}/thumbstick-${controlId}.png`;
+    } else {
+      // For background images, use orientation as filename
+      key = `${userEmail}/${projectId}/${orientation}.png`;
+    }
 
     // Generate upload ID
     const uploadId = crypto.randomUUID();
@@ -135,7 +139,8 @@ async function handleUploadUrl(request, env, corsHeaders) {
           fileType,
           imageType,
           orientation,
-          timestamp,
+          userEmail,
+          controlId,
           expires: Date.now() + 300000 // 5 minutes
         }),
         { expirationTtl: 300 } // Expire after 5 minutes
@@ -318,10 +323,11 @@ async function handleList(request, env, corsHeaders) {
   try {
     const url = new URL(request.url);
     const projectId = url.searchParams.get("projectId");
+    const userEmail = url.searchParams.get("userEmail");
     
-    if (!projectId) {
+    if (!projectId || !userEmail) {
       return new Response(JSON.stringify({ 
-        error: "Missing projectId parameter" 
+        error: "Missing required parameters: projectId, userEmail" 
       }), {
         status: 400,
         headers: { 
@@ -331,7 +337,7 @@ async function handleList(request, env, corsHeaders) {
       });
     }
 
-    const prefix = `projects/${projectId}/`;
+    const prefix = `${userEmail}/${projectId}/`;
     const list = await env.R2_BUCKET.list({ prefix, limit: 1000 });
 
     const images = list.objects.map(obj => ({

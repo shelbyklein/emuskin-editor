@@ -20,6 +20,7 @@ import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContextV2';
+import { useAuth } from '../contexts/AuthContext';
 // import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves
 
 const Editor: React.FC = () => {
@@ -72,6 +73,7 @@ const Editor: React.FC = () => {
     saveOrientationData,
     saveProjectWithOrientation
   } = useProject();
+  const { user } = useAuth();
   
   // Autosave disabled - using explicit saves instead
   // All changes are now saved immediately when:
@@ -691,11 +693,16 @@ const Editor: React.FC = () => {
       let imageUrl: string;
       
       if (isR2Enabled()) {
+        if (!user?.email) {
+          console.error('User must be logged in to upload images');
+          throw new Error('User authentication required');
+        }
         // Upload to R2
         console.log('Uploading image to R2...');
         const { publicUrl } = await uploadImage(
           currentProject.id,
           file,
+          user.email,
           'background',
           getCurrentOrientation()
         );
@@ -1022,13 +1029,19 @@ const Editor: React.FC = () => {
         let url: string;
         
         if (isR2Enabled()) {
+          if (!user?.email) {
+            console.error('User must be logged in to upload images');
+            throw new Error('User authentication required');
+          }
           // Upload to R2
           console.log('Uploading thumbstick image to R2...');
           const { publicUrl } = await uploadImage(
             currentProject.id,
             file,
+            user.email,
             'thumbstick',
-            getCurrentOrientation()
+            getCurrentOrientation(),
+            controlId
           );
           url = publicUrl;
           console.log('Thumbstick image uploaded to R2:', url);

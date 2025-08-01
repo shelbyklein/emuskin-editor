@@ -36,8 +36,10 @@ export async function requestUploadUrl(
   projectId: string,
   fileName: string,
   fileType: string,
+  userEmail: string,
   imageType: 'background' | 'thumbstick' = 'background',
-  orientation: 'portrait' | 'landscape' = 'portrait'
+  orientation: 'portrait' | 'landscape' = 'portrait',
+  controlId?: string
 ): Promise<UploadUrlResponse> {
   const response = await fetch(`${R2_WORKER_URL}/upload-url`, {
     method: 'POST',
@@ -48,8 +50,10 @@ export async function requestUploadUrl(
       projectId,
       fileName,
       fileType,
+      userEmail,
       imageType,
       orientation,
+      controlId,
     }),
   });
 
@@ -111,8 +115,10 @@ export async function uploadToR2(
 export async function uploadImage(
   projectId: string,
   file: File,
+  userEmail: string,
   imageType: 'background' | 'thumbstick' = 'background',
   orientation: 'portrait' | 'landscape' = 'portrait',
+  controlId?: string,
   onProgress?: (progress: number) => void
 ): Promise<{ publicUrl: string; key: string }> {
   try {
@@ -121,8 +127,10 @@ export async function uploadImage(
       projectId,
       file.name,
       file.type,
+      userEmail,
       imageType,
-      orientation
+      orientation,
+      controlId
     );
 
     // Step 2: Upload file
@@ -156,8 +164,8 @@ export async function deleteImage(key: string): Promise<void> {
 /**
  * List all images for a project
  */
-export async function listProjectImages(projectId: string): Promise<ImageListResponse> {
-  const response = await fetch(`${R2_WORKER_URL}/list?projectId=${projectId}`);
+export async function listProjectImages(projectId: string, userEmail: string): Promise<ImageListResponse> {
+  const response = await fetch(`${R2_WORKER_URL}/list?projectId=${projectId}&userEmail=${encodeURIComponent(userEmail)}`);
 
   if (!response.ok) {
     const error = await response.json();
