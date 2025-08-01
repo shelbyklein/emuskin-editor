@@ -1418,8 +1418,8 @@ const Canvas: React.FC<CanvasProps> = ({
                   key={screen.id || `screen-${index}`}
                   className={`absolute border-2 rounded group touch-interactive ${
                     isSelected 
-                      ? 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50' 
-                      : 'border-green-400 bg-green-400/10 hover:border-green-500 hover:bg-green-500/20'
+                      ? (screen.locked ? 'border-gray-500 bg-gray-500/20 ring-2 ring-gray-500/50' : 'border-green-500 bg-green-500/20 ring-2 ring-green-500/50')
+                      : (screen.locked ? 'border-gray-400 bg-gray-400/10' : 'border-green-400 bg-green-400/10 hover:border-green-500 hover:bg-green-500/20')
                   } ${dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'screen' ? 'opacity-75' : ''}`}
                   style={{
                     left: `${x}px`,
@@ -1432,8 +1432,8 @@ const Canvas: React.FC<CanvasProps> = ({
                                 (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'screen') 
                                 ? 'none' : 'all 75ms'
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, index, 'screen')}
-                  onTouchStart={(e) => handleTouchStart(e, index, 'screen')}
+                  onMouseDown={(e) => !screen.locked && handleMouseDown(e, index, 'screen')}
+                  onTouchStart={(e) => !screen.locked && handleTouchStart(e, index, 'screen')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the screen (don't open properties panel - use settings button for that)
@@ -1644,8 +1644,8 @@ const Canvas: React.FC<CanvasProps> = ({
                   key={index}
                   className={`control absolute border-2 rounded group touch-interactive ${
                     isSelected 
-                      ? (isLocked ? 'border-purple-500 bg-purple-500/40 ring-2 ring-purple-500/50' : 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50')
-                      : (isLocked ? 'border-purple-400 bg-purple-400/30' : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40')
+                      ? (control.locked ? 'border-purple-500 bg-purple-500/40 ring-2 ring-purple-500/50' : 'border-blue-500 bg-blue-500/40 ring-2 ring-blue-500/50')
+                      : (control.locked ? 'border-purple-400 bg-purple-400/30' : 'border-blue-400 bg-blue-400/30 hover:border-blue-500 hover:bg-blue-500/40')
                   } ${dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control' ? 'opacity-75' : ''}`}
                   style={{
                     left: `${x}px`,
@@ -1653,13 +1653,13 @@ const Canvas: React.FC<CanvasProps> = ({
                     width: `${width}px`,
                     height: `${height}px`,
                     zIndex: isSelected ? 20 : 10, // Controls have lower z-index than screens
-                    cursor: isLocked ? 'default' : (dragState.isDragging ? 'grabbing' : 'move'),
+                    cursor: control.locked ? 'default' : (dragState.isDragging ? 'grabbing' : 'move'),
                     transition: (dragState.isDragging && dragState.itemIndex === index && dragState.itemType === 'control') || 
                                 (resizeState.isResizing && resizeState.itemIndex === index && resizeState.itemType === 'control') 
                                 ? 'none' : 'all 75ms'
                   }}
-                  onMouseDown={(e) => !isLocked && handleMouseDown(e, index, 'control')}
-                  onTouchStart={(e) => !isLocked && handleTouchStart(e, index, 'control')}
+                  onMouseDown={(e) => !control.locked && handleMouseDown(e, index, 'control')}
+                  onTouchStart={(e) => !control.locked && handleTouchStart(e, index, 'control')}
                   onClick={(e) => {
                     e.stopPropagation();
                     // Select the control (don't open properties panel - use settings button for that)
@@ -1830,7 +1830,7 @@ const Canvas: React.FC<CanvasProps> = ({
                   </div>
 
                   {/* Resize handles (visible when selected and not locked) */}
-                  {isSelected && !isLocked && (
+                  {isSelected && !control.locked && (
                     <>
                       {/* Corner handles */}
                       <div 
