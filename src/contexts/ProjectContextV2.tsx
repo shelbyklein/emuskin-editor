@@ -4,6 +4,8 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { MinimalProject } from '../types/SaveFormat';
 import { toMinimalProject, fromMinimalProject } from '../utils/projectConverter';
+import { userDatabase } from '../utils/userDatabase';
+import { useAuth } from './AuthContext';
 
 interface OrientationData {
   controls: ControlMapping[];
@@ -82,6 +84,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>([]);
   const [consoles, setConsoles] = useState<Console[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  
+  // Get current user from auth context
+  const { user } = useAuth();
 
   // Load consoles/devices
   useEffect(() => {
@@ -150,6 +155,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       currentOrientation: 'portrait',
       hasBeenConfigured: false,
       lastModified: Date.now(),
+      userId: user?.id,
       ...initialData
     };
     
@@ -158,6 +164,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     if (minimal) {
       setMinimalProjects([...minimalProjects, minimal]);
       setCurrentProjectId(newProject.id);
+      
+      // Add project to user's database entry
+      if (user?.email) {
+        userDatabase.addProjectToUser(user.email, newProject.id);
+        console.log(`Project ${newProject.id} added to user ${user.email} in database`);
+      }
     }
     
     return newProject.id;
@@ -238,6 +250,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     setMinimalProjects(prev => prev.filter(p => p.id !== id));
     if (currentProjectId === id) {
       setCurrentProjectId(null);
+    }
+    
+    // Remove project from user's database entry
+    if (user?.email) {
+      userDatabase.removeProjectFromUser(user.email, id);
+      console.log(`Project ${id} removed from user ${user.email} in database`);
     }
   };
 

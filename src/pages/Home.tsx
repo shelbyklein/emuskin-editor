@@ -7,6 +7,8 @@ import ImportButton from '../components/ImportButton';
 import LoginModal from '../components/LoginModal';
 import ConsoleIcon from '../components/ConsoleIcon';
 import { ControlMapping, ScreenMapping } from '../types';
+import { DatabaseDebugger } from '../components/DatabaseDebugger';
+import { userDatabase } from '../utils/userDatabase';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -16,11 +18,19 @@ const Home: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   
-  // Filter projects to show only current user's projects
+  // Filter projects to show only current user's projects based on user database
   const userProjects = useMemo(() => {
+    if (!user?.email) {
+      // Not logged in - show no projects
+      return [];
+    }
+    
+    // Get project IDs from user database
+    const userProjectIds = userDatabase.getUserProjects(user.email);
+    
+    // Filter projects to only those in the user's database
     return projects.filter(project => 
-      !project.userId || // Show legacy projects without userId
-      (user && project.userId === user.id) // Show projects belonging to current user
+      userProjectIds.includes(project.id)
     );
   }, [projects, user]);
 
@@ -344,6 +354,9 @@ const Home: React.FC = () => {
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
       />
+      
+      {/* Database Debugger */}
+      <DatabaseDebugger />
     </div>
   );
 };
