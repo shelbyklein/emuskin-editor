@@ -156,9 +156,11 @@
 - [x] Implement user database for tracking logins and project ownership
 - [x] Projects now filtered based on user database array
 - [x] Add automatic migration for existing projects
+- [x] Update R2 storage to organize files by user email
+- [x] Simplify R2 paths: [email]/[project]/[orientation].png
 
 ## Future Scalability Considerations
-- User accounts and cloud storage (JWT auth foundation complete, local database implemented)
+- User accounts and cloud storage (JWT auth complete, R2 organized by user)
 - iPad support (touch support already implemented)
 - Community template sharing
 - Collaborative editing features

@@ -115,6 +115,16 @@
   - Automatic migration for existing projects on login
 - **Status**: User database serves as single source of truth for project ownership
 
+### ✅ R2 Storage Organization by User [COMPLETED]
+- **Implemented**:
+  - Updated folder structure: [userEmail]/[projectId]/[orientation].png
+  - Thumbstick images: [userEmail]/[projectId]/thumbstick-[controlId].png
+  - Removed timestamps for cleaner URLs and automatic replacement
+  - Modified Cloudflare worker to accept and use user email
+  - Updated r2Client and Editor to pass user email with uploads
+  - Added authentication check before allowing uploads
+- **Status**: All user images now organized under their email address
+
 ### ✅ Touch Support [COMPLETED]
 - **Implemented**:
   - Full touch event handling for mobile devices

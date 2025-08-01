@@ -28,6 +28,13 @@
 - **Auth Method**: JWT tokens with email/password login
 - **Token Storage**: LocalStorage with JWT decoding for user data
 - **API Format**: WordPress REST API with ?rest_route= parameter
+- **User Database**: Local tracking of users and projects by email
+
+## Cloud Storage
+- **Image Storage**: Cloudflare R2 with Worker
+- **Folder Structure**: [userEmail]/[projectId]/[orientation].png
+- **Authentication**: User must be logged in to upload
+- **Benefits**: Organized by user, automatic replacement, clean URLs
 
 ## Development Tools
 - **Version Control**: Git with GitHub

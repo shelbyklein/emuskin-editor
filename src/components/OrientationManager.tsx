@@ -33,62 +33,67 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    <div id="orientation-manager-container" className="space-y-3">
+      <h3 id="orientation-manager-title" className="text-lg font-medium text-gray-900 dark:text-white">
         Orientations
       </h3>
       
-      <div className="space-y-3">
+      <div id="orientation-selector-container" className="space-y-3">
         {/* Pill-style orientation selector - vertical layout */}
-        <div className="inline-flex flex-col bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+        <div id="orientation-pill-selector" className="flex flex-col bg-gray-100 dark:bg-gray-800 rounded-lg p-2 gap-2">
           {availableOrientations.map((orientation) => (
             <button
               key={orientation}
+              id={`orientation-button-${orientation}`}
               onClick={() => onOrientationChange(orientation)}
-              className={`relative group px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+              className={`relative group w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 border ${
                 currentOrientation === orientation
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-primary-600 text-white shadow-sm border-primary-700 dark:border-primary-500'
+                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
               }`}
               aria-label={`Switch to ${orientation} orientation`}
               aria-pressed={currentOrientation === orientation}
             >
-              <span className="flex items-center justify-between">
-                <span className="flex items-center space-x-2">
-                  <span className="capitalize">{orientation}</span>
+              <span className="flex items-center justify-between w-full">
+                <span id={`orientation-label-${orientation}`} className="capitalize">{orientation}</span>
+                <span className="relative flex items-center justify-center w-4 h-4">
                   {orientationInfo[orientation]?.hasContent && (
                     <span 
-                      className={`w-2 h-2 rounded-full ${
+                      id={`orientation-content-indicator-${orientation}`}
+                      className={`w-2 h-2 rounded-full transition-opacity ${
+                        canRemove ? 'group-hover:opacity-0' : ''
+                      } ${
                         currentOrientation === orientation ? 'bg-white' : 'bg-green-500'
                       }`} 
                       title="Has content" 
                     />
                   )}
-                </span>
-                {canRemove && (
-                  <button
-                    onClick={(e) => handleRemove(e, orientation)}
-                    className={`ml-3 p-0.5 rounded transition-opacity ${
-                      currentOrientation === orientation
-                        ? 'opacity-0 group-hover:opacity-100 hover:bg-primary-700'
-                        : 'opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30'
-                    }`}
-                    aria-label={`Remove ${orientation} orientation`}
-                  >
-                    <svg 
-                      className={`w-3.5 h-3.5 ${
+                  {canRemove && (
+                    <button
+                      id={`orientation-remove-button-${orientation}`}
+                      onClick={(e) => handleRemove(e, orientation)}
+                      className={`absolute inset-0 flex items-center justify-center rounded transition-opacity opacity-0 group-hover:opacity-100 ${
                         currentOrientation === orientation
-                          ? 'text-white'
-                          : 'text-red-600 dark:text-red-400'
-                      }`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
+                          ? 'hover:bg-primary-700'
+                          : 'hover:bg-red-100 dark:hover:bg-red-900/30'
+                      }`}
+                      aria-label={`Remove ${orientation} orientation`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
+                      <svg 
+                        className={`w-3.5 h-3.5 ${
+                          currentOrientation === orientation
+                            ? 'text-white'
+                            : 'text-red-600 dark:text-red-400'
+                        }`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </span>
               </span>
             </button>
           ))}
@@ -96,9 +101,10 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
       </div>
 
       {(canAddPortrait || canAddLandscape) && (
-        <div className="pt-2 space-y-2">
+        <div id="orientation-add-buttons-container" className="pt-2 space-y-2">
           {canAddPortrait && (
             <button
+              id="add-portrait-button"
               onClick={() => onAddOrientation('portrait')}
               className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center space-x-2"
             >
@@ -111,6 +117,7 @@ const OrientationManager: React.FC<OrientationManagerProps> = ({
           
           {canAddLandscape && (
             <button
+              id="add-landscape-button"
               onClick={() => onAddOrientation('landscape')}
               className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center space-x-2"
             >

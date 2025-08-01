@@ -244,6 +244,8 @@ emuskin-generator/
 - ✅ Implemented user database for tracking logins and project ownership
 - ✅ Home page now filters projects based on user database array (single source of truth)
 - ✅ Added automatic migration for existing projects to user database on login
+- ✅ Updated R2 storage structure to organize files by user email
+- ✅ Simplified R2 paths: [email]/[project]/[orientation].png (no timestamps)
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)
