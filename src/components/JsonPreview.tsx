@@ -70,7 +70,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
     const createOrientationData = (orientationData: any, isLandscape: boolean = false) => {
       const orientation: any = {
         assets: orientationData?.backgroundImage ? { medium: orientationData.backgroundImage.fileName || 'background.png' } : {},
-        items: (orientationData?.controls || controls).map((control: ControlMapping) => {
+        items: (orientationData?.controls || []).map((control: ControlMapping) => {
           const item: any = {};
           
           // Add thumbstick if present (must come before inputs)
@@ -103,7 +103,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
           
           return item;
         }),
-        screens: (orientationData?.screens || screens).map((screen: ScreenMapping) => {
+        screens: (orientationData?.screens || []).map((screen: ScreenMapping) => {
           const screenObj: any = {
             outputFrame: {
               x: screen.outputFrame?.x || 0,
@@ -138,8 +138,8 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       };
       
       // Add menuInsets if enabled
-      const insetsEnabled = orientationData?.menuInsetsEnabled ?? menuInsetsEnabled;
-      const insetsBottom = orientationData?.menuInsetsBottom ?? menuInsetsBottom;
+      const insetsEnabled = orientationData?.menuInsetsEnabled || false;
+      const insetsBottom = orientationData?.menuInsetsBottom || 0;
       if (insetsEnabled) {
         orientation.menuInsets = {
           bottom: insetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
@@ -160,7 +160,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
     }
 
     return config;
-  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, screens, backgroundImageFile, menuInsetsEnabled, menuInsetsBottom, currentProject]);
+  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, currentProject]);
 
   // Format JSON with indentation
   const formattedJson = jsonConfig ? JSON.stringify(jsonConfig, null, 2) : '';
