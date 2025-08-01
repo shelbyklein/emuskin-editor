@@ -30,6 +30,7 @@ emuskin-generator/
 │   │   ├── ImportButton.tsx     # Import existing .deltaskin/.gammaskin files
 │   │   ├── JsonPreview.tsx      # JSON output display with screens support
 │   │   ├── Layout.tsx           # Main app layout with ID system
+│   │   ├── OrientationManager.tsx # Portrait/landscape orientation switcher
 │   │   ├── ProjectManager.tsx   # Project save/load management
 │   │   ├── ScreenList.tsx       # Screen list panel with clickable pills
 │   │   ├── ScreenPalette.tsx    # Screen selection for game display
@@ -246,6 +247,8 @@ emuskin-generator/
 - ✅ Added automatic migration for existing projects to user database on login
 - ✅ Updated R2 storage structure to organize files by user email
 - ✅ Simplified R2 paths: [email]/[project]/[orientation].png (no timestamps)
+- ✅ Improved OrientationManager UI with full-width buttons, borders, and hover effects
+- ✅ Added comprehensive IDs to all OrientationManager child elements for better testability
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

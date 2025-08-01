@@ -1266,28 +1266,43 @@ const Editor: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Orientation Manager */}
-              {currentProject && (
-                <div id="orientation-manager-section" className="card animate-slide-up">
-                  <OrientationManager
-                    key={`orientation-manager-${currentProject.availableOrientations?.length || 0}-${currentProject.availableOrientations?.join(',') || 'portrait'}`}
-                    availableOrientations={currentProject.availableOrientations || ['portrait']}
-                    currentOrientation={getCurrentOrientation()}
-                    onOrientationChange={setOrientation}
-                    onAddOrientation={handleAddOrientation}
-                    onRemoveOrientation={handleRemoveOrientation}
-                    orientationInfo={{
-                      portrait: {
-                        hasContent: !!(currentProject.orientations?.portrait?.controls?.length || 
-                                     currentProject.orientations?.portrait?.screens?.length ||
-                                     currentProject.orientations?.portrait?.backgroundImage)
-                      },
-                      landscape: {
-                        hasContent: !!(currentProject.orientations?.landscape?.controls?.length || 
-                                      currentProject.orientations?.landscape?.screens?.length ||
-                                      currentProject.orientations?.landscape?.backgroundImage)
-                      }
-                    }}
+              {/* Screen Palette */}
+              <div id="screen-palette-section" className="card animate-slide-up">
+                <h3 id="screen-palette-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Game Screens</h3>
+                <ScreenPalette 
+                  consoleType={selectedConsole}
+                  existingScreens={screens}
+                  onScreenAdd={handleScreenAdd}
+                />
+                {screens.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <ScreenList
+                      screens={screens}
+                      onScreenDelete={handleDeleteScreen}
+                      onScreenSelect={setSelectedScreenIndex}
+                      selectedScreen={selectedScreenIndex}
+                      consoleType={selectedConsole}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Control Palette */}
+              <div id="control-palette-section" className="card animate-slide-up">
+                <ControlPalette 
+                  consoleType={selectedConsole}
+                  onControlSelect={handleControlSelect}
+                />
+              </div>
+              
+              {/* Control List */}
+              {controls.length > 0 && (
+                <div id="control-list-section" className="card animate-slide-up">
+                  <ControlList 
+                    controls={controls}
+                    onControlDelete={handleControlDelete}
+                    onControlSelect={handleControlSelectFromList}
+                    selectedControl={selectedControlIndex}
                   />
                 </div>
               )}
@@ -1325,47 +1340,6 @@ const Editor: React.FC = () => {
                   >
                     Remove {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'} Image
                   </button>
-                )}
-              </div>
-
-              {/* Control Palette */}
-              <div id="control-palette-section" className="card animate-slide-up">
-                <ControlPalette 
-                  consoleType={selectedConsole}
-                  onControlSelect={handleControlSelect}
-                />
-              </div>
-              
-              {/* Control List */}
-              {controls.length > 0 && (
-                <div id="control-list-section" className="card animate-slide-up">
-                  <ControlList 
-                    controls={controls}
-                    onControlDelete={handleControlDelete}
-                    onControlSelect={handleControlSelectFromList}
-                    selectedControl={selectedControlIndex}
-                  />
-                </div>
-              )}
-
-              {/* Screen Palette */}
-              <div id="screen-palette-section" className="card animate-slide-up">
-                <h3 id="screen-palette-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">Game Screens</h3>
-                <ScreenPalette 
-                  consoleType={selectedConsole}
-                  existingScreens={screens}
-                  onScreenAdd={handleScreenAdd}
-                />
-                {screens.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <ScreenList
-                      screens={screens}
-                      onScreenDelete={handleDeleteScreen}
-                      onScreenSelect={setSelectedScreenIndex}
-                      selectedScreen={selectedScreenIndex}
-                      consoleType={selectedConsole}
-                    />
-                  </div>
                 )}
               </div>
 
@@ -1421,6 +1395,32 @@ const Editor: React.FC = () => {
                     </button>
                   </div>
                 </div>
+                
+                {/* Orientation Manager - moved from left column */}
+                {currentProject && (
+                  <div className="flex items-center">
+                    <OrientationManager
+                      key={`orientation-manager-${currentProject.availableOrientations?.length || 0}-${currentProject.availableOrientations?.join(',') || 'portrait'}`}
+                      availableOrientations={currentProject.availableOrientations || ['portrait']}
+                      currentOrientation={getCurrentOrientation()}
+                      onOrientationChange={setOrientation}
+                      onAddOrientation={handleAddOrientation}
+                      onRemoveOrientation={handleRemoveOrientation}
+                      orientationInfo={{
+                        portrait: {
+                          hasContent: !!(currentProject.orientations?.portrait?.controls?.length || 
+                                       currentProject.orientations?.portrait?.screens?.length ||
+                                       currentProject.orientations?.portrait?.backgroundImage)
+                        },
+                        landscape: {
+                          hasContent: !!(currentProject.orientations?.landscape?.controls?.length || 
+                                        currentProject.orientations?.landscape?.screens?.length ||
+                                        currentProject.orientations?.landscape?.backgroundImage)
+                        }
+                      }}
+                    />
+                  </div>
+                )}
                 
               </div>
               {/* Grid Controls */}

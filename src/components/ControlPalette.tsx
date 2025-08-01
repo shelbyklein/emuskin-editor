@@ -117,8 +117,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
         id={`control-button-${button.key}`}
         key={button.key}
         onClick={() => handleButtonClick(button)}
-        className="group relative flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
-        style={{ width: '65px', height: '65px' }}
+        className="group relative flex items-center justify-center aspect-square border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 bg-white dark:bg-gray-800 transition-all duration-200"
         aria-label={`Add ${button.label} control`}
       >
         <div id={`control-button-icon-${button.key}`} className="w-10 h-10 flex items-center justify-center">
@@ -229,7 +228,7 @@ const ControlPalette: React.FC<ControlPaletteProps> = ({
     <div id="control-palette-container" className="space-y-4">
       <h4 id="control-palette-title" className="font-medium text-gray-700 dark:text-gray-300">Available Controls</h4>
       
-      <div id="control-palette-buttons-grid" className="flex flex-wrap gap-2">
+      <div id="control-palette-buttons-grid" className="grid grid-cols-4 gap-2">
         {availableButtons.map(button => renderButton(button))}
       </div>
       
