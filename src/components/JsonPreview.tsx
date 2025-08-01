@@ -1,6 +1,7 @@
 // JSON Preview component for displaying generated skin configuration
 import React, { useState, useMemo } from 'react';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
+import { useProject } from '../contexts/ProjectContextV2';
 
 interface JsonPreviewProps {
   skinName: string;
@@ -27,6 +28,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const { currentProject } = useProject();
 
   // Generate the JSON configuration
   const jsonConfig = useMemo(() => {
@@ -34,99 +36,131 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       return null;
     }
 
-    const config = {
+    // Get data for both orientations from current project
+    const portraitData = currentProject?.orientations?.portrait;
+    const landscapeData = currentProject?.orientations?.landscape;
+    const availableOrientations = currentProject?.availableOrientations || ['portrait'];
+
+    interface SkinConfig {
+      name: string;
+      identifier: string;
+      gameTypeIdentifier: string;
+      representations: {
+        iphone: {
+          edgeToEdge: {
+            portrait?: any;
+            landscape?: any;
+          }
+        }
+      }
+    }
+
+    const config: SkinConfig = {
       name: skinName || 'Untitled Skin',
       identifier: skinIdentifier || 'com.playcase.default.skin',
       gameTypeIdentifier: selectedConsole.gameTypeIdentifier,
       representations: {
         iphone: {
-          edgeToEdge: {
-            portrait: (() => {
-              const portrait: any = {
-                assets: backgroundImageFile ? { medium: backgroundImageFile.name } : {},
-                items: controls.map(control => {
-                  const item: any = {};
-                  
-                  // Add thumbstick if present (must come before inputs)
-                  if (control.thumbstick) {
-                    item.thumbstick = {
-                      name: control.thumbstick.name,
-                      width: control.thumbstick.width,
-                      height: control.thumbstick.height
-                    };
-                  }
-                  
-                  // Add inputs
-                  item.inputs = control.inputs;
-                  
-                  // Add frame
-                  item.frame = {
-                    x: control.frame?.x || 0,
-                    y: control.frame?.y || 0,
-                    width: control.frame?.width || 50,
-                    height: control.frame?.height || 50
-                  };
-                  
-                  // Add extended edges
-                  item.extendedEdges = control.extendedEdges || {
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0
-                  };
-                  
-                  return item;
-                }),
-                screens: screens.map(screen => {
-                  const screenObj: any = {
-                    outputFrame: {
-                      x: screen.outputFrame?.x || 0,
-                      y: screen.outputFrame?.y || 0,
-                      width: screen.outputFrame?.width || 200,
-                      height: screen.outputFrame?.height || 150
-                    }
-                  };
-                  
-                  // Only include inputFrame if it exists (not for SEGA Genesis)
-                  if (screen.inputFrame) {
-                    screenObj.inputFrame = {
-                      x: screen.inputFrame.x,
-                      y: screen.inputFrame.y,
-                      width: screen.inputFrame.width,
-                      height: screen.inputFrame.height
-                    };
-                  }
-                  
-                  return screenObj;
-                }),
-                mappingSize: {
-                  width: selectedDevice.logicalWidth,
-                  height: selectedDevice.logicalHeight
-                },
-                extendedEdges: {
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0
-                }
-              };
-              
-              // Add menuInsets after extendedEdges if enabled
-              if (menuInsetsEnabled) {
-                portrait.menuInsets = {
-                  bottom: menuInsetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
-                };
-              }
-              
-              return portrait;
-            })()
-          }
+          edgeToEdge: {}
         }
       }
     };
 
+    // Helper function to create orientation data
+    const createOrientationData = (orientationData: any, isLandscape: boolean = false) => {
+      const orientation: any = {
+        assets: orientationData?.backgroundImage ? { medium: orientationData.backgroundImage.fileName || 'background.png' } : {},
+        items: (orientationData?.controls || controls).map((control: ControlMapping) => {
+          const item: any = {};
+          
+          // Add thumbstick if present (must come before inputs)
+          if (control.thumbstick) {
+            item.thumbstick = {
+              name: control.thumbstick.name,
+              width: control.thumbstick.width,
+              height: control.thumbstick.height
+            };
+          }
+          
+          // Add inputs
+          item.inputs = control.inputs;
+          
+          // Add frame
+          item.frame = {
+            x: control.frame?.x || 0,
+            y: control.frame?.y || 0,
+            width: control.frame?.width || 50,
+            height: control.frame?.height || 50
+          };
+          
+          // Add extended edges
+          item.extendedEdges = control.extendedEdges || {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0
+          };
+          
+          return item;
+        }),
+        screens: (orientationData?.screens || screens).map((screen: ScreenMapping) => {
+          const screenObj: any = {
+            outputFrame: {
+              x: screen.outputFrame?.x || 0,
+              y: screen.outputFrame?.y || 0,
+              width: screen.outputFrame?.width || 200,
+              height: screen.outputFrame?.height || 150
+            }
+          };
+          
+          // Only include inputFrame if it exists (not for SEGA Genesis)
+          if (screen.inputFrame) {
+            screenObj.inputFrame = {
+              x: screen.inputFrame.x,
+              y: screen.inputFrame.y,
+              width: screen.inputFrame.width,
+              height: screen.inputFrame.height
+            };
+          }
+          
+          return screenObj;
+        }),
+        mappingSize: {
+          width: isLandscape ? selectedDevice.logicalHeight : selectedDevice.logicalWidth,
+          height: isLandscape ? selectedDevice.logicalWidth : selectedDevice.logicalHeight
+        },
+        extendedEdges: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0
+        }
+      };
+      
+      // Add menuInsets if enabled
+      const insetsEnabled = orientationData?.menuInsetsEnabled ?? menuInsetsEnabled;
+      const insetsBottom = orientationData?.menuInsetsBottom ?? menuInsetsBottom;
+      if (insetsEnabled) {
+        orientation.menuInsets = {
+          bottom: insetsBottom / 100 // Convert percentage to decimal (e.g., 43% -> 0.43)
+        };
+      }
+      
+      return orientation;
+    };
+
+    // Add portrait orientation if available
+    if (availableOrientations.includes('portrait')) {
+      config.representations.iphone.edgeToEdge.portrait = createOrientationData(portraitData, false);
+    }
+
+    // Add landscape orientation if available
+    if (availableOrientations.includes('landscape') && landscapeData) {
+      config.representations.iphone.edgeToEdge.landscape = createOrientationData(landscapeData, true);
+    }
+
     return config;
-  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, screens, backgroundImageFile, menuInsetsEnabled, menuInsetsBottom]);
+  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, screens, backgroundImageFile, menuInsetsEnabled, menuInsetsBottom, currentProject]);
 
   // Format JSON with indentation
   const formattedJson = jsonConfig ? JSON.stringify(jsonConfig, null, 2) : '';

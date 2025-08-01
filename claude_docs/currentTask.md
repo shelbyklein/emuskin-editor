@@ -25,6 +25,7 @@
 - ✅ Fix lock button functionality - now properly prevents drag/drop and shows visual feedback
 - ✅ Clear screens when console changes - prevents incorrect screen configurations
 - ✅ Fix save functionality - replaced buggy autosave with explicit saves on all changes
+- ✅ Fix JSON preview to show landscape orientation when available
 - Add keyboard shortcuts for common actions
 
 ## Context
@@ -279,6 +280,12 @@
   - Fixed autosave cleanup effect dependencies to prevent stale closures
   - Added comprehensive debug logging to track save operations
   - All changes now save immediately without relying on timers
+- ✅ Fixed JSON preview to show landscape orientation
+  - JsonPreview component was hardcoded to only show portrait data
+  - Added useProject hook to access project context and orientation data
+  - Updated JSON generation to include both portrait and landscape when available
+  - Mirrors the same structure as ExportButton for consistency
+  - JSON preview now dynamically shows all available orientations
 
 ## Next Steps
 1. Add keyboard shortcuts for common actions
