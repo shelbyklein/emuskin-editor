@@ -1,14 +1,22 @@
 // Authentication button for login/logout functionality
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 
 const AuthButton: React.FC = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLogin = () => {
     setShowLoginModal(true);
+  };
+
+  const handleLogout = () => {
+    logout(() => {
+      navigate('/');
+    });
   };
 
   if (isLoading) {
@@ -43,7 +51,7 @@ const AuthButton: React.FC = () => {
 
         {/* Logout Button */}
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           title="Logout"
         >

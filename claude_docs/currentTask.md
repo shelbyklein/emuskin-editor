@@ -315,9 +315,28 @@
   - Updated OrientationManager to horizontal layout for toolbar placement
   - Changed control palette from flexbox to 4-column grid layout
   - Updated control buttons to use aspect-square instead of fixed dimensions
+- ✅ Enhanced OrientationManager visual design
+  - Replaced text pills with visual representations of portrait (9:16) and landscape (16:9)
+  - Icons now properly reflect aspect ratios with reduced size (30% smaller)
+  - Added borders and consistent pill height (64px) for better visual hierarchy
+  - Moved delete button to top-right corner of pill (not on icon)
+  - Green dot indicator shows when orientation has content
+  - Purple "Add Portrait/Landscape" buttons match the visual style
+  - Fixed DOM nesting error (button inside button) by restructuring component
+- ✅ Moved GridControls to canvas toolbar
+  - Grid options (Show Grid, Snap to Grid, Grid Size) now integrated into canvas toolbar
+  - Better organization with grid controls between undo/redo and orientation manager
+  - Removed redundant placement below the toolbar
+- ✅ Deployed Cloudflare Worker with user-based storage structure
+  - R2 storage now correctly uses [email]/[project]/[orientation].png format
+  - All new uploads will be organized by user email
+- ✅ Added logout redirect to home page
+  - When users log out, they are automatically redirected to the home page
+  - Implemented using React Router navigation in AuthButton component
+  - AuthContext logout function now accepts optional callback for post-logout actions
 
 ## Current Issues
-- **R2 Storage Deployment**: The Cloudflare Worker is still using the old storage structure (projects/[id]/background/[orientation]/) instead of the new user-based structure ([email]/[project]/[orientation].png). The code has been updated locally but the worker needs to be redeployed.
+- None currently reported
 
 ## Next Steps
 1. **Deploy updated Cloudflare Worker** (URGENT)

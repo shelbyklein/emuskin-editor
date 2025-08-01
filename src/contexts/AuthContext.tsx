@@ -19,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (token: string, user: WordPressUser) => void;
-  logout: () => void;
+  logout: (onLogoutComplete?: () => void) => void;
   refreshToken: () => Promise<boolean>;
 }
 
@@ -125,11 +125,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 100); // Small delay to ensure database is ready
   };
 
-  const logout = () => {
+  const logout = (onLogoutComplete?: () => void) => {
     setToken(null);
     setUser(null);
     // Clear any cached project data
     // TODO: Implement proper cleanup when switching from cloud to local storage
+    
+    // Call the optional callback after logout
+    if (onLogoutComplete) {
+      onLogoutComplete();
+    }
   };
 
   const refreshToken = async (): Promise<boolean> => {
