@@ -151,16 +151,29 @@ const Editor: React.FC = () => {
     
     // Skip if this is just a lastModified update (not actual data change)
     // Compare everything except lastModified to determine if data actually changed
+    const currentOrientation = currentProject.currentOrientation || 'portrait';
+    const orientationChanged = previousOrientationRef.current !== currentOrientation;
+    
     const isJustTimestampUpdate = 
       skinName === currentProject.name && 
       skinIdentifier === currentProject.identifier &&
       selectedConsole === currentProject.console?.shortName &&
-      selectedDevice === currentProject.device?.model;
+      selectedDevice === currentProject.device?.model &&
+      !orientationChanged;
       
     if (isJustTimestampUpdate) {
       console.log('Skipping project load - only timestamp changed');
       return;
     }
+    
+    console.log('Orientation check:', {
+      previous: previousOrientationRef.current,
+      current: currentOrientation,
+      changed: orientationChanged
+    });
+    
+    // Update the previous orientation ref after logging
+    previousOrientationRef.current = currentOrientation;
     
     console.log('Loading project data into UI:', {
       oldName: skinName,
@@ -203,6 +216,12 @@ const Editor: React.FC = () => {
     // Load orientation-specific data
     const orientationData = getOrientationData();
     
+    console.log('Loading orientation data for:', getCurrentOrientation(), {
+      hasData: !!orientationData,
+      controlsCount: orientationData?.controls?.length || 0,
+      screensCount: orientationData?.screens?.length || 0
+    });
+    
     if (orientationData) {
       setControls(orientationData.controls || []);
       setScreens(orientationData.screens || []);
@@ -238,6 +257,14 @@ const Editor: React.FC = () => {
         console.log('❌ No background image found for', getCurrentOrientation());
         setUploadedImage(null);
       }
+    } else {
+      // No orientation data - clear everything
+      console.log('No orientation data found, clearing controls and screens');
+      setControls([]);
+      setScreens([]);
+      setMenuInsetsEnabled(false);
+      setMenuInsetsBottom(0);
+      setUploadedImage(null);
     }
     
     if (currentProject.console) {
@@ -482,6 +509,8 @@ const Editor: React.FC = () => {
   const hasMountedRef = useRef(false);
   // Track if we've shown the edit panel for this project
   const hasShownEditPanelRef = useRef<string | null>(null);
+  // Track the previous orientation to detect changes
+  const previousOrientationRef = useRef<string | null>(null);
   
   // Reset the edit panel tracking when currentProject changes
   useEffect(() => {

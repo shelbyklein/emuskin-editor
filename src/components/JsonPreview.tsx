@@ -20,11 +20,11 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
   skinIdentifier,
   selectedConsole,
   selectedDevice,
-  controls,
-  screens,
-  backgroundImageFile,
-  menuInsetsEnabled = false,
-  menuInsetsBottom = 0
+  controls: _controls,
+  screens: _screens,
+  backgroundImageFile: _backgroundImageFile,
+  menuInsetsEnabled: _menuInsetsEnabled,
+  menuInsetsBottom: _menuInsetsBottom
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -201,7 +201,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
           </svg>
           <span>JSON Preview</span>
           <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-            ({controls.length} controls, {screens.length} screens)
+            ({currentProject?.orientations?.[currentProject.currentOrientation || 'portrait']?.controls?.length || 0} controls, {currentProject?.orientations?.[currentProject.currentOrientation || 'portrait']?.screens?.length || 0} screens)
           </span>
         </button>
 
