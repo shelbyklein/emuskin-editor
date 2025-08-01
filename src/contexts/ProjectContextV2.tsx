@@ -27,6 +27,7 @@ interface Project {
     portrait: OrientationData;
     landscape: OrientationData;
   };
+  availableOrientations?: Array<'portrait' | 'landscape'>;
   currentOrientation?: 'portrait' | 'landscape';
   hasBeenConfigured?: boolean;
   lastModified: number;
@@ -145,6 +146,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         portrait: { ...defaultOrientationData },
         landscape: { ...defaultOrientationData }
       },
+      availableOrientations: ['portrait'],
       currentOrientation: 'portrait',
       hasBeenConfigured: false,
       lastModified: Date.now(),

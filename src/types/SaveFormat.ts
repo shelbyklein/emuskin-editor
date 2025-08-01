@@ -56,6 +56,7 @@ export interface MinimalProject {
     portrait: MinimalOrientationData;
     landscape: MinimalOrientationData;
   };
+  availableOrientations?: Array<'portrait' | 'landscape'>;
   currentOrientation: 'portrait' | 'landscape';
   lastModified: number;
 }

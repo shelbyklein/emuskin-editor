@@ -49,8 +49,11 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       }
     };
 
-    // Add portrait orientation if it has data
-    if (portraitData) {
+    // Get available orientations from project
+    const availableOrientations = currentProject?.availableOrientations || ['portrait'];
+    
+    // Add portrait orientation if it's available
+    if (availableOrientations.includes('portrait') && portraitData) {
       skinConfig.representations.iphone.edgeToEdge.portrait = {
         assets: portraitData.backgroundImage ? { medium: portraitData.backgroundImage.fileName || 'background.png' } : {},
         items: (portraitData.controls || []).map(control => {
@@ -124,8 +127,8 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       };
     }
     
-    // Add landscape orientation if it has data
-    if (landscapeData && (landscapeData.controls?.length > 0 || landscapeData.screens?.length > 0)) {
+    // Add landscape orientation if it's available
+    if (availableOrientations.includes('landscape') && landscapeData) {
       skinConfig.representations.iphone.edgeToEdge.landscape = {
         assets: landscapeData.backgroundImage ? { medium: landscapeData.backgroundImage.fileName || 'background.png' } : {},
         items: (landscapeData.controls || []).map(control => {
@@ -223,21 +226,36 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       errors.push('iPhone model must be selected');
     }
     
-    // Check if at least one orientation has data
+    // Check available orientations
+    const availableOrientations = currentProject?.availableOrientations || ['portrait'];
+    
+    if (availableOrientations.length === 0) {
+      errors.push('At least one orientation must be available');
+    }
+    
+    // Check if available orientations have data
     const portraitData = currentProject?.orientations?.portrait;
     const landscapeData = currentProject?.orientations?.landscape;
     
-    const hasPortraitControls = portraitData?.controls && portraitData.controls.length > 0;
-    const hasLandscapeControls = landscapeData?.controls && landscapeData.controls.length > 0;
-    const hasPortraitScreens = portraitData?.screens && portraitData.screens.length > 0;
-    const hasLandscapeScreens = landscapeData?.screens && landscapeData.screens.length > 0;
+    let hasAnyControls = false;
+    let hasAnyScreens = false;
     
-    if (!hasPortraitControls && !hasLandscapeControls) {
-      errors.push('At least one control must be added in either portrait or landscape');
+    if (availableOrientations.includes('portrait') && portraitData) {
+      if (portraitData.controls?.length > 0) hasAnyControls = true;
+      if (portraitData.screens?.length > 0) hasAnyScreens = true;
     }
     
-    if (!hasPortraitScreens && !hasLandscapeScreens) {
-      errors.push('At least one screen must be added in either portrait or landscape');
+    if (availableOrientations.includes('landscape') && landscapeData) {
+      if (landscapeData.controls?.length > 0) hasAnyControls = true;
+      if (landscapeData.screens?.length > 0) hasAnyScreens = true;
+    }
+    
+    if (!hasAnyControls) {
+      errors.push('At least one control must be added in an available orientation');
+    }
+    
+    if (!hasAnyScreens) {
+      errors.push('At least one screen must be added in an available orientation');
     }
     
     return {

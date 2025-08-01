@@ -29,6 +29,7 @@ interface Project {
       menuInsetsBottom?: number;
     };
   };
+  availableOrientations?: Array<'portrait' | 'landscape'>;
   currentOrientation?: 'portrait' | 'landscape';
   hasBeenConfigured?: boolean;
   lastModified: number;
@@ -68,6 +69,7 @@ export function toMinimalProject(project: Project): MinimalProject | null {
         project.orientations.landscape.backgroundImage?.fileName || undefined
       )
     },
+    availableOrientations: project.availableOrientations || ['portrait'],
     currentOrientation: project.currentOrientation || 'portrait',
     lastModified: project.lastModified
   };
@@ -116,8 +118,37 @@ export async function fromMinimalProject(
         } : null
       }
     },
+    availableOrientations: minimal.availableOrientations || determineAvailableOrientations(minimal),
     currentOrientation: minimal.currentOrientation,
     hasBeenConfigured: true,
     lastModified: minimal.lastModified
   };
+}
+
+// Helper function to determine available orientations for migration
+function determineAvailableOrientations(minimal: MinimalProject): Array<'portrait' | 'landscape'> {
+  const orientations: Array<'portrait' | 'landscape'> = [];
+  
+  // Check if portrait has any data
+  if (minimal.orientations.portrait.controls.length > 0 ||
+      minimal.orientations.portrait.screens.length > 0 ||
+      minimal.orientations.portrait.backgroundImageUrl ||
+      minimal.orientations.portrait.backgroundImageRef) {
+    orientations.push('portrait');
+  }
+  
+  // Check if landscape has any data
+  if (minimal.orientations.landscape.controls.length > 0 ||
+      minimal.orientations.landscape.screens.length > 0 ||
+      minimal.orientations.landscape.backgroundImageUrl ||
+      minimal.orientations.landscape.backgroundImageRef) {
+    orientations.push('landscape');
+  }
+  
+  // If no orientations have data, default to portrait
+  if (orientations.length === 0) {
+    orientations.push('portrait');
+  }
+  
+  return orientations;
 }

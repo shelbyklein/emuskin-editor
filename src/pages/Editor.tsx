@@ -9,6 +9,7 @@ import ControlPalette from '../components/ControlPalette';
 import ControlList from '../components/ControlList';
 import ScreenPalette from '../components/ScreenPalette';
 import ScreenList from '../components/ScreenList';
+import OrientationManager from '../components/OrientationManager';
 import JsonPreview from '../components/JsonPreview';
 import GridControls from '../components/GridControls';
 import ProjectManager from '../components/ProjectManager';
@@ -699,85 +700,78 @@ const Editor: React.FC = () => {
     }
   };
 
-  const handleOrientationToggle = () => {
-    if (!currentProject) return;
-    
-    // Save current orientation data before switching
-    const orientationData = getOrientationData();
-    if (orientationData) {
-      const imageData = uploadedImage ? {
-        fileName: uploadedImage.file.name,
-        url: null,
-        hasStoredImage: true
-      } : orientationData.backgroundImage;
-      
-      saveOrientationData({
-        controls,
-        screens,
-        menuInsetsEnabled,
-        menuInsetsBottom,
-        backgroundImage: imageData
-      });
-    }
-    
-    // Toggle orientation
-    const newOrientation = getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait';
-    setOrientation(newOrientation);
-    
-    // Load image for the new orientation
-    const newOrientationData = getOrientationData(newOrientation);
-    if (newOrientationData?.backgroundImage?.url) {
-      console.log('Loading image for new orientation:', newOrientation);
-      setUploadedImage({
-        file: new File([], newOrientationData.backgroundImage.fileName || 'image.png'),
-        url: newOrientationData.backgroundImage.url
-      });
-    } else {
-      // No image for new orientation
-      setUploadedImage(null);
-    }
-  };
 
-  const handleCopyOrientationLayout = () => {
+  const handleAddOrientation = (orientation: 'portrait' | 'landscape') => {
     if (!currentProject) return;
     
-    const currentOrientation = getCurrentOrientation();
-    const sourceOrientation = currentOrientation === 'portrait' ? 'landscape' : 'portrait';
+    const updatedOrientations = [...(currentProject.availableOrientations || ['portrait']), orientation];
     
-    // Get the source orientation data
-    const sourceData = getOrientationData(sourceOrientation);
+    // Save the new available orientations
+    saveProject({
+      availableOrientations: updatedOrientations
+    });
     
-    if (!sourceData || (!sourceData.controls?.length && !sourceData.screens?.length)) {
-      alert(`No layout found in ${sourceOrientation} orientation to copy from.`);
-      return;
+    // Initialize empty orientation data if it doesn't exist
+    if (!currentProject.orientations?.[orientation]) {
+      saveOrientationData({
+        controls: [],
+        screens: [],
+        backgroundImage: null,
+        menuInsetsEnabled: false,
+        menuInsetsBottom: 0
+      }, orientation);
     }
     
-    // Ask for confirmation
-    if (!confirm(`Copy layout from ${sourceOrientation} to ${currentOrientation}? This will replace the current ${currentOrientation} layout.`)) {
-      return;
+    // Offer to copy layout from existing orientation
+    const otherOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
+    const hasOtherOrientation = currentProject.availableOrientations?.includes(otherOrientation);
+    
+    if (hasOtherOrientation) {
+      const sourceData = getOrientationData(otherOrientation);
+      if (sourceData && (sourceData.controls?.length > 0 || sourceData.screens?.length > 0)) {
+        if (window.confirm(`Would you like to copy the layout from ${otherOrientation} to ${orientation}?`)) {
+          saveOrientationData({
+            controls: sourceData.controls || [],
+            screens: sourceData.screens || [],
+            menuInsetsEnabled: sourceData.menuInsetsEnabled || false,
+            menuInsetsBottom: sourceData.menuInsetsBottom || 0,
+            backgroundImage: null // Don't copy image
+          }, orientation);
+        }
+      }
     }
     
-    // Copy controls with adjusted positions if needed
-    const copiedControls = sourceData.controls?.map((control: ControlMapping) => ({
-      ...control,
-      id: control.id, // Keep the same IDs to maintain thumbstick image associations
-    })) || [];
+    // Switch to the new orientation
+    setOrientation(orientation);
+  };
+  
+  const handleRemoveOrientation = (orientation: 'portrait' | 'landscape') => {
+    if (!currentProject) return;
     
-    // Copy screens
-    const copiedScreens = sourceData.screens?.map((screen: ScreenMapping) => ({
-      ...screen,
-      id: screen.id, // Keep the same IDs
-    })) || [];
+    const currentOrientations = currentProject.availableOrientations || ['portrait'];
+    if (currentOrientations.length <= 1) return; // Can't remove last orientation
     
-    // Update current orientation with copied data
-    setControls(copiedControls);
-    setScreens(copiedScreens);
-    setMenuInsetsEnabled(sourceData.menuInsetsEnabled || false);
-    setMenuInsetsBottom(sourceData.menuInsetsBottom || 0);
+    const updatedOrientations = currentOrientations.filter(o => o !== orientation);
     
-    // Don't copy background image - each orientation should have its own image
+    // If removing current orientation, switch to the other one
+    if (getCurrentOrientation() === orientation) {
+      const newOrientation = updatedOrientations[0];
+      setOrientation(newOrientation);
+    }
     
-    alert(`Layout copied from ${sourceOrientation} to ${currentOrientation} successfully!`);
+    // Clear the orientation data
+    saveOrientationData({
+      controls: [],
+      screens: [],
+      backgroundImage: null,
+      menuInsetsEnabled: false,
+      menuInsetsBottom: 0
+    }, orientation);
+    
+    // Update available orientations
+    saveProject({
+      availableOrientations: updatedOrientations
+    });
   };
 
   // Initialize history tracking state
@@ -1227,6 +1221,31 @@ const Editor: React.FC = () => {
             </div>
           ) : (
             <>
+              {/* Orientation Manager */}
+              {currentProject && (
+                <div id="orientation-manager-section" className="card animate-slide-up">
+                  <OrientationManager
+                    availableOrientations={currentProject.availableOrientations || ['portrait']}
+                    currentOrientation={getCurrentOrientation()}
+                    onOrientationChange={setOrientation}
+                    onAddOrientation={handleAddOrientation}
+                    onRemoveOrientation={handleRemoveOrientation}
+                    orientationInfo={{
+                      portrait: {
+                        hasContent: !!(currentProject.orientations?.portrait?.controls?.length || 
+                                     currentProject.orientations?.portrait?.screens?.length ||
+                                     currentProject.orientations?.portrait?.backgroundImage)
+                      },
+                      landscape: {
+                        hasContent: !!(currentProject.orientations?.landscape?.controls?.length || 
+                                      currentProject.orientations?.landscape?.screens?.length ||
+                                      currentProject.orientations?.landscape?.backgroundImage)
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Image Upload Section */}
               <div id="image-upload-section" className="card animate-slide-up">
                 <h3 id="image-upload-title" className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -1357,74 +1376,6 @@ const Editor: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Orientation Toggle and Copy */}
-                {currentProject && (
-                  <div className="flex items-center space-x-2">
-                    {/* Orientation Toggle */}
-                    <button
-                      onClick={handleOrientationToggle}
-                      className="relative flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm"
-                      title={`Switch to ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} orientation`}
-                    >
-                      {/* Image indicators */}
-                      <div className="absolute -top-1 -right-1 flex gap-0.5">
-                        {(() => {
-                          const portraitData = getOrientationData('portrait');
-                          const landscapeData = getOrientationData('landscape');
-                          const hasPortraitImage = portraitData?.backgroundImage?.hasStoredImage || false;
-                          const hasLandscapeImage = landscapeData?.backgroundImage?.hasStoredImage || false;
-                          
-                          return (
-                            <>
-                              {hasPortraitImage && (
-                                <div 
-                                  className={`w-2 h-2 rounded-full ${
-                                    getCurrentOrientation() === 'portrait' ? 'bg-green-500' : 'bg-gray-400'
-                                  }`}
-                                  title="Portrait has image"
-                                />
-                              )}
-                              {hasLandscapeImage && (
-                                <div 
-                                  className={`w-2 h-2 rounded-full ${
-                                    getCurrentOrientation() === 'landscape' ? 'bg-green-500' : 'bg-gray-400'
-                                  }`}
-                                  title="Landscape has image"
-                                />
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                      
-                      <svg 
-                        className={`w-4 h-4 transition-transform duration-300 ${
-                          getCurrentOrientation() === 'landscape' ? 'rotate-90' : ''
-                        }`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <rect x="7" y="4" width="10" height="16" rx="2" strokeWidth={2} />
-                        <line x1="12" y1="17" x2="12" y2="17.01" strokeWidth={3} strokeLinecap="round" />
-                      </svg>
-                      <span className="font-medium">
-                        {getCurrentOrientation() === 'portrait' ? 'Portrait' : 'Landscape'}
-                      </span>
-                    </button>
-                    
-                    {/* Copy Layout Button */}
-                    <button
-                      onClick={handleCopyOrientationLayout}
-                      className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200"
-                      title={`Copy layout from ${getCurrentOrientation() === 'portrait' ? 'landscape' : 'portrait'} to ${getCurrentOrientation()}`}
-                    >
-                      <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
               </div>
               {/* Grid Controls */}
               {selectedDeviceData && (
