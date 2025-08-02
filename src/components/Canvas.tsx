@@ -6,6 +6,7 @@ import ControlPropertiesPanel from './ControlPropertiesPanel';
 import ScreenPropertiesPanel from './ScreenPropertiesPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useKeyboardShortcuts, ShortcutConfig } from '../hooks/useKeyboardShortcuts';
 import ArrowIcon from '../../assets/icons/arrow.svg';
 import DpadIcon from '../../assets/icons/dpad.svg';
 import MenuIcon from '../../assets/icons/menu.svg';
@@ -1295,21 +1296,156 @@ const Canvas: React.FC<CanvasProps> = ({
     updateScreensWithMirroredControls(updatedScreens);
   }, [screens, updateScreensWithMirroredControls]);
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedControl !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
-        e.preventDefault();
-        handleDeleteControl(selectedControl);
-      } else if (selectedScreen !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
-        e.preventDefault();
-        handleDeleteScreen(selectedScreen);
-      }
-    };
+  // Handle nudging for selected items
+  const handleNudge = useCallback((dx: number, dy: number) => {
+    if (selectedControl !== null && controls[selectedControl]) {
+      const control = controls[selectedControl];
+      if (control.locked) return; // Don't nudge locked controls
+      
+      const updatedControls = [...controls];
+      updatedControls[selectedControl] = {
+        ...control,
+        frame: {
+          ...control.frame,
+          x: Math.max(0, Math.min(canvasSize.width - control.frame.width, control.frame.x + dx)),
+          y: Math.max(0, Math.min(canvasSize.height - control.frame.height, control.frame.y + dy))
+        }
+      };
+      onControlUpdate(updatedControls);
+    } else if (selectedScreen !== null && screens[selectedScreen]) {
+      const screen = screens[selectedScreen];
+      if (screen.locked) return; // Don't nudge locked screens
+      
+      const updatedScreens = [...screens];
+      updatedScreens[selectedScreen] = {
+        ...screen,
+        outputFrame: {
+          ...screen.outputFrame,
+          x: Math.max(0, Math.min(canvasSize.width - screen.outputFrame.width, screen.outputFrame.x + dx)),
+          y: Math.max(0, Math.min(canvasSize.height - screen.outputFrame.height, screen.outputFrame.y + dy))
+        }
+      };
+      onScreenUpdate(updatedScreens);
+    }
+  }, [selectedControl, selectedScreen, controls, screens, canvasSize, onControlUpdate, onScreenUpdate]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedControl, selectedScreen, handleDeleteControl, handleDeleteScreen]);
+  // Handle tab navigation
+  const handleTabNavigation = useCallback((forward: boolean) => {
+    const totalControls = controls.length;
+    if (totalControls === 0) return;
+
+    let nextIndex: number;
+    if (selectedControl === null) {
+      // No selection, start at beginning or end
+      nextIndex = forward ? 0 : totalControls - 1;
+    } else {
+      // Calculate next index with wrapping
+      if (forward) {
+        nextIndex = (selectedControl + 1) % totalControls;
+      } else {
+        nextIndex = selectedControl === 0 ? totalControls - 1 : selectedControl - 1;
+      }
+    }
+
+    updateControlSelection(nextIndex);
+    updateScreenSelection(null);
+    setShowPropertiesPanel(false);
+    setShowScreenPropertiesPanel(false);
+  }, [selectedControl, controls.length, updateControlSelection, updateScreenSelection]);
+
+  // Keyboard shortcuts configuration
+  const shortcuts: ShortcutConfig[] = [
+    // Delete/Backspace - Delete selected item
+    {
+      key: 'Delete',
+      handler: () => {
+        if (selectedControl !== null) {
+          handleDeleteControl(selectedControl);
+        } else if (selectedScreen !== null) {
+          handleDeleteScreen(selectedScreen);
+        }
+      }
+    },
+    {
+      key: 'Backspace',
+      handler: () => {
+        if (selectedControl !== null) {
+          handleDeleteControl(selectedControl);
+        } else if (selectedScreen !== null) {
+          handleDeleteScreen(selectedScreen);
+        }
+      }
+    },
+    // Arrow keys - Nudge selected item
+    {
+      key: 'ArrowUp',
+      handler: () => handleNudge(0, -1)
+    },
+    {
+      key: 'ArrowUp',
+      modifiers: { shift: true },
+      handler: () => handleNudge(0, -10)
+    },
+    {
+      key: 'ArrowDown',
+      handler: () => handleNudge(0, 1)
+    },
+    {
+      key: 'ArrowDown',
+      modifiers: { shift: true },
+      handler: () => handleNudge(0, 10)
+    },
+    {
+      key: 'ArrowLeft',
+      handler: () => handleNudge(-1, 0)
+    },
+    {
+      key: 'ArrowLeft',
+      modifiers: { shift: true },
+      handler: () => handleNudge(-10, 0)
+    },
+    {
+      key: 'ArrowRight',
+      handler: () => handleNudge(1, 0)
+    },
+    {
+      key: 'ArrowRight',
+      modifiers: { shift: true },
+      handler: () => handleNudge(10, 0)
+    },
+    // Escape - Deselect
+    {
+      key: 'Escape',
+      handler: () => {
+        updateControlSelection(null);
+        updateScreenSelection(null);
+        setShowPropertiesPanel(false);
+        setShowScreenPropertiesPanel(false);
+      }
+    },
+    // Tab - Navigate controls
+    {
+      key: 'Tab',
+      handler: () => handleTabNavigation(true)
+    },
+    {
+      key: 'Tab',
+      modifiers: { shift: true },
+      handler: () => handleTabNavigation(false)
+    }
+  ];
+
+  // Use the keyboard shortcuts hook
+  useKeyboardShortcuts(shortcuts, [
+    selectedControl, 
+    selectedScreen, 
+    handleDeleteControl, 
+    handleDeleteScreen,
+    handleNudge,
+    handleTabNavigation,
+    controls,
+    screens
+  ]);
 
   return (
     <>
@@ -1560,7 +1696,8 @@ const Canvas: React.FC<CanvasProps> = ({
                         handleDeleteScreen(index);
                       }}
                       onMouseDown={(e) => e.stopPropagation()}
-                      aria-label={`Delete ${screen.label || 'screen'}`}
+                      aria-label={`Delete ${screen.label || 'screen'} (Delete/Backspace)`}
+                      title="Delete (Delete/Backspace)"
                     >
                       <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
@@ -1866,7 +2003,8 @@ const Canvas: React.FC<CanvasProps> = ({
                         handleDeleteControl(index);
                       }}
                       onMouseDown={(e) => e.stopPropagation()}
-                      aria-label={`Delete ${label} control`}
+                      aria-label={`Delete ${label} control (Delete/Backspace)`}
+                      title="Delete (Delete/Backspace)"
                     >
                       <svg className="w-2.5 h-2.5 text-white opacity-0 hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
