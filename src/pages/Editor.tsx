@@ -1290,12 +1290,28 @@ const Editor: React.FC = () => {
           </button>
         </div>
         
-        {/* Right side - Project Manager */}
-        <ProjectManager 
-          onSave={handleSave}
-          hasUnsavedChanges={hasUnsavedChanges}
-          showSavedMessage={showSavedMessage}
-        />
+        {/* Right side - Project Manager and Import/Export */}
+        <div className="flex items-center space-x-3">
+          <ProjectManager 
+            onSave={handleSave}
+            hasUnsavedChanges={hasUnsavedChanges}
+            showSavedMessage={showSavedMessage}
+          />
+          <div className="border-l border-gray-300 dark:border-gray-600 h-5 mx-2" />
+          <ImportButton onImport={handleImport} />
+          <ExportButton
+            skinName={skinName}
+            skinIdentifier={skinIdentifier}
+            selectedConsole={selectedConsoleData}
+            selectedDevice={selectedDeviceData}
+            controls={controls}
+            screens={screens}
+            backgroundImage={uploadedImage}
+            menuInsetsEnabled={menuInsetsEnabled}
+            menuInsetsBottom={menuInsetsBottom}
+            thumbstickFiles={thumbstickFiles}
+          />
+        </div>
       </div>
 
       {/* Two Column Layout */}
@@ -1603,24 +1619,6 @@ const Editor: React.FC = () => {
                   <p className="text-lg font-medium mb-2">Configure Your Skin First</p>
                   <p className="text-sm">Please select a console and device to begin designing</p>
                 </div>
-              </div>
-            )}
-            {/* Canvas Actions - Moved to bottom */}
-            {selectedConsole && selectedDevice && (
-              <div id="canvas-actions" className="flex items-center justify-end space-x-3 mt-4">
-                <ImportButton onImport={handleImport} />
-                <ExportButton
-                  skinName={skinName}
-                  skinIdentifier={skinIdentifier}
-                  selectedConsole={selectedConsoleData}
-                  selectedDevice={selectedDeviceData}
-                  controls={controls}
-                  screens={screens}
-                  backgroundImage={uploadedImage}
-                  menuInsetsEnabled={menuInsetsEnabled}
-                  menuInsetsBottom={menuInsetsBottom}
-                  thumbstickFiles={thumbstickFiles}
-                />
               </div>
             )}
           </div>

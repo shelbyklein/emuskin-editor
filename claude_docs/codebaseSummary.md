@@ -274,6 +274,10 @@ emuskin-generator/
   - Created 8 pre-configured console templates in /public/assets/templates/
   - Templates provide quick start for new projects with default control layouts
   - Integrated template loading into Editor component
+- ✅ Reorganized Import/Export buttons to editor header
+  - Moved from bottom canvas actions to header for better accessibility
+  - Updated to icon-only format consistent with project manager buttons
+  - Maintains dropdown functionality for export format selection
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

@@ -150,9 +150,27 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
   return (
     <div id="screen-properties-panel" className="bg-white dark:bg-gray-800 rounded-t-xl shadow-2xl p-6 w-full max-w-2xl">
       <div id="properties-panel-header" className="flex justify-between items-center mb-4">
-        <h3 id="properties-panel-title" className="text-lg font-medium text-gray-900 dark:text-white">
-          Screen Properties
-        </h3>
+        <div className="flex items-center space-x-2">
+          <h3 id="properties-panel-title" className="text-lg font-medium text-gray-900 dark:text-white">
+            Screen Properties
+          </h3>
+          {screen.inputFrame && (
+            <div className="group relative">
+              <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-3 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                <div className="font-medium mb-1">Input Frame (Read-only)</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div>X: {screen.inputFrame.x}</div>
+                  <div>Y: {screen.inputFrame.y}</div>
+                  <div>Width: {screen.inputFrame.width}</div>
+                  <div>Height: {screen.inputFrame.height}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <button
           id="screen-properties-close"
           onClick={onClose}
@@ -243,9 +261,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
               height: Math.round(newHeight)
             }));
           }}
-          className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center row-span-2"
+          title="Scale to fit"
         >
-          Scale
+          <img src="/assets/icons/scale.svg" alt="Scale" className="w-6 h-6 dark:invert" />
         </button>
         
         <button
@@ -272,9 +291,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, x: newX }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Align left"
         >
-          Align Left
+          <img src="/assets/icons/align-left.svg" alt="Align Left" className="w-4 h-4 dark:invert" />
         </button>
         
         <button
@@ -301,9 +321,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, x: Math.round(newX) }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Center horizontally"
         >
-          Center H
+          <img src="/assets/icons/center-horizontal.svg" alt="Center Horizontally" className="w-4 h-4 dark:invert" />
         </button>
         
         <button
@@ -330,9 +351,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, x: Math.max(0, newX) }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Align right"
         >
-          Align Right
+          <img src="/assets/icons/align-right.svg" alt="Align Right" className="w-4 h-4 dark:invert" />
         </button>
         
         <button
@@ -359,9 +381,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, y: newY }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Align top"
         >
-          Align Top
+          <img src="/assets/icons/align-top.svg" alt="Align Top" className="w-4 h-4 dark:invert" />
         </button>
         
         <button
@@ -388,9 +411,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, y: Math.round(newY) }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Center vertically"
         >
-          Center V
+          <img src="/assets/icons/center-vertical.svg" alt="Center Vertically" className="w-4 h-4 dark:invert" />
         </button>
         
         <button
@@ -417,9 +441,10 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
             // Update form to reflect changes
             setFormData(prev => ({ ...prev, y: Math.max(0, newY) }));
           }}
-          className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+          className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+          title="Align bottom"
         >
-          Align Bottom
+          <img src="/assets/icons/align-bottom.svg" alt="Align Bottom" className="w-4 h-4 dark:invert" />
         </button>
       </div>
 
@@ -486,26 +511,6 @@ const ScreenPropertiesPanel: React.FC<ScreenPropertiesPanelProps> = ({
         </div>
       </div>
 
-      {/* Input Frame Info (read-only) */}
-      {screen.inputFrame && (
-        <div id="input-frame-info" className="mt-6 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Input Frame (Read-only)</h4>
-          <div className="grid grid-cols-4 gap-2 text-xs">
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">X:</span> {screen.inputFrame.x}
-            </div>
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">Y:</span> {screen.inputFrame.y}
-            </div>
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">W:</span> {screen.inputFrame.width}
-            </div>
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">H:</span> {screen.inputFrame.height}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Actions */}
       <div id="properties-panel-actions" className="flex justify-between items-center mt-6">

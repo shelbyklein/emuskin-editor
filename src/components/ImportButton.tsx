@@ -266,10 +266,12 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
       />
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+        className="p-1.5 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         id="import-button"
+        title="Import skin file"
+        aria-label="Import skin file"
       >
-        Import Skin
+        <img src="/assets/icons/import.svg" alt="Import" className="w-5 h-5 dark:invert" />
       </button>
     </>
   );

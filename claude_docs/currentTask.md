@@ -368,6 +368,12 @@
   - Non-blocking notifications can stack multiple messages
   - Close button for manual dismissal
   - Accessible with ARIA live regions
+- ✅ Moved Import/Export buttons to editor header
+  - Import and Export buttons now located in the header next to project manager
+  - Updated to icon-only format matching save/open project buttons
+  - Import: cloud upload icon with tooltip
+  - Export: download icon with dropdown for format selection
+  - Maintains all existing functionality while improving UI consistency
 
 ## Current Issues
 - None currently reported
