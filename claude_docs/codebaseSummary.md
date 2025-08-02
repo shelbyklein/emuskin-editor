@@ -197,6 +197,11 @@ emuskin-generator/
 - ✅ Made settings cog only visible on hover
 - ✅ Updated assets format to use object with "medium" key
 - ✅ Added "control" class to all control elements for better CSS targeting
+- ✅ Menu insets panel with visual overlay and JSON export support
+- ✅ Keyboard shortcuts implementation with centralized hook
+  - Arrow keys for nudging (1px/10px with Shift)
+  - Escape to deselect, Tab to cycle controls
+  - Delete/Backspace for deletion (with tooltips)
 - ✅ Fixed "0" appearing in controls by using ternary operator with null
 - ✅ Widened grid size dropdown to accommodate caret with pr-8
 - ✅ Fixed console selection by converting from datalist to select dropdown

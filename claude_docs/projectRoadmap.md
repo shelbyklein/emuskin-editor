@@ -170,6 +170,10 @@
 - [x] Fix menu insets not appearing in JSON preview
   - Menu insets now save to project context
   - Proper data persistence and JSON generation
+- [x] Implement keyboard shortcuts for navigation
+  - Arrow keys for nudging (1px/10px with Shift)
+  - Escape to deselect, Tab to cycle controls
+  - Centralized keyboard hook for maintainability
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)

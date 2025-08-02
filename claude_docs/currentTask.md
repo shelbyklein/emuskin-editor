@@ -348,6 +348,17 @@
   - Updated MenuInsetsPanel callbacks to save changes via saveOrientationData
   - Menu insets now persist to project and appear correctly in JSON output
   - Follows same pattern as controls/screens with immediate saves on change
+- ✅ Implemented keyboard shortcuts for navigation and positioning
+  - Created useKeyboardShortcuts hook for centralized shortcut management
+  - Arrow keys: Nudge selected control/screen by 1px
+  - Shift+Arrow keys: Nudge by 10px for faster positioning
+  - Escape: Deselect current item and close properties panels
+  - Tab/Shift+Tab: Cycle through controls with wrapping
+  - Delete/Backspace: Delete selected control/screen (enhanced with new system)
+  - Shortcuts disabled in input fields
+  - Locked items cannot be nudged
+  - Updated tooltips to show keyboard shortcuts
+  - All changes saved automatically with history tracking
 
 ## Current Issues
 - None currently reported
@@ -356,13 +367,6 @@
 1. **Deploy updated Cloudflare Worker** (URGENT)
    - Navigate to cloudflare-worker directory
    - Run `wrangler deploy` to update the worker with new user-based storage paths
-   
-2. Add keyboard shortcuts for common actions
-   - Delete/Backspace: Delete selected control/screen
-   - Arrow keys: Nudge selected item by 1px (10px with Shift)
-   - Cmd/Ctrl+S: Save current project
-   - Cmd/Ctrl+E: Export skin
-   - Escape: Deselect current item
    
 3. Add success/error toasts
    - Replace alert() calls with toast notifications

@@ -11,6 +11,13 @@
   - Fixed menu insets not appearing in JSON output
   - Updated MenuInsetsPanel callbacks to save to project context
   - Menu insets now persist and export correctly
+- ✅ Keyboard Shortcuts Implementation
+  - Created useKeyboardShortcuts hook for centralized management
+  - Arrow keys: Nudge by 1px (10px with Shift)
+  - Escape: Deselect and close properties panels
+  - Tab/Shift+Tab: Cycle through controls
+  - Delete/Backspace: Enhanced with new system
+  - Tooltips updated to show shortcuts
 
 ## Immediate Priorities (Next Session)
 
@@ -20,17 +27,7 @@
 - **Path format**: [email]/[project]/[orientation].png
 - **All new uploads are properly organized by user email**
 
-### 1. Keyboard Shortcuts for Common Actions
-- **Purpose**: Improve productivity and accessibility
-- **Implementation**:
-  - Delete/Backspace: Delete selected control/screen
-  - Arrow keys: Nudge selected item by 1px (10px with Shift)
-  - Cmd/Ctrl+E: Export skin
-  - Escape: Deselect current item
-  - Cmd/Ctrl+D: Duplicate selected control
-  - Tab/Shift+Tab: Cycle through controls
-
-### 2. Toast Notifications
+### 1. Toast Notifications
 - **Purpose**: Better UX than alert() dialogs
 - **Implementation**:
   - Create Toast component with auto-dismiss
@@ -39,7 +36,7 @@
   - Stack multiple toasts if needed
   - Non-blocking user experience
 
-### 3. Control Alignment Tools
+### 2. Control Alignment Tools
 - **Purpose**: Precise control positioning
 - **Implementation**:
   - Align selected controls (left, right, center, top, bottom)
@@ -48,7 +45,7 @@
   - Visual alignment guides when dragging
   - Multi-select with Shift+click
 
-### 4. Performance Optimizations
+### 3. Performance Optimizations
 - **Purpose**: Better performance with many controls
 - **Implementation**:
   - Consider migrating all project data to IndexedDB
@@ -56,7 +53,7 @@
   - Add loading states for async operations
   - Implement virtualization for control lists
 
-### 5. Backend API Development
+### 4. Backend API Development
 - **Purpose**: Enable cloud sync and multi-device access
 - **Implementation**:
   - Set up Node.js/Express backend with JWT validation
