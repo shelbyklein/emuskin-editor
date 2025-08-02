@@ -374,6 +374,16 @@
   - Import: cloud upload icon with tooltip
   - Export: download icon with dropdown for format selection
   - Maintains all existing functionality while improving UI consistency
+- ✅ Updated UI components with custom SVG icons
+  - Import/Export buttons now use custom SVG icons from assets folder
+  - Buttons positioned on right side of header with divider separator
+  - Export button simplified to single icon with dropdown on click
+- ✅ Enhanced ScreenPropertiesPanel with icon-based alignment buttons
+  - Replaced text labels with SVG icons for all alignment actions
+  - Icons: scale, align-left/right/top/bottom, center-horizontal/vertical
+  - Grey button backgrounds with hover states for consistency
+  - Scale button spans two rows for visual hierarchy
+  - Input frame info moved to tooltip on hover of info icon
 
 ## Current Issues
 - None currently reported

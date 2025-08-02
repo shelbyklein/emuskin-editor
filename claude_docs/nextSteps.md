@@ -25,6 +25,12 @@
   - Replaced all 11 alert() calls in the application
   - Smooth animations and dark mode support
   - Stack multiple toasts with manual dismiss option
+- ✅ UI Components with Custom SVG Icons
+  - Import/Export buttons moved to header right side
+  - Custom SVG icons from assets/icons implemented
+  - ScreenPropertiesPanel alignment buttons use icon set
+  - Scale button spans two rows for visual hierarchy
+  - Input frame info converted to tooltip on info icon
 
 ## Immediate Priorities (Next Session)
 
