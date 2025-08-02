@@ -202,6 +202,11 @@ emuskin-generator/
   - Arrow keys for nudging (1px/10px with Shift)
   - Escape to deselect, Tab to cycle controls
   - Delete/Backspace for deletion (with tooltips)
+- ✅ Toast notification system replacing alert() dialogs
+  - Toast component with auto-dismiss and animations
+  - ToastContext for global notification management
+  - Four types: success, error, warning, info
+  - Non-blocking, stackable notifications
 - ✅ Fixed "0" appearing in controls by using ternary operator with null
 - ✅ Widened grid size dropdown to accommodate caret with pr-8
 - ✅ Fixed console selection by converting from datalist to select dropdown

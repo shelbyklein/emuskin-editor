@@ -174,6 +174,10 @@
   - Arrow keys for nudging (1px/10px with Shift)
   - Escape to deselect, Tab to cycle controls
   - Centralized keyboard hook for maintainability
+- [x] Replace alert() dialogs with toast notifications
+  - Non-blocking notifications with auto-dismiss
+  - Success, error, warning, info types with icons
+  - Better UX for all user feedback
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)

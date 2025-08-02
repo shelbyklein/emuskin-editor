@@ -359,6 +359,15 @@
   - Locked items cannot be nudged
   - Updated tooltips to show keyboard shortcuts
   - All changes saved automatically with history tracking
+- ✅ Implemented toast notification system
+  - Created Toast component with auto-dismiss (3 seconds default)
+  - Four types: success, error, warning, info with icons
+  - ToastContext for global notification management
+  - Smooth slide animations and dark mode support
+  - Replaced all 11 alert() calls throughout the application
+  - Non-blocking notifications can stack multiple messages
+  - Close button for manual dismissal
+  - Accessible with ARIA live regions
 
 ## Current Issues
 - None currently reported
@@ -368,12 +377,7 @@
    - Navigate to cloudflare-worker directory
    - Run `wrangler deploy` to update the worker with new user-based storage paths
    
-3. Add success/error toasts
-   - Replace alert() calls with toast notifications
-   - Better UX for save/export/import operations
-   - Non-blocking user feedback
-   
-4. Control alignment tools (future)
+2. Control alignment tools (future)
    - Align selected controls (left, right, center, top, bottom)
    - Distribute controls evenly
    - Visual guides when dragging
