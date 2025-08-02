@@ -21,6 +21,7 @@ import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContextV2';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 // import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves
 
 const Editor: React.FC = () => {
@@ -76,6 +77,7 @@ const Editor: React.FC = () => {
     saveProjectWithOrientation
   } = useProject();
   const { user } = useAuth();
+  const { showError, showWarning } = useToast();
   
   // Autosave disabled - using explicit saves instead
   // All changes are now saved immediately when:
@@ -738,7 +740,7 @@ const Editor: React.FC = () => {
       console.log('Image upload completed successfully');
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('Failed to upload image. Please try again.');
+      showError('Failed to upload image. Please try again.');
     } finally {
       setIsUploadingImage(false);
     }
@@ -989,7 +991,7 @@ const Editor: React.FC = () => {
   const handleDeleteScreen = (index: number) => {
     // Prevent deletion of Nintendo DS screens
     if (selectedConsole === 'nds') {
-      alert('Nintendo DS screens cannot be deleted. The system requires both top and bottom screens.');
+      showWarning('Nintendo DS screens cannot be deleted. The system requires both top and bottom screens.');
       return;
     }
     
@@ -1577,7 +1579,7 @@ const Editor: React.FC = () => {
                                   }
                                 } catch (error) {
                                   console.error('Failed to copy image:', error);
-                                  alert('Failed to copy image from other orientation');
+                                  showError('Failed to copy image from other orientation');
                                 }
                               }}
                               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"

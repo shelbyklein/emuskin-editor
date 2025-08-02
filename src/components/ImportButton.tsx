@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import JSZip from 'jszip';
 import { ControlMapping, ScreenMapping } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 interface ImportedSkinData {
   name: string;
@@ -56,6 +57,7 @@ interface ImportButtonProps {
 
 const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showError, showSuccess, showWarning } = useToast();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,7 +66,7 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
     // Check file extension
     const extension = file.name.toLowerCase();
     if (!extension.endsWith('.deltaskin') && !extension.endsWith('.gammaskin')) {
-      alert('Please select a .deltaskin or .gammaskin file');
+      showWarning('Please select a .deltaskin or .gammaskin file');
       return;
     }
 
@@ -244,11 +246,11 @@ const ImportButton: React.FC<ImportButtonProps> = ({ onImport }) => {
         fileInputRef.current.value = '';
       }
 
-      alert(`Successfully imported "${skinName}"!`);
+      showSuccess(`Successfully imported "${skinName}"!`);
 
     } catch (error) {
       console.error('Error importing skin file:', error);
-      alert(`Failed to import skin file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(`Failed to import skin file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

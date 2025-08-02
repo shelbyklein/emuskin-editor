@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContextV2';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import ImportButton from '../components/ImportButton';
 import LoginModal from '../components/LoginModal';
 import ConsoleIcon from '../components/ConsoleIcon';
@@ -14,6 +15,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const { projects, loadProject, deleteProject, createProject, clearProject } = useProject();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { showError } = useToast();
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -144,7 +146,7 @@ const Home: React.FC = () => {
       });
     } catch (error) {
       console.error('Error loading template:', error);
-      alert('Failed to load template. Please try again.');
+      showError('Failed to load template. Please try again.');
     }
   };
 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { useProject } from '../contexts/ProjectContextV2';
+import { useToast } from '../contexts/ToastContext';
 
 interface ExportButtonProps {
   skinName: string;
@@ -28,6 +29,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   const [exportFormat, setExportFormat] = useState<'deltaskin' | 'gammaskin'>('deltaskin');
   const [showFormatMenu, setShowFormatMenu] = useState(false);
   const { currentProject } = useProject();
+  const { showError, showSuccess } = useToast();
 
   const generateSkinJson = () => {
     if (!selectedConsole || !selectedDevice) {
@@ -269,7 +271,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
     // Validate before export
     const validation = validateExport();
     if (!validation.valid) {
-      alert('Cannot export:\n\n' + validation.errors.join('\n'));
+      showError('Cannot export: ' + validation.errors.join(', '));
       return;
     }
 
@@ -343,10 +345,10 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       URL.revokeObjectURL(url);
 
       // Success feedback
-      alert(`Successfully exported ${fileName}`);
+      showSuccess(`Successfully exported ${fileName}`);
     } catch (error) {
       console.error('Export error:', error);
-      alert('Failed to export skin file. Please check the console for details.');
+      showError('Failed to export skin file. Please check the console for details.');
     } finally {
       setIsExporting(false);
     }

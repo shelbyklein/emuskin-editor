@@ -1,6 +1,7 @@
 // Panel for editing skin configuration properties
 import React, { useState, useEffect } from 'react';
 import { Console, Device, ControlMapping } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 interface SkinEditPanelProps {
   isOpen: boolean;
@@ -33,6 +34,8 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   onConsoleChange,
   onDeviceChange
 }) => {
+  const { showWarning } = useToast();
+  
   // Local state for form values
   const [localSkinName, setLocalSkinName] = useState(skinName);
   const [localSkinIdentifier, setLocalSkinIdentifier] = useState(skinIdentifier);
@@ -151,7 +154,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     const isNewProject = !selectedConsole && !selectedDevice;
     if (isNewProject) {
       if (!localSelectedConsole || !localSelectedDevice) {
-        alert('Please select a console and device for your new skin before continuing.');
+        showWarning('Please select a console and device for your new skin before continuing.');
         return;
       }
     }
