@@ -527,7 +527,9 @@ const Editor: React.FC = () => {
         controls,
         screens,
         menuInsetsEnabled,
-        menuInsetsBottom
+        menuInsetsBottom,
+        menuInsetsLeft,
+        menuInsetsRight
       };
       
       console.log('Saving project and orientation data:', {
@@ -1308,7 +1310,7 @@ const Editor: React.FC = () => {
       // Clear the state to prevent re-loading on refresh
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, consoles, devices]);
+  }, [location.state, consoles, devices, saveOrientationData]);
 
   // Add keyboard shortcut for save (Cmd/Ctrl + S)
   useEffect(() => {

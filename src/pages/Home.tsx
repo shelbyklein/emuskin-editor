@@ -129,6 +129,9 @@ const Home: React.FC = () => {
       clearProject();
       const projectId = createProject(templateData.name);
       
+      // Load the project to ensure currentProject is set
+      await loadProject(projectId);
+      
       // Navigate to editor with the template data
       navigate('/editor', {
         state: {
@@ -397,19 +400,30 @@ const Home: React.FC = () => {
                     <p className="text-xs text-gray-500 dark:text-gray-500">
                       {new Date(project.lastModified).toLocaleDateString()}
                     </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProject(project.id);
-                      }}
-                      className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                        deleteConfirm === project.id
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {deleteConfirm === project.id ? 'Confirm Delete' : 'Delete'}
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/test/${project.id}`);
+                        }}
+                        className="px-3 py-1 text-xs font-medium rounded transition-colors bg-purple-500 hover:bg-purple-600 text-white"
+                      >
+                        Test
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProject(project.id);
+                        }}
+                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                          deleteConfirm === project.id
+                            ? 'bg-red-500 hover:bg-red-600 text-white'
+                            : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {deleteConfirm === project.id ? 'Confirm Delete' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

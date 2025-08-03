@@ -42,7 +42,8 @@ emuskin-generator/
 │   │   ├── Home.tsx    # Project cards view and landing page
 │   │   ├── Editor.tsx  # Main editor interface
 │   │   ├── Settings.tsx
-│   │   └── About.tsx
+│   │   ├── About.tsx
+│   │   └── TestSkin.tsx # Fullscreen skin testing interface
 │   ├── types/          # TypeScript definitions
 │   │   └── index.ts    # Core type interfaces (includes ScreenMapping)
 │   ├── hooks/          # Custom React hooks
@@ -284,6 +285,29 @@ emuskin-generator/
   - ScreenPropertiesPanel alignment buttons use icon set
   - All icons support dark mode with proper inversion
   - Icons copied to public/assets/icons for runtime access
+- ✅ Fixed device selection auto-matching on skin load
+  - Added findDeviceByDimensions helper function in Editor.tsx
+  - Projects now auto-select correct device based on mappingSize from JSON preview
+  - Toast notification shows when device is automatically changed
+  - Prevents all skins from defaulting to iPhone 16 Pro Max
+- ✅ Fixed template visibility for new users
+  - Templates now show for all authenticated users regardless of project count
+  - Restructured conditional rendering in Home.tsx
+  - Template section moved outside userProjects.length === 0 condition
+  - New users immediately see templates after signing in
+  - Empty state message updated to reference templates above
+- ✅ Implemented skin testing feature
+  - Added TestSkin component for fullscreen interactive testing
+  - Test button on all project cards navigates to /test/:projectId
+  - Visual feedback on control press (opacity and scale changes)
+  - Active button display shows pressed buttons on game screen
+  - Multi-touch support for simultaneous button presses
+  - Fullscreen mode, orientation switching, and exit controls
+  - Uses existing Canvas rendering logic in read-only mode
+- ✅ Fixed missing save button for template-based projects
+  - Fixed race condition in handleTemplateSelect
+  - Added await loadProject() after createProject()
+  - Ensures currentProject is set before navigation
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

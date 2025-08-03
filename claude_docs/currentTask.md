@@ -384,29 +384,47 @@
   - Grey button backgrounds with hover states for consistency
   - Scale button spans two rows for visual hierarchy
   - Input frame info moved to tooltip on hover of info icon
+- ✅ Fixed device selection to match skin dimensions on load
+  - Created helper function to find device by dimensions
+  - Projects now auto-select correct device based on mappingSize
+  - Toast notification shows when device is changed
+  - Prevents skins from always loading at iPhone 16 Pro Max size
+- ✅ Fixed template visibility for new users
+  - Templates now show for all authenticated users
+  - Moved template section outside userProjects.length condition
+  - New users see templates immediately after signing in
+  - Empty state message updated to reference templates
+- ✅ Implemented skin testing feature
+  - Added "Test" button to project cards on home page
+  - Created fullscreen TestSkin component for interactive testing
+  - Visual feedback shows controls being pressed (opacity/scale changes)
+  - Active button display shows pressed buttons on game screen
+  - Support for multi-touch and simultaneous button presses
+  - Fullscreen mode support with toggle button
+  - Orientation switching for projects with both layouts
+  - Exit button and project info display
+- ✅ Fixed missing save button when starting with template
+  - Issue: Race condition where navigation happened before project was fully loaded
+  - Solution: Added await loadProject() after createProject() in handleTemplateSelect
+  - Save button now appears correctly when starting with a template
+- ✅ Fixed controls disappearing after saving template-based projects
+  - Issue: handleSave was missing menuInsetsLeft and menuInsetsRight in orientation data
+  - Also missing saveOrientationData dependency in template loading effect
+  - Solution: Added all menu inset values to save data and fixed dependency array
+  - Controls now persist correctly after saving
+- ✅ Fixed TestSkin component crash when clicking "Test" button
+  - Issue: TypeError trying to access screen.frame.x when screens use outputFrame
+  - Solution: Updated screen rendering to use screen.outputFrame instead of screen.frame
+  - Added filter to ensure only screens with valid outputFrame are rendered
+  - Test mode now works correctly without errors
+- ✅ Moved button press display to game screen area
+  - Changed from displaying at top of canvas to inside the first game screen
+  - Position is relative to screen boundaries with 8px padding
+  - Smaller badges with reduced padding for better fit in screen
+  - Only displays when screens exist and buttons are pressed
+  - Max width constraint prevents badges from extending outside screen
 
 ## Current Issues
 - None currently reported
 
 ## Next Steps
-1. **Deploy updated Cloudflare Worker** (URGENT)
-   - Navigate to cloudflare-worker directory
-   - Run `wrangler deploy` to update the worker with new user-based storage paths
-   
-2. Control alignment tools (future)
-   - Align selected controls (left, right, center, top, bottom)
-   - Distribute controls evenly
-   - Visual guides when dragging
-
-## Technical Debt
-- Consider migrating from localStorage to IndexedDB for all project data
-- Add comprehensive error handling for file operations
-- Implement proper loading states for async operations
-- Add unit tests for critical functions
-- Optimize Canvas rendering for large numbers of controls
-
-## Related Tasks from Project Roadmap
-- Custom button functionality is partially complete
-- Export functionality is fully implemented
-- Import functionality is the next major feature
-- All core MVP features are nearly complete

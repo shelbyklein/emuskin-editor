@@ -12,6 +12,7 @@ import Editor from './pages/Editor';
 import Settings from './pages/Settings';
 import About from './pages/About';
 import TestSaveFormat from './pages/TestSaveFormat';
+import TestSkin from './pages/TestSkin';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
                         <Route path="settings" element={<Settings />} />
                         <Route path="about" element={<About />} />
                         <Route path="test" element={<TestSaveFormat />} />
+                        <Route path="test/:projectId" element={<TestSkin />} />
                       </Route>
                     </Routes>
                   </Router>

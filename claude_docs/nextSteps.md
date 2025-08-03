@@ -31,6 +31,16 @@
   - ScreenPropertiesPanel alignment buttons use icon set
   - Scale button spans two rows for visual hierarchy
   - Input frame info converted to tooltip on info icon
+- ✅ Device Selection Auto-Matching Fix
+  - Fixed skins loading at iPhone 16 Pro Max size
+  - Added findDeviceByDimensions helper function
+  - Auto-selects device based on JSON mappingSize
+  - Toast notification shows device change
+- ✅ Template Visibility Fix
+  - Templates now show for all authenticated users
+  - Fixed conditional rendering in Home.tsx
+  - New users see templates immediately after login
+  - Empty state message references templates
 
 ## Immediate Priorities (Next Session)
 
