@@ -16,23 +16,30 @@ Backend API for the Emulator Skin Generator application, providing cross-device 
 - MongoDB (local or MongoDB Atlas)
 - Frontend with JWT tokens from WordPress Simple JWT Login
 
-## Installation
+## Quick Start
 
-1. Install dependencies:
+1. Run setup script:
 ```bash
 cd api
-npm install
+./setup.sh
 ```
 
-2. Create `.env` file:
+2. Configure MongoDB connection in `.env`:
+```env
+MONGODB_URI=mongodb+srv://doadmin:password@your-cluster.mongo.ondigitalocean.com/emuskin-generator?tls=true&authSource=admin
+```
+
+3. Test database connection:
 ```bash
-cp .env.example .env
+npm run test:db
 ```
 
-3. Configure environment variables in `.env`:
-- `MONGODB_URI`: Your MongoDB connection string
-- `ALLOWED_ORIGINS`: Comma-separated list of allowed frontend URLs
-- `PORT`: API port (default: 3001)
+4. Deploy to Vercel:
+```bash
+npm run deploy
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## Development
 
