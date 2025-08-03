@@ -423,8 +423,18 @@
   - Smaller badges with reduced padding for better fit in screen
   - Only displays when screens exist and buttons are pressed
   - Max width constraint prevents badges from extending outside screen
+- ✅ Implemented cloud sync capability for cross-device project access
+  - Integrated projectsAPI into ProjectContext
+  - Projects load from cloud API on user login
+  - All CRUD operations sync to cloud when API is available
+  - Added VITE_API_URL environment check
+  - Graceful fallback to localStorage when offline
+  - Warning message shows when API not configured
+  - Ready for backend deployment
 
 ## Current Issues
-- None currently reported
+- Projects don't sync between devices without backend API deployment
+- Need to set VITE_API_URL in Vercel environment variables
+- Backend API endpoints need to be implemented and deployed
 
 ## Next Steps

@@ -1,6 +1,14 @@
 # Next Steps
 
 ## Recently Completed
+- ✅ Cloud Sync Implementation
+  - Integrated projectsAPI into ProjectContext
+  - Auto-sync projects from cloud on user login
+  - All CRUD operations sync to cloud when API available
+  - Environment variable check for API availability
+  - Graceful fallback to localStorage when offline
+  - Warning message when API not configured
+  - Ready for backend API deployment
 - ✅ Skin Testing Feature
   - Added Test button to all project cards on home page
   - Created fullscreen TestSkin component for interactive testing
@@ -44,13 +52,22 @@
 
 ## Immediate Priorities (Next Session)
 
-### ✅ Deploy Updated Cloudflare Worker [COMPLETED]
-- **Status**: Successfully deployed
-- **Result**: R2 storage now uses new user-based folder structure
-- **Path format**: [email]/[project]/[orientation].png
-- **All new uploads are properly organized by user email**
+### 1. Deploy Backend API (Critical)
+- **Purpose**: Enable cross-device project synchronization
+- **Requirements**:
+  - Node.js/Express server with JWT authentication
+  - Implement endpoints from `src/utils/api.ts`
+  - Database for project storage (PostgreSQL/MongoDB)
+  - Deploy to cloud service (Heroku/AWS/Vercel)
+  - Set VITE_API_URL environment variable in Vercel
+- **Endpoints Needed**:
+  - GET /api/projects - List user's projects
+  - POST /api/projects - Create new project
+  - PUT /api/projects/:id - Update project
+  - DELETE /api/projects/:id - Delete project
+  - POST /api/projects/:id/images - Upload images (optional, R2 already works)
 
-### 1. Control Alignment Tools
+### 2. Control Alignment Tools
 - **Purpose**: Precise control positioning
 - **Implementation**:
   - Align selected controls (left, right, center, top, bottom)
