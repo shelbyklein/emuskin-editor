@@ -77,7 +77,19 @@ const Editor: React.FC = () => {
     saveProjectWithOrientation
   } = useProject();
   const { user } = useAuth();
-  const { showError, showWarning } = useToast();
+  const { showError, showWarning, showInfo } = useToast();
+  
+  // Helper function to find device by dimensions
+  const findDeviceByDimensions = (width: number, height: number, orientation: 'portrait' | 'landscape') => {
+    return devices.find(device => {
+      if (orientation === 'portrait') {
+        return device.logicalWidth === width && device.logicalHeight === height;
+      } else {
+        // In landscape, width and height are swapped
+        return device.logicalWidth === height && device.logicalHeight === width;
+      }
+    });
+  };
   
   // Autosave disabled - using explicit saves instead
   // All changes are now saved immediately when:
@@ -200,12 +212,9 @@ const Editor: React.FC = () => {
       device: currentProject.device?.model || ''
     };
     
-    // Also update selectedConsoleData and selectedDeviceData
+    // Update console data first
     if (currentProject.console) {
       setSelectedConsoleData(currentProject.console);
-    }
-    if (currentProject.device) {
-      setSelectedDeviceData(currentProject.device);
     }
     
     // Check if this is a project that hasn't been configured yet
@@ -277,11 +286,78 @@ const Editor: React.FC = () => {
       setUploadedImage(null);
     }
     
+    // Check if we should auto-detect device based on skin dimensions
+    // This helps when a skin was created with one device but the project was saved with another
+    if (devices.length > 0 && currentProject.device) {
+      // First, set the stored device as default
+      setSelectedDevice(currentProject.device.model);
+      setSelectedDeviceData(currentProject.device);
+      
+      // Then check if we have orientation data with controls/screens
+      if (orientationData && (orientationData.controls?.length > 0 || orientationData.screens?.length > 0)) {
+        const currentOrientation = getCurrentOrientation();
+        
+        // Analyze the control and screen positions to determine intended canvas size
+        let maxX = 0;
+        let maxY = 0;
+        
+        // Check controls
+        orientationData.controls?.forEach(control => {
+          const rightEdge = (control.frame.x || 0) + (control.frame.width || 0);
+          const bottomEdge = (control.frame.y || 0) + (control.frame.height || 0);
+          maxX = Math.max(maxX, rightEdge);
+          maxY = Math.max(maxY, bottomEdge);
+        });
+        
+        // Check screens
+        orientationData.screens?.forEach(screen => {
+          if (screen.outputFrame) {
+            const rightEdge = screen.outputFrame.x + screen.outputFrame.width;
+            const bottomEdge = screen.outputFrame.y + screen.outputFrame.height;
+            maxX = Math.max(maxX, rightEdge);
+            maxY = Math.max(maxY, bottomEdge);
+          }
+        });
+        
+        // If we found elements, try to match to a device
+        if (maxX > 0 && maxY > 0) {
+          // Add some padding to account for elements near the edge
+          const threshold = 50;
+          
+          // Find device that best fits the content
+          const matchingDevice = devices.find(device => {
+            if (currentOrientation === 'portrait') {
+              return maxX <= device.logicalWidth && maxY <= device.logicalHeight &&
+                     maxX > (device.logicalWidth - threshold) && maxY > (device.logicalHeight - threshold);
+            } else {
+              return maxX <= device.logicalHeight && maxY <= device.logicalWidth &&
+                     maxX > (device.logicalHeight - threshold) && maxY > (device.logicalWidth - threshold);
+            }
+          });
+          
+          // If we found a better match, use it
+          if (matchingDevice && matchingDevice.model !== currentProject.device.model) {
+            console.log('Better device match found based on content bounds:', {
+              stored: currentProject.device.model,
+              detected: matchingDevice.model,
+              orientation: currentOrientation,
+              contentBounds: { maxX, maxY }
+            });
+            
+            setSelectedDevice(matchingDevice.model);
+            setSelectedDeviceData(matchingDevice);
+            showInfo(`Device adjusted to ${matchingDevice.model} to better fit skin content`);
+          }
+        }
+      }
+    } else if (currentProject.device) {
+      // No devices loaded yet, just set the stored device
+      setSelectedDevice(currentProject.device.model);
+      setSelectedDeviceData(currentProject.device);
+    }
+    
     if (currentProject.console) {
       setSelectedConsole(currentProject.console.shortName);
-    }
-    if (currentProject.device) {
-      setSelectedDevice(currentProject.device.model);
     }
     
     // Load thumbstick images

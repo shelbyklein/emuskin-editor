@@ -241,24 +241,6 @@ const Home: React.FC = () => {
               <span>Sign in with Playcase</span>
             </button>
           </div>
-        ) : userProjects.length === 0 ? (
-          <div id="empty-state" className="text-center py-16">
-            <svg className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No skins yet
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Get started by creating your first emulator skin
-            </p>
-            <button
-              onClick={handleCreateNew}
-              className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              Create Your First Skin
-            </button>
-          </div>
         ) : (
           <div>
             {/* User Profile Section */}
@@ -295,7 +277,7 @@ const Home: React.FC = () => {
               </div>
             )}
             
-            {/* Template Section */}
+            {/* Template Section - Always show for authenticated users */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Start with a template:</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -326,13 +308,33 @@ const Home: React.FC = () => {
               </div>
             </div>
             
-            {/* Projects Section */}
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Projects</h2>
-            </div>
-            
-            <div id="projects-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {userProjects.map((project) => (
+            {/* Projects Section or Empty State */}
+            {userProjects.length === 0 ? (
+              <div id="empty-state" className="text-center py-16">
+                <svg className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  No skins yet
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Get started by creating your first emulator skin or choose a template above
+                </p>
+                <button
+                  onClick={handleCreateNew}
+                  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  Create Your First Skin
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Projects</h2>
+                </div>
+                
+                <div id="projects-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {userProjects.map((project) => (
               <div
                 key={project.id}
                 id={`project-card-${project.id}`}
@@ -411,8 +413,10 @@ const Home: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
