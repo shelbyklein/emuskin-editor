@@ -447,10 +447,27 @@
 ## Current Issues
 - None - ready for deployment
 
-## Deployment Ready
-The application is now fully prepared for deployment:
-1. DigitalOcean Managed MongoDB ($15/month) - reliable, managed database
-2. API deployment to Vercel (free tier) - serverless, auto-scaling
-3. Frontend already on Vercel - just needs VITE_API_URL environment variable
+## Deployment in Progress
+- ✅ Fixed Vercel deployment configuration errors
+  - Removed deprecated `builds` property conflicting with `functions`
+  - Created proper serverless function structure at api/serverless.js
+  - Added buildCommand: "" to prevent Vite build errors
+  - Created .vercelignore to exclude unnecessary files
+  - Ready to deploy as separate API project
+
+## Recent Fixes
+- ✅ Fixed "builds and functions cannot be used together" error
+  - Migrated from deprecated builds to modern rewrites format
+  - Kept functions property for serverless configuration
+- ✅ Fixed "pattern doesn't match Serverless Functions" error
+  - Created api/serverless.js as proper entry point
+  - Updated vercel.json to point to correct function path
+- ✅ Fixed "vite build exited with 127" error
+  - Added buildCommand: "" to prevent frontend build
+  - Added outputDirectory: "." for API-only deployment
 
 ## Next Steps
+1. Run `vercel link` to create new API project
+2. Deploy with `npm run deploy`
+3. Set up DigitalOcean MongoDB
+4. Configure environment variables
