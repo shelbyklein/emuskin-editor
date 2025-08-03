@@ -308,6 +308,13 @@ emuskin-generator/
   - Fixed race condition in handleTemplateSelect
   - Added await loadProject() after createProject()
   - Ensures currentProject is set before navigation
+- ✅ Fixed controls disappearing after saving templates
+  - Added missing menuInsetsLeft and menuInsetsRight to save data
+  - Fixed missing dependency in template loading effect
+- ✅ Fixed TestSkin component crashes
+  - Updated to use screen.outputFrame instead of screen.frame
+  - Added safety checks for screen data
+  - Moved button display inside game screen area
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

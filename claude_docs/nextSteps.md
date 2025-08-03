@@ -1,6 +1,22 @@
 # Next Steps
 
 ## Recently Completed
+- ✅ Skin Testing Feature
+  - Added Test button to all project cards on home page
+  - Created fullscreen TestSkin component for interactive testing
+  - Visual feedback on control press (opacity and scale changes)
+  - Active button display shows inside game screen area
+  - Multi-touch support for simultaneous button presses
+  - Fullscreen mode toggle and orientation switching
+  - Exit button and project info display
+- ✅ Template Project Fixes
+  - Fixed missing save button (added await loadProject)
+  - Fixed controls disappearing after save (missing menu inset values)
+  - Fixed missing dependency in template loading effect
+- ✅ TestSkin Component Fixes
+  - Fixed crash on screen rendering (use outputFrame not frame)
+  - Moved button display from canvas top to inside game screen
+  - Added safety checks for screen data
 - ✅ Template Selection Feature
   - Created 8 pre-configured console templates
   - Added "Start with a template:" section to home page
@@ -25,22 +41,6 @@
   - Replaced all 11 alert() calls in the application
   - Smooth animations and dark mode support
   - Stack multiple toasts with manual dismiss option
-- ✅ UI Components with Custom SVG Icons
-  - Import/Export buttons moved to header right side
-  - Custom SVG icons from assets/icons implemented
-  - ScreenPropertiesPanel alignment buttons use icon set
-  - Scale button spans two rows for visual hierarchy
-  - Input frame info converted to tooltip on info icon
-- ✅ Device Selection Auto-Matching Fix
-  - Fixed skins loading at iPhone 16 Pro Max size
-  - Added findDeviceByDimensions helper function
-  - Auto-selects device based on JSON mappingSize
-  - Toast notification shows device change
-- ✅ Template Visibility Fix
-  - Templates now show for all authenticated users
-  - Fixed conditional rendering in Home.tsx
-  - New users see templates immediately after login
-  - Empty state message references templates
 
 ## Immediate Priorities (Next Session)
 
@@ -206,26 +206,35 @@
 
 ## Recommended Next Session Plan
 
-1. **Visual Polish** - Continue improving UI/UX based on recent orientation manager updates:
-   - Consider visual representations for control buttons in palette (like orientation icons)
-   - Add hover tooltips to orientation icons explaining what they are
-   - Improve visual hierarchy in the toolbar (group related items)
-   - Consider adding visual feedback when hovering over controls in the palette
+1. **Enhanced Testing Mode Features**
+   - Add visual indicators for thumbstick movement
+   - Show analog stick position for directional inputs
+   - Add haptic feedback support (vibration) when available
+   - Option to show/hide button press display
+   - Debug mode showing touch coordinates and control boundaries
    
-2. **Keyboard Shortcuts** - Quick win for productivity
-   - Start with the most common actions (Delete, Arrow keys, Export)
-   - Add visual indicators showing keyboard shortcuts in tooltips
-   
-3. **Toast Notifications** - Better UX improvement  
-   - Create reusable toast component
-   - Replace alert() dialogs throughout the app
-   
-4. **Control Alignment Tools** - Precision editing
-   - Multi-select functionality
+2. **Control Alignment Tools** - Precision editing
+   - Multi-select functionality with Shift+click
    - Alignment options (left, right, center, distribute)
+   - Visual alignment guides when dragging
+   - Snap to other controls feature
+   
+3. **Testing Mode Improvements**
+   - Add support for custom button combinations in display
+   - Show D-pad directions as arrows instead of text
+   - Add opacity slider for button display overlay
+   - Support for showing multiple screens (Nintendo DS)
+   
+4. **Backend API Development** - Enable cloud sync
+   - Set up Node.js/Express backend with JWT validation
+   - Migrate user database structure to backend
+   - Create endpoints for project CRUD operations
+   - Implement real-time sync when online
    
 5. **Performance Optimizations**
    - Review Canvas rendering for optimization opportunities
    - Consider virtualizing long control lists
+   - Optimize TestSkin component for smoother animations
+   - Add loading states for async operations
 
-The visual improvements to OrientationManager were well-received. Consider applying similar visual design patterns to other UI elements for consistency. The grid controls integration into the toolbar also improved organization - look for other opportunities to consolidate related controls.
+The skin testing feature has been well implemented and provides immediate value to users. Consider enhancing it further with the suggestions above, particularly the visual improvements for analog controls and haptic feedback which would make testing even more immersive.

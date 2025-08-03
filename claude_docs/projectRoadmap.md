@@ -182,9 +182,11 @@
   - Test button on project cards for quick access
   - Fullscreen interactive testing experience
   - Visual feedback for button presses
-  - Active button display overlay
+  - Active button display overlay inside game screen
   - Multi-touch support
   - Fullscreen mode and orientation switching
+  - Fixed template save button and control persistence
+  - Fixed screen rendering using correct outputFrame property
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)

@@ -6,6 +6,7 @@ import { MinimalProject } from '../types/SaveFormat';
 import { toMinimalProject, fromMinimalProject } from '../utils/projectConverter';
 import { userDatabase } from '../utils/userDatabase';
 import { useAuth } from './AuthContext';
+import { projectsAPI } from '../utils/api';
 
 interface OrientationData {
   controls: ControlMapping[];
@@ -88,9 +89,16 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>([]);
   const [consoles, setConsoles] = useState<Console[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   // Get current user from auth context
   const { user } = useAuth();
+  
+  // Check if API is available (not localhost)
+  const isApiAvailable = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    return apiUrl && !apiUrl.includes('localhost');
+  };
 
   // Load consoles/devices
   useEffect(() => {
@@ -118,6 +126,57 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     
     loadData();
   }, []);
+
+  // Sync projects from API when user logs in
+  useEffect(() => {
+    const syncProjectsFromCloud = async () => {
+      if (!user?.email || !isApiAvailable() || isSyncing) {
+        return;
+      }
+
+      setIsSyncing(true);
+      console.log('Syncing projects from cloud for user:', user.email);
+
+      try {
+        // Get projects from API
+        const cloudProjects = await projectsAPI.getProjects();
+        console.log('Received projects from cloud:', cloudProjects.length);
+        
+        // Convert cloud projects to minimal format and merge with local
+        const cloudMinimalProjects: MinimalProject[] = [];
+        for (const cloudProject of cloudProjects) {
+          const minimal = toMinimalProject(cloudProject);
+          if (minimal) {
+            cloudMinimalProjects.push(minimal);
+          }
+        }
+        
+        // Merge cloud projects with local projects (avoid duplicates)
+        const localProjectIds = minimalProjects.map(p => p.id);
+        const newProjects = cloudMinimalProjects.filter(cp => !localProjectIds.includes(cp.id));
+        
+        if (newProjects.length > 0) {
+          console.log('Adding', newProjects.length, 'new projects from cloud');
+          setMinimalProjects([...minimalProjects, ...newProjects]);
+          
+          // Update user database
+          for (const project of newProjects) {
+            userDatabase.addProjectToUser(user.email, project.id);
+          }
+        }
+        
+        // TODO: Handle conflicts (same ID but different lastModified)
+        
+      } catch (error) {
+        console.error('Failed to sync projects from cloud:', error);
+        // Fall back to local storage silently
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    syncProjectsFromCloud();
+  }, [user?.email]); // Only run when user changes
 
   // Convert minimal projects to full projects when consoles/devices are available
   useEffect(() => {
@@ -174,6 +233,23 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         userDatabase.addProjectToUser(user.email, newProject.id);
         console.log(`Project ${newProject.id} added to user ${user.email} in database`);
       }
+      
+      // Sync to cloud if API is available
+      if (user?.email && isApiAvailable()) {
+        projectsAPI.createProject({
+          name: newProject.name,
+          identifier: newProject.identifier,
+          console: newProject.console,
+          device: newProject.device,
+          hasBeenConfigured: newProject.hasBeenConfigured
+        }).then(cloudProject => {
+          console.log('Project created in cloud:', cloudProject.id);
+          // TODO: Update local project with cloud ID if different
+        }).catch(error => {
+          console.error('Failed to create project in cloud:', error);
+          // Project still exists locally
+        });
+      }
     }
     
     return newProject.id;
@@ -221,6 +297,24 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
           const newProjects = [...prev];
           newProjects[index] = minimal;
           console.log('✅ Updated existing project in storage');
+          
+          // Sync to cloud if API is available
+          if (user?.email && isApiAvailable()) {
+            projectsAPI.updateProject(updated.id, {
+              name: updated.name,
+              identifier: updated.identifier,
+              console: updated.console,
+              device: updated.device,
+              hasBeenConfigured: updated.hasBeenConfigured,
+              lastModified: updated.lastModified
+            }).then(() => {
+              console.log('Project synced to cloud:', updated.id);
+            }).catch(error => {
+              console.error('Failed to sync project to cloud:', error);
+              // Project still saved locally
+            });
+          }
+          
           return newProjects;
         }
         console.log('❌ Project not found in storage - this should not happen!');
@@ -260,6 +354,18 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     if (user?.email) {
       userDatabase.removeProjectFromUser(user.email, id);
       console.log(`Project ${id} removed from user ${user.email} in database`);
+      
+      // Delete from cloud if API is available
+      if (isApiAvailable()) {
+        projectsAPI.deleteProject(id)
+          .then(() => {
+            console.log('Project deleted from cloud:', id);
+          })
+          .catch(error => {
+            console.error('Failed to delete project from cloud:', error);
+            // Project still deleted locally
+          });
+      }
     }
   };
 
