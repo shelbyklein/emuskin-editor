@@ -29,8 +29,8 @@ npm install
 
 Create a `.env.production` file (DO NOT commit this):
 ```env
-MONGODB_URI=mongodb+srv://doadmin:YOUR_PASSWORD@db-mongodb-nyc1-xxxxx.mongo.ondigitalocean.com/emuskin-generator?tls=true&authSource=admin&replicaSet=db-mongodb-nyc1-xxxxx
-ALLOWED_ORIGINS=https://your-frontend.vercel.app,http://localhost:8008
+MONGODB_URI=mongodb+srv://doadmin:Lt9gJi5403MT687y@mongodb+srv://emuskin-maker-1fa7f399.mongo.ondigitalocean.com
+ALLOWED_ORIGINS=https://emuskin-editor.vercel.app/,http://localhost:8008
 NODE_ENV=production
 ```
 
