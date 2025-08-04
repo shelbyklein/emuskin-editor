@@ -195,7 +195,10 @@ export const projectsAPI = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update project');
+      const errorText = response.status === 404 
+        ? 'Project not found (404)' 
+        : 'Failed to update project';
+      throw new Error(errorText);
     }
 
     return response.json();

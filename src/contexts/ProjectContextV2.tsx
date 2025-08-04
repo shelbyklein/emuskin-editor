@@ -237,14 +237,16 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       // Sync to cloud if API is available
       if (user?.email && isApiAvailable()) {
         projectsAPI.createProject({
+          _id: newProject.id,  // Include the ID!
           name: newProject.name,
           identifier: newProject.identifier,
           console: newProject.console,
           device: newProject.device,
-          hasBeenConfigured: newProject.hasBeenConfigured
+          hasBeenConfigured: newProject.hasBeenConfigured,
+          lastModified: newProject.lastModified,
+          createdAt: newProject.lastModified
         }).then(cloudProject => {
-          console.log('Project created in cloud:', cloudProject.id);
-          // TODO: Update local project with cloud ID if different
+          console.log('Project created in cloud:', cloudProject._id || cloudProject.id);
         }).catch(error => {
           console.error('Failed to create project in cloud:', error);
           // Project still exists locally
@@ -309,9 +311,29 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
               lastModified: updated.lastModified
             }).then(() => {
               console.log('Project synced to cloud:', updated.id);
-            }).catch(error => {
+            }).catch(async (error) => {
               console.error('Failed to sync project to cloud:', error);
-              // Project still saved locally
+              
+              // If project doesn't exist in cloud (404), try to create it
+              if (error.message.includes('404') || error.message.includes('not found')) {
+                console.log('Project not found in cloud, attempting to create it...');
+                try {
+                  await projectsAPI.createProject({
+                    _id: updated.id,
+                    name: updated.name,
+                    identifier: updated.identifier,
+                    console: updated.console,
+                    device: updated.device,
+                    hasBeenConfigured: updated.hasBeenConfigured,
+                    lastModified: updated.lastModified,
+                    createdAt: updated.createdAt || updated.lastModified
+                  });
+                  console.log('Project created in cloud successfully');
+                } catch (createError) {
+                  console.error('Failed to create project in cloud:', createError);
+                }
+              }
+              // Project still saved locally regardless
             });
           }
           
