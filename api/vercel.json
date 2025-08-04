@@ -2,21 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/serverless.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "src/**",
-          "package.json",
-          "package-lock.json"
-        ]
-      }
+      "src": "index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/serverless.js"
+      "dest": "/index.js"
     }
   ],
   "env": {
