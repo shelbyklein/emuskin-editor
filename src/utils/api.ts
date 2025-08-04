@@ -32,8 +32,8 @@ interface Project {
   lastModified: number;
 }
 
-// API base URL - will be set via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// API base URL - now using local API endpoints
+const API_BASE_URL = '/api';
 
 // API request wrapper with authentication
 async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
