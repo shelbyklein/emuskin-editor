@@ -1,7 +1,7 @@
 // TestSkin component for interactive skin testing
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProject } from '../contexts/ProjectContextV2';
+import { useProject } from '../contexts/ProjectContextV3';
 import { useToast } from '../contexts/ToastContext';
 import { ControlMapping, ScreenMapping } from '../types';
 

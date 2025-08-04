@@ -1,7 +1,7 @@
 // Home page displaying all saved skin projects
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProject } from '../contexts/ProjectContextV2';
+import { useProject } from '../contexts/ProjectContextV3';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import ImportButton from '../components/ImportButton';
@@ -9,7 +9,6 @@ import LoginModal from '../components/LoginModal';
 import ConsoleIcon from '../components/ConsoleIcon';
 import { ControlMapping, ScreenMapping } from '../types';
 import { DatabaseDebugger } from '../components/DatabaseDebugger';
-import { userDatabase } from '../utils/userDatabase';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -20,21 +19,8 @@ const Home: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   
-  // Filter projects to show only current user's projects based on user database
-  const userProjects = useMemo(() => {
-    if (!user?.email) {
-      // Not logged in - show no projects
-      return [];
-    }
-    
-    // Get project IDs from user database
-    const userProjectIds = userDatabase.getUserProjects(user.email);
-    
-    // Filter projects to only those in the user's database
-    return projects.filter(project => 
-      userProjectIds.includes(project.id)
-    );
-  }, [projects, user]);
+  // Use projects directly from the API - no filtering needed
+  const userProjects = projects;
 
   // Load preview images for projects
   useEffect(() => {
@@ -64,7 +50,7 @@ const Home: React.FC = () => {
       return;
     }
     clearProject(); // Clear any current project
-    const projectId = createProject('New Skin');
+    const projectId = await createProject('New Skin');
     await loadProject(projectId);
     navigate('/editor');
   };
@@ -74,9 +60,9 @@ const Home: React.FC = () => {
     navigate('/editor');
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = async (projectId: string) => {
     if (deleteConfirm === projectId) {
-      deleteProject(projectId);
+      await deleteProject(projectId);
       setDeleteConfirm(null);
     } else {
       setDeleteConfirm(projectId);
@@ -97,7 +83,7 @@ const Home: React.FC = () => {
   ) => {
     // Create a new project with imported data
     clearProject();
-    createProject(importedName);
+    await createProject(importedName);
     
     // Navigate to editor with the imported data
     navigate('/editor', { 
@@ -127,7 +113,7 @@ const Home: React.FC = () => {
       
       // Create a new project with template data
       clearProject();
-      const projectId = createProject(templateData.name);
+      const projectId = await createProject(templateData.name);
       
       // Load the project to ensure currentProject is set
       await loadProject(projectId);

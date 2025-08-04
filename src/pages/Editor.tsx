@@ -19,7 +19,7 @@ import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
-import { useProject } from '../contexts/ProjectContextV2';
+import { useProject } from '../contexts/ProjectContextV3';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 // import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves
@@ -78,6 +78,15 @@ const Editor: React.FC = () => {
   } = useProject();
   const { user } = useAuth();
   const { showError, showWarning, showInfo } = useToast();
+  
+  // Wrapper to handle async saves without blocking UI
+  const saveOrientationDataAsync = useCallback((data: any, orientation?: 'portrait' | 'landscape') => {
+    // Save in background without blocking UI
+    saveOrientationData(data, orientation).catch(error => {
+      console.error('Failed to save orientation data:', error);
+      showError('Failed to save changes');
+    });
+  }, [saveOrientationData, showError]);
   
   // Helper function to find device by dimensions
   const findDeviceByDimensions = (width: number, height: number, orientation: 'portrait' | 'landscape') => {
@@ -416,7 +425,7 @@ const Editor: React.FC = () => {
           // This ensures the image URL is properly stored in the project
           const orientationData = getOrientationData();
           if (orientationData) {
-            saveOrientationData({
+            saveOrientationDataAsync({
               ...orientationData,
               backgroundImage: {
                 fileName: pendingImage.file.name,
@@ -498,7 +507,7 @@ const Editor: React.FC = () => {
       }
       
       // Immediately save orientation data with image metadata
-      saveOrientationData({
+      saveOrientationDataAsync({
         controls,
         screens,
         menuInsetsEnabled,
@@ -557,7 +566,7 @@ const Editor: React.FC = () => {
       console.log('Screens being saved:', orientationData.screens);
       
       // Save project and orientation data first
-      saveProjectWithOrientation(projectData, orientationData);
+      await saveProjectWithOrientation(projectData, orientationData);
       
       // Then save the image if one was uploaded
       if (uploadedImage) {
@@ -806,7 +815,7 @@ const Editor: React.FC = () => {
       
       // Save the URL to project data
       if (isR2Enabled()) {
-        saveOrientationData({
+        saveOrientationDataAsync({
           backgroundImage: {
             fileName: file.name,
             url: imageUrl,
@@ -859,7 +868,7 @@ const Editor: React.FC = () => {
       // Check if other orientation has data to copy
       if (sourceData && (sourceData.controls?.length > 0 || sourceData.screens?.length > 0)) {
         if (window.confirm(`Would you like to copy the layout from ${otherOrientation} to ${orientation}?`)) {
-          saveOrientationData({
+          saveOrientationDataAsync({
             controls: sourceData.controls || [],
             screens: sourceData.screens || [],
             menuInsetsEnabled: sourceData.menuInsetsEnabled || false,
@@ -1008,7 +1017,7 @@ const Editor: React.FC = () => {
     // Explicitly save the updated controls
     if (currentProject) {
       console.log('💾 Explicitly saving controls after update:', newControls.length, 'controls');
-      saveOrientationData({
+      saveOrientationDataAsync({
         controls: newControls
       });
     }
@@ -1024,7 +1033,7 @@ const Editor: React.FC = () => {
     // Explicitly save the updated screens
     if (currentProject) {
       console.log('💾 Explicitly saving screens after update:', newScreens.length, 'screens');
-      saveOrientationData({
+      saveOrientationDataAsync({
         screens: newScreens
       });
     }
@@ -1047,7 +1056,7 @@ const Editor: React.FC = () => {
     // Explicitly save after adding control
     if (currentProject) {
       console.log('💾 Explicitly saving after adding control');
-      saveOrientationData({
+      saveOrientationDataAsync({
         controls: newControls
       });
     }
@@ -1106,7 +1115,7 @@ const Editor: React.FC = () => {
     // Explicitly save after adding screen
     if (currentProject) {
       console.log('💾 Explicitly saving after adding screen');
-      saveOrientationData({
+      saveOrientationDataAsync({
         screens: newScreens
       });
     }
@@ -1300,7 +1309,7 @@ const Editor: React.FC = () => {
         }
         
         // Save to project
-        saveOrientationData({
+        saveOrientationDataAsync({
           controls: templateData.items || [],
           screens: templateData.screens || [],
           menuInsetsEnabled: templateData.menuInsets?.bottom > 0,
@@ -1479,7 +1488,7 @@ const Editor: React.FC = () => {
                       // Update orientation data to clear the image
                       const orientationData = getOrientationData();
                       if (orientationData) {
-                        saveOrientationData({
+                        saveOrientationDataAsync({
                           ...orientationData,
                           backgroundImage: null
                         });
@@ -1504,7 +1513,7 @@ const Editor: React.FC = () => {
                   // Save to project context
                   const orientationData = getOrientationData();
                   if (orientationData) {
-                    saveOrientationData({
+                    saveOrientationDataAsync({
                       ...orientationData,
                       menuInsetsEnabled: enabled
                     });
@@ -1515,7 +1524,7 @@ const Editor: React.FC = () => {
                   // Save to project context
                   const orientationData = getOrientationData();
                   if (orientationData) {
-                    saveOrientationData({
+                    saveOrientationDataAsync({
                       ...orientationData,
                       menuInsetsBottom: value
                     });
@@ -1526,7 +1535,7 @@ const Editor: React.FC = () => {
                   // Save to project context
                   const orientationData = getOrientationData();
                   if (orientationData) {
-                    saveOrientationData({
+                    saveOrientationDataAsync({
                       ...orientationData,
                       menuInsetsLeft: value
                     });
@@ -1537,7 +1546,7 @@ const Editor: React.FC = () => {
                   // Save to project context
                   const orientationData = getOrientationData();
                   if (orientationData) {
-                    saveOrientationData({
+                    saveOrientationDataAsync({
                       ...orientationData,
                       menuInsetsRight: value
                     });
