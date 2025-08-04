@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/serverless"
+    }
+  ],
+  "functions": {
+    "api/serverless.js": {
+      "maxDuration": 10,
+      "includeFiles": "src/**"
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "regions": ["iad1"]
+}

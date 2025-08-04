@@ -1,20 +1,25 @@
 {
   "version": 2,
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api/serverless"
+      "src": "api/serverless.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "src/**",
+          "package.json",
+          "package-lock.json"
+        ]
+      }
     }
   ],
-  "functions": {
-    "api/serverless.js": {
-      "maxDuration": 10
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/serverless.js"
     }
-  },
+  ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "regions": ["iad1"]
+  }
 }

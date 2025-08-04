@@ -14,3 +14,7 @@ render.yaml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Prevent Vercel from treating these as functions
+server.js
+src/server.js
