@@ -215,33 +215,62 @@ app.get('/api/projects/:id', authenticate, async (req, res) => {
 // Create project
 app.post('/api/projects', authenticate, async (req, res) => {
   try {
+    // Generate ID if not provided
+    const projectId = req.body._id || req.body.id || `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const projectData = {
       ...req.body,
-      userId: req.user.id,
+      _id: projectId,
+      userId: req.user.id || req.user.email,
       userEmail: req.user.email,
-      lastModified: Date.now()
+      lastModified: Date.now(),
+      createdAt: req.body.createdAt || Date.now()
     };
+    
+    // Ensure required fields have defaults
+    if (!projectData.name) projectData.name = 'Untitled Project';
+    if (!projectData.identifier) projectData.identifier = 'com.default.skin';
+    
+    console.log('Creating project with data:', JSON.stringify({
+      _id: projectData._id,
+      name: projectData.name,
+      userEmail: projectData.userEmail
+    }));
     
     const project = new Project(projectData);
     await project.save();
     
+    console.log('Project created successfully:', project._id);
     res.status(201).json(project);
   } catch (error) {
-    console.error('Error creating project:', error);
-    res.status(500).json({ error: 'Failed to create project' });
+    console.error('Error creating project:', error.message);
+    console.error('Full error:', error);
+    
+    // Send more detailed error in development
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? error.message 
+      : 'Failed to create project';
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: error.code === 11000 ? 'Project with this ID already exists' : undefined
+    });
   }
 });
 
 // Update project
 app.put('/api/projects/:id', authenticate, async (req, res) => {
   try {
+    // Don't allow updating certain fields
+    const { _id, userId, userEmail, ...updateData } = req.body;
+    
     const project = await Project.findOneAndUpdate(
       { 
         _id: req.params.id,
         userEmail: req.user.email 
       },
       { 
-        ...req.body,
+        ...updateData,
         lastModified: Date.now()
       },
       { new: true, runValidators: true }
@@ -251,10 +280,14 @@ app.put('/api/projects/:id', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     
+    console.log('Project updated successfully:', project._id);
     res.json(project);
   } catch (error) {
-    console.error('Error updating project:', error);
-    res.status(500).json({ error: 'Failed to update project' });
+    console.error('Error updating project:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to update project',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
