@@ -86,7 +86,9 @@ const corsOptions = {
       'http://localhost:8008',
       'http://localhost:5173',
       'https://emuskin.vercel.app',
-      'https://emuskin-generator.vercel.app'
+      'https://emuskin-generator.vercel.app',
+      'https://emuskin-editor.vercel.app',
+      'https://emuskin-maker.vercel.app'
     ];
     
     if (!origin) return callback(null, true);
