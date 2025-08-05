@@ -789,6 +789,10 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
+    // Check if we were dragging (not resizing) and call drag end callbacks
+    const wasDragging = dragState.isDragging && !resizeState.isResizing;
+    const draggedItemType = dragState.itemType;
+    
     // Always reset both states on mouse up
     const wasResizing = resizeState.isResizing;
     
@@ -849,7 +853,9 @@ const Canvas: React.FC<CanvasProps> = ({
     setTimeout(() => {
       setHasResized(false);
     }, 100);
-  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls]);
+    
+    // No automatic saves - user must click save button
+  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls, dragState.isDragging, hasDragged]);
 
   // Handle touch move (dragging)
   const handleTouchMove = useCallback((e: TouchEvent) => {
@@ -1169,6 +1175,9 @@ const Canvas: React.FC<CanvasProps> = ({
 
   // Handle touch end
   const handleTouchEnd = useCallback(() => {
+    // Check if we were dragging (not resizing) and call drag end callbacks
+    const wasDragging = dragState.isDragging && !resizeState.isResizing;
+    const draggedItemType = dragState.itemType;
     // Apply final resize position if we were resizing
     if (resizeState.isResizing && resizePositionRef.current && resizeState.itemIndex !== null && resizeState.itemType) {
       // Cancel any pending throttled update
@@ -1226,7 +1235,9 @@ const Canvas: React.FC<CanvasProps> = ({
     setTimeout(() => {
       setHasResized(false);
     }, 100);
-  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls]);
+    
+    // No automatic saves - user must click save button
+  }, [resizeState, controls, screens, onControlUpdate, updateScreensWithMirroredControls, dragState.isDragging, hasDragged]);
 
   // Add global mouse and touch event listeners
   useEffect(() => {

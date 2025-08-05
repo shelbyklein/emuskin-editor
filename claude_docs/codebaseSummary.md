@@ -375,6 +375,15 @@ The API is built using Vercel Functions (serverless) integrated directly with th
 - No user feedback yet (pre-development phase)
 - Future feedback will be tracked in this section
 
+## Debugging Tools
+- DatabaseDebugger: Comprehensive debugging interface for all data sources
+  - Tabbed interface: Overview, User Database, LocalStorage views
+  - Shows MongoDB status, userDatabase structure, localStorage projects
+  - Complete reset functionality for both MongoDB and localStorage
+  - Clear project references without deleting actual projects
+  - Displays user login counts, project counts, and all emuskin localStorage keys
+  - Temporary reset API endpoint at /api/reset.js (should be deleted after use)
+
 ## Additional Documentation
 - `plan.md`: Comprehensive development plan
 - `CLAUDE.md`: Contains project-specific instructions and JSON structure details

@@ -422,18 +422,8 @@ const Editor: React.FC = () => {
           pendingImageSaveRef.current = null;
           
           // Update orientation data with the saved image reference
-          // This ensures the image URL is properly stored in the project
-          const orientationData = getOrientationData();
-          if (orientationData) {
-            saveOrientationDataAsync({
-              ...orientationData,
-              backgroundImage: {
-                fileName: pendingImage.file.name,
-                url: null,
-                hasStoredImage: false
-              }
-            }, pendingImage.orientation);
-          }
+          // Don't save automatically - user must click save button
+          // The image is already set in the state for display
         })
         .catch(error => {
           console.error('Failed to save pending image:', error);
@@ -813,16 +803,8 @@ const Editor: React.FC = () => {
       // Set the uploaded image for display
       setUploadedImage({ file, url: imageUrl });
       
-      // Save the URL to project data
-      if (isR2Enabled()) {
-        saveOrientationDataAsync({
-          backgroundImage: {
-            fileName: file.name,
-            url: imageUrl,
-            hasStoredImage: true
-          }
-        }, getCurrentOrientation());
-      }
+      // Don't save automatically - user must click save button
+      // The image is already uploaded and ready to be saved when user clicks save
       
       console.log('Image upload completed successfully');
     } catch (error) {
@@ -868,15 +850,15 @@ const Editor: React.FC = () => {
       // Check if other orientation has data to copy
       if (sourceData && (sourceData.controls?.length > 0 || sourceData.screens?.length > 0)) {
         if (window.confirm(`Would you like to copy the layout from ${otherOrientation} to ${orientation}?`)) {
-          saveOrientationDataAsync({
-            controls: sourceData.controls || [],
-            screens: sourceData.screens || [],
-            menuInsetsEnabled: sourceData.menuInsetsEnabled || false,
-            menuInsetsBottom: sourceData.menuInsetsBottom || 0,
-            menuInsetsLeft: sourceData.menuInsetsLeft || 0,
-            menuInsetsRight: sourceData.menuInsetsRight || 0,
-            backgroundImage: null // Don't copy image
-          }, orientation);
+          // Copy the data to current state
+          setControls(sourceData.controls || []);
+          setScreens(sourceData.screens || []);
+          setMenuInsetsEnabled(sourceData.menuInsetsEnabled || false);
+          setMenuInsetsBottom(sourceData.menuInsetsBottom || 0);
+          setMenuInsetsLeft(sourceData.menuInsetsLeft || 0);
+          setMenuInsetsRight(sourceData.menuInsetsRight || 0);
+          // Don't copy image - backgroundImage stays null
+          // Don't save automatically - user must click save button
         }
       }
     }, 100); // Small delay to ensure state updates have propagated
@@ -1014,13 +996,7 @@ const Editor: React.FC = () => {
       pushToHistory('Update controls');
     }
     
-    // Explicitly save the updated controls
-    if (currentProject) {
-      console.log('💾 Explicitly saving controls after update:', newControls.length, 'controls');
-      saveOrientationDataAsync({
-        controls: newControls
-      });
-    }
+    // Don't save during drag operations - let drag end handle it
   };
 
   const handleScreensUpdate = (newScreens: ScreenMapping[]) => {
@@ -1030,14 +1006,9 @@ const Editor: React.FC = () => {
       pushToHistory('Update screens');
     }
     
-    // Explicitly save the updated screens
-    if (currentProject) {
-      console.log('💾 Explicitly saving screens after update:', newScreens.length, 'screens');
-      saveOrientationDataAsync({
-        screens: newScreens
-      });
-    }
+    // Don't save during drag operations - let drag end handle it
   };
+
 
   const handleControlSelect = (control: ControlMapping) => {
     // Apply grid snapping to initial placement if enabled
@@ -1053,13 +1024,7 @@ const Editor: React.FC = () => {
     setControls(newControls);
     pushToHistory('Add control');
     
-    // Explicitly save after adding control
-    if (currentProject) {
-      console.log('💾 Explicitly saving after adding control');
-      saveOrientationDataAsync({
-        controls: newControls
-      });
-    }
+    // Don't save automatically - user must click save button
   };
 
   const handleControlDelete = (index: number) => {
@@ -1112,13 +1077,7 @@ const Editor: React.FC = () => {
     setScreens(newScreens);
     pushToHistory('Add screen');
     
-    // Explicitly save after adding screen
-    if (currentProject) {
-      console.log('💾 Explicitly saving after adding screen');
-      saveOrientationDataAsync({
-        screens: newScreens
-      });
-    }
+    // Don't save automatically - user must click save button
   };
   
   const handleThumbstickImageUpload = async (file: File, controlIndex: number) => {
@@ -1308,13 +1267,8 @@ const Editor: React.FC = () => {
           setMenuInsetsBottom(templateData.menuInsets.bottom);
         }
         
-        // Save to project
-        saveOrientationDataAsync({
-          controls: templateData.items || [],
-          screens: templateData.screens || [],
-          menuInsetsEnabled: templateData.menuInsets?.bottom > 0,
-          menuInsetsBottom: templateData.menuInsets?.bottom || 0
-        });
+        // Don't save automatically - user must click save button
+        // Template data is already loaded into state
       }
       // Clear the state to prevent re-loading on refresh
       window.history.replaceState({}, document.title);
@@ -1485,14 +1439,8 @@ const Editor: React.FC = () => {
                       // Clear UI first
                       setUploadedImage(null);
                       
-                      // Update orientation data to clear the image
-                      const orientationData = getOrientationData();
-                      if (orientationData) {
-                        saveOrientationDataAsync({
-                          ...orientationData,
-                          backgroundImage: null
-                        });
-                      }
+                      // Don't save automatically - user must click save button
+                      // The image removal will be saved when user clicks save
                     }}
                     className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                   >
@@ -1510,47 +1458,19 @@ const Editor: React.FC = () => {
                 orientation={getCurrentOrientation()}
                 onToggle={(enabled) => {
                   setMenuInsetsEnabled(enabled);
-                  // Save to project context
-                  const orientationData = getOrientationData();
-                  if (orientationData) {
-                    saveOrientationDataAsync({
-                      ...orientationData,
-                      menuInsetsEnabled: enabled
-                    });
-                  }
+                  // Don't save automatically - user must click save button
                 }}
                 onBottomChange={(value) => {
                   setMenuInsetsBottom(value);
-                  // Save to project context
-                  const orientationData = getOrientationData();
-                  if (orientationData) {
-                    saveOrientationDataAsync({
-                      ...orientationData,
-                      menuInsetsBottom: value
-                    });
-                  }
+                  // Don't save automatically - user must click save button
                 }}
                 onLeftChange={(value) => {
                   setMenuInsetsLeft(value);
-                  // Save to project context
-                  const orientationData = getOrientationData();
-                  if (orientationData) {
-                    saveOrientationDataAsync({
-                      ...orientationData,
-                      menuInsetsLeft: value
-                    });
-                  }
+                  // Don't save automatically - user must click save button
                 }}
                 onRightChange={(value) => {
                   setMenuInsetsRight(value);
-                  // Save to project context
-                  const orientationData = getOrientationData();
-                  if (orientationData) {
-                    saveOrientationDataAsync({
-                      ...orientationData,
-                      menuInsetsRight: value
-                    });
-                  }
+                  // Don't save automatically - user must click save button
                 }}
               />
             </>
