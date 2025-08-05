@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "vercel-dev": "vercel dev --listen 8008",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "lint": "eslint .",
@@ -14,8 +15,8 @@
   },
   "dependencies": {
     "@use-gesture/react": "^10.3.1",
-    "jszip": "^3.10.1",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
     "mongoose": "^8.0.0",
     "react": "^18.3.1",
     "react-dnd": "^16.0.1",
@@ -40,6 +41,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",
+    "vercel": "^44.7.2",
     "vite": "^5.4.10"
   }
 }

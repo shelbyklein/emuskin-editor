@@ -12,8 +12,8 @@ import { DatabaseDebugger } from '../components/DatabaseDebugger';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { projects, loadProject, deleteProject, createProject, clearProject } = useProject();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { projects, loadProject, deleteProject, createProject, clearProject, isLoading: isProjectsLoading } = useProject();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { showError } = useToast();
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -31,10 +31,11 @@ const Home: React.FC = () => {
         // Check for R2 image URLs in the orientation-based structure
         const portraitUrl = project.orientations?.portrait?.backgroundImage?.url;
         const landscapeUrl = project.orientations?.landscape?.backgroundImage?.url;
+        const projectId = project.id || project._id;
         
-        if (project.id && (portraitUrl || landscapeUrl)) {
+        if (projectId && (portraitUrl || landscapeUrl)) {
           // Prefer portrait image, fall back to landscape
-          images[project.id] = portraitUrl || landscapeUrl || '';
+          images[projectId] = portraitUrl || landscapeUrl || '';
         }
       }
       
@@ -51,6 +52,12 @@ const Home: React.FC = () => {
     }
     clearProject(); // Clear any current project
     const projectId = await createProject('New Skin');
+    
+    if (!projectId) {
+      showError('Failed to create project - no ID returned');
+      return;
+    }
+    
     await loadProject(projectId);
     navigate('/editor');
   };
@@ -61,13 +68,26 @@ const Home: React.FC = () => {
   };
 
   const handleDeleteProject = async (projectId: string) => {
+    if (!projectId) {
+      showError('Cannot delete project: Project ID is missing');
+      return;
+    }
+    
     if (deleteConfirm === projectId) {
-      await deleteProject(projectId);
-      setDeleteConfirm(null);
+      try {
+        await deleteProject(projectId);
+        setDeleteConfirm(null);
+      } catch (error) {
+        console.error('Failed to delete project:', error);
+        showError('Failed to delete project. Please try again.');
+        setDeleteConfirm(null);
+      }
     } else {
       setDeleteConfirm(projectId);
       // Reset confirmation after 3 seconds
-      setTimeout(() => setDeleteConfirm(null), 3000);
+      setTimeout(() => {
+        setDeleteConfirm(null);
+      }, 3000);
     }
   };
 
@@ -174,7 +194,7 @@ const Home: React.FC = () => {
 
       {/* Projects Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
+        {isAuthLoading || isProjectsLoading ? (
           <div className="text-center py-16">
             <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading...</p>
@@ -232,20 +252,6 @@ const Home: React.FC = () => {
           </div>
         ) : (
           <div>
-            {/* Cloud Sync Status */}
-            {!import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL.includes('localhost') ? (
-              <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                    <p className="font-medium">Local Storage Only</p>
-                    <p className="mt-1">Projects are stored locally on this device. To sync projects across devices, a backend API must be configured and deployed.</p>
-                  </div>
-                </div>
-              </div>
-            ) : null}
             
             {/* User Profile Section */}
             {user && (
@@ -338,18 +344,20 @@ const Home: React.FC = () => {
                 </div>
                 
                 <div id="projects-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {userProjects.map((project) => (
+                  {userProjects.map((project) => {
+                    const projectId = project.id || project._id;
+                    return (
               <div
-                key={project.id}
-                id={`project-card-${project.id}`}
+                key={projectId}
+                id={`project-card-${projectId}`}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden group cursor-pointer"
-                onClick={() => handleOpenProject(project.id)}
+                onClick={() => handleOpenProject(projectId)}
               >
                 {/* Preview Image */}
                 <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
-                  {projectImages[project.id] ? (
+                  {projectImages[projectId] ? (
                     <img
-                      src={projectImages[project.id]}
+                      src={projectImages[projectId]}
                       alt={`${project.name} preview`}
                       className="w-full h-full object-contain"
                     />
@@ -405,7 +413,7 @@ const Home: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/test/${project.id}`);
+                          navigate(`/test/${projectId}`);
                         }}
                         className="px-3 py-1 text-xs font-medium rounded transition-colors bg-purple-500 hover:bg-purple-600 text-white"
                       >
@@ -414,21 +422,26 @@ const Home: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteProject(project.id);
+                          if (!projectId) {
+                            console.error('Project ID is undefined!', project);
+                            return;
+                          }
+                          handleDeleteProject(projectId);
                         }}
                         className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                          deleteConfirm === project.id
+                          deleteConfirm === projectId
                             ? 'bg-red-500 hover:bg-red-600 text-white'
                             : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                         }`}
                       >
-                        {deleteConfirm === project.id ? 'Confirm Delete' : 'Delete'}
+                        {deleteConfirm === projectId ? 'Confirm Delete' : 'Delete'}
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </>
             )}

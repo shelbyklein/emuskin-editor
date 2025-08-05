@@ -1,4 +1,5 @@
 {
+  "devCommand": "vite --port $PORT --host",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30

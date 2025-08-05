@@ -326,21 +326,21 @@ emuskin-generator/
   - Added .vercelignore to exclude development files
   - Configured for API-only deployment without frontend build
 
-## API Structure
+## API Structure (Vercel Functions)
 ```
 api/
-├── api/
-│   └── serverless.js    # Vercel serverless function entry
-├── src/
-│   ├── app.js          # Express application
-│   ├── config/         # Database configuration
-│   ├── controllers/    # Request handlers
-│   ├── middleware/     # Auth and error handling
-│   ├── models/         # MongoDB schemas
-│   └── routes/         # API endpoints
-├── vercel.json         # Deployment configuration
-└── package.json        # Dependencies and scripts
+├── health.js           # Health check endpoint
+├── projects/
+│   ├── index.js       # Projects CRUD endpoints
+│   └── [id].js        # Single project operations
+└── lib/
+    ├── auth.js        # JWT authentication
+    ├── mongodb.js     # Database connection
+    └── models/
+        └── Project.js # MongoDB schema
 ```
+
+The API is built using Vercel Functions (serverless) and requires MongoDB to be configured. In development, the API endpoints are proxied through Vite, but MongoDB must still be available.
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

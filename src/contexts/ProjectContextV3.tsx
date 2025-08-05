@@ -2,7 +2,7 @@
 import React, { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { useAuth } from './AuthContext';
-import { projectsAPI } from '../utils/api';
+import { projectsAPI, isApiAvailable } from '../utils/api';
 import { useToast } from './ToastContext';
 
 interface OrientationData {
@@ -21,6 +21,7 @@ interface OrientationData {
 
 interface Project {
   id: string;
+  _id?: string; // MongoDB ID from API
   name: string;
   identifier: string;
   console: Console | null;
@@ -123,11 +124,23 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       setIsLoading(true);
       try {
         const cloudProjects = await projectsAPI.getProjects();
-        setProjects(cloudProjects);
-        console.log(`Loaded ${cloudProjects.length} projects from database`);
+        // Normalize MongoDB _id to id for consistency
+        const normalizedProjects = cloudProjects.map(project => ({
+          ...project,
+          id: project.id || project._id,
+          _id: project._id || project.id
+        }));
+        setProjects(normalizedProjects);
+        console.log(`Loaded ${normalizedProjects.length} projects from database`);
       } catch (error) {
         console.error('Failed to load projects:', error);
-        showError('Failed to load projects');
+        // Check if this is a development environment without MongoDB
+        if (!import.meta.env.PROD) {
+          console.log('Running in development mode without MongoDB configured');
+          showError('Database not configured. Please set up MongoDB to save projects.');
+        } else {
+          showError('Failed to load projects. Please check your connection.');
+        }
         setProjects([]);
       } finally {
         setIsLoading(false);
@@ -168,27 +181,50 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         ...newProject
       });
       
-      setProjects(prev => [...prev, cloudProject]);
-      setCurrentProject(cloudProject);
+      // Normalize the project ID to ensure consistency
+      const normalizedProject = {
+        ...cloudProject,
+        id: cloudProject.id || cloudProject._id,
+        _id: cloudProject._id || cloudProject.id
+      };
+      
+      setProjects(prev => [...prev, normalizedProject]);
+      setCurrentProject(normalizedProject);
       showSuccess('Project created');
-      return cloudProject.id;
+      return normalizedProject.id;
     } catch (error) {
       console.error('Failed to create project:', error);
-      showError('Failed to create project');
+      if (!import.meta.env.PROD) {
+        showError('Cannot create project: Database not configured');
+      } else {
+        showError('Failed to create project. Please check your connection.');
+      }
       throw error;
     }
   }, [isAuthenticated, user, showError, showSuccess]);
 
   const loadProject = useCallback(async (id: string) => {
-    const project = projects.find(p => p.id === id);
+    const project = projects.find(p => p.id === id || p._id === id);
     if (project) {
-      setCurrentProject(project);
+      // Ensure the project has both id and _id normalized
+      const normalizedProject = {
+        ...project,
+        id: project.id || project._id,
+        _id: project._id || project.id
+      };
+      setCurrentProject(normalizedProject);
     } else {
       // Try to load from API
       try {
         const cloudProject = await projectsAPI.getProject(id);
-        setCurrentProject(cloudProject);
-        setProjects(prev => [...prev.filter(p => p.id !== id), cloudProject]);
+        // Normalize the project ID
+        const normalizedProject = {
+          ...cloudProject,
+          id: cloudProject.id || cloudProject._id,
+          _id: cloudProject._id || cloudProject.id
+        };
+        setCurrentProject(normalizedProject);
+        setProjects(prev => [...prev.filter(p => p.id !== id && p._id !== id), normalizedProject]);
       } catch (error) {
         console.error('Failed to load project:', error);
         showError('Failed to load project');
@@ -208,14 +244,36 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       lastModified: Date.now()
     };
 
+    // Ensure we have a valid ID to use for the API call
+    const projectId = updated.id || updated._id;
+    if (!projectId) {
+      console.error('No project ID found in current project:', currentProject);
+      showError('Cannot save project: No project ID');
+      return;
+    }
+
     try {
-      const cloudProject = await projectsAPI.updateProject(updated.id, updated);
-      setCurrentProject(cloudProject);
-      setProjects(prev => prev.map(p => p.id === cloudProject.id ? cloudProject : p));
+      const cloudProject = await projectsAPI.updateProject(projectId, updated);
+      
+      // Normalize the response to ensure both id and _id exist
+      const normalizedProject = {
+        ...cloudProject,
+        id: cloudProject.id || cloudProject._id,
+        _id: cloudProject._id || cloudProject.id
+      };
+      
+      setCurrentProject(normalizedProject);
+      setProjects(prev => prev.map(p => 
+        (p.id === normalizedProject.id || p._id === normalizedProject.id) ? normalizedProject : p
+      ));
       console.log('Project saved to database');
     } catch (error) {
       console.error('Failed to save project:', error);
-      showError('Failed to save project');
+      if (!import.meta.env.PROD) {
+        showError('Cannot save project: Database not configured');
+      } else {
+        showError('Failed to save project. Please check your connection.');
+      }
       throw error;
     }
   }, [currentProject, showError]);
@@ -223,14 +281,19 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const deleteProject = useCallback(async (id: string) => {
     try {
       await projectsAPI.deleteProject(id);
-      setProjects(prev => prev.filter(p => p.id !== id));
-      if (currentProject?.id === id) {
+      setProjects(prev => prev.filter(p => p.id !== id && p._id !== id));
+      if (currentProject?.id === id || currentProject?._id === id) {
         setCurrentProject(null);
       }
       showSuccess('Project deleted');
     } catch (error) {
       console.error('Failed to delete project:', error);
-      showError('Failed to delete project');
+      if (!import.meta.env.PROD) {
+        showError('Cannot delete project: Database not configured');
+      } else {
+        showError('Failed to delete project. Please check your connection.');
+      }
+      throw error;
     }
   }, [currentProject, showError, showSuccess]);
 

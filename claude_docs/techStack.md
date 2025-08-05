@@ -62,12 +62,13 @@
 - **Deployment**: Vercel CLI for both frontend and API
 
 ## Architecture Decisions
-- **Hybrid Architecture**: Local-first with cloud sync
+- **API-First Architecture**: Database-backed storage for all projects
 - **Client-Side Processing**: JSON generation and file handling in browser
-- **API Design**: RESTful endpoints with JWT authentication
+- **API Design**: RESTful endpoints with JWT authentication via Vercel Functions
 - **Component Structure**: Modular components for reusability
 - **Mobile-First**: Touch-optimized interactions, responsive design
-- **Offline Support**: Full functionality without internet, sync when online
+- **Database Required**: MongoDB must be configured for project storage
+- **No Local Storage**: Projects are only stored in the cloud database
 
 ## Production Stack Summary
 - **Frontend**: React + TypeScript + Vite → Vercel

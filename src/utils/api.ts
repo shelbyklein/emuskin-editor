@@ -32,8 +32,30 @@ interface Project {
   lastModified: number;
 }
 
-// API base URL - now using local API endpoints
-const API_BASE_URL = '/api';
+// API base URL - check if we have a configured API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Check if API is available
+export const isApiAvailable = (): boolean => {
+  // In development, API functions are available through Vite's proxy
+  // In production, they're available through Vercel Functions
+  // But both require MongoDB to be configured
+  
+  // If we have a specific API URL configured, use that
+  if (import.meta.env.VITE_API_URL) {
+    return !import.meta.env.VITE_API_URL.includes('localhost');
+  }
+  
+  // In production (Vercel), API should be available
+  if (import.meta.env.PROD) {
+    return true;
+  }
+  
+  // In development, we need MongoDB configured
+  // Since we can't access server env vars from client, we'll try the API
+  // and handle failures gracefully
+  return false;
+};
 
 // API request wrapper with authentication
 async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -168,6 +190,17 @@ export const projectsAPI = {
     
     if (!response.ok) {
       throw new Error('Failed to fetch projects');
+    }
+    
+    return response.json();
+  },
+
+  // Get a single project by ID
+  getProject: async (id: string): Promise<Project> => {
+    const response = await apiRequest(`/projects/${id}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch project');
     }
     
     return response.json();
