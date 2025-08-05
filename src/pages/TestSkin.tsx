@@ -24,6 +24,11 @@ const TestSkin: React.FC = () => {
   const [controls, setControls] = useState<ControlMapping[]>([]);
   const [screens, setScreens] = useState<ScreenMapping[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewportDimensions, setViewportDimensions] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+  const [showDebug, setShowDebug] = useState(false);
   
   // Track active touches
   const activeTouches = useRef<Map<number, string>>(new Map());
@@ -60,6 +65,48 @@ const TestSkin: React.FC = () => {
     }
   }, [currentProject, orientation]);
 
+  // Get accurate viewport dimensions
+  const updateViewportDimensions = () => {
+    // Use visualViewport API if available (more accurate for mobile browsers)
+    if (window.visualViewport) {
+      setViewportDimensions({
+        width: window.visualViewport.width,
+        height: window.visualViewport.height
+      });
+    } else {
+      // Fallback to window dimensions
+      setViewportDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    }
+  };
+
+  useEffect(() => {
+    updateViewportDimensions();
+
+    // Listen for viewport changes
+    const handleResize = () => updateViewportDimensions();
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Listen to visualViewport resize if available
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
+    };
+  }, []);
+
   // Handle fullscreen
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement && containerRef.current) {
@@ -87,6 +134,20 @@ const TestSkin: React.FC = () => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Add body class for test mode
+  useEffect(() => {
+    document.body.classList.add('test-mode');
+    
+    // Try to hide Safari UI by scrolling
+    if (window.scrollTo) {
+      window.scrollTo(0, 1);
+    }
+    
+    return () => {
+      document.body.classList.remove('test-mode');
     };
   }, []);
 
@@ -171,15 +232,24 @@ const TestSkin: React.FC = () => {
   const canvasWidth = orientation === 'portrait' ? device.logicalWidth : device.logicalHeight;
   const canvasHeight = orientation === 'portrait' ? device.logicalHeight : device.logicalWidth;
 
-  // Calculate scale to fit screen
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const scale = Math.min(viewportWidth / canvasWidth, viewportHeight / canvasHeight);
+  // Detect if running on iOS Safari
+  const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  
+  // Calculate available viewport considering Safari UI
+  // Safari's UI takes approximately 100-150px combined (top and bottom)
+  const safariUIOffset = isIOSSafari && !isFullscreen ? 100 : 0;
+  const availableHeight = viewportDimensions.height - safariUIOffset;
+
+  // Calculate scale to fit viewport
+  const scale = Math.min(
+    viewportDimensions.width / canvasWidth,
+    availableHeight / canvasHeight
+  );
 
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden"
+      className="viewport-height fixed inset-0 bg-black flex items-center justify-center overflow-hidden"
       style={{ touchAction: 'none' }}
     >
       {/* Canvas */}
@@ -320,6 +390,32 @@ const TestSkin: React.FC = () => {
           <div className="text-xs text-gray-400">{device.model} • {orientation}</div>
         </div>
       </div>
+
+      {/* Debug Overlay */}
+      <div className="fixed top-4 left-4">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full shadow-lg transition-colors text-xs"
+        >
+          Debug
+        </button>
+      </div>
+      
+      {showDebug && (
+        <div className="fixed top-16 left-4 bg-black/90 text-white p-4 rounded-lg text-xs font-mono">
+          <div>Window: {window.innerWidth} x {window.innerHeight}</div>
+          <div>Viewport: {viewportDimensions.width} x {viewportDimensions.height}</div>
+          {window.visualViewport && (
+            <div>Visual: {window.visualViewport.width} x {window.visualViewport.height}</div>
+          )}
+          <div>Canvas: {canvasWidth} x {canvasHeight}</div>
+          <div>Scale: {scale.toFixed(3)}</div>
+          <div>iOS Safari: {isIOSSafari ? 'Yes' : 'No'}</div>
+          <div>Safari UI Offset: {safariUIOffset}px</div>
+          <div>Available Height: {availableHeight}px</div>
+          <div>Fullscreen: {isFullscreen ? 'Yes' : 'No'}</div>
+        </div>
+      )}
     </div>
   );
 };

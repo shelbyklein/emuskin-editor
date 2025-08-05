@@ -218,6 +218,11 @@
   - Visual indicators show storage type (Local/Cloud)
   - Migration dialog helps users move projects to cloud
   - Smooth onboarding experience without forced signup
+- [x] Fix excessive auto-saving issues
+  - Removed all automatic saves throughout the application
+  - Fixed performance issues from saves on every pixel movement
+  - Only manual save button or Cmd/Ctrl+S triggers saves
+  - Users have complete control over persistence
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)

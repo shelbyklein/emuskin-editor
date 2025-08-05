@@ -354,6 +354,13 @@ emuskin-generator/
   - Non-authenticated users can create and save projects locally
   - Visual indicators show storage type (Local/Cloud)
   - Migration dialog helps users move local projects to cloud when signing in
+- ✅ Fixed excessive auto-saving issues
+  - Removed all automatic saves from drag/resize operations
+  - Removed saves from control/screen addition, menu insets, image operations
+  - Removed saves from template loading and orientation copying
+  - Only manual save button or Cmd/Ctrl+S triggers saves
+  - Dramatically improved performance by eliminating constant save operations
+  - Users have complete control over when their work is persisted
 
 ## API Structure (Vercel Functions)
 ```

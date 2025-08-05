@@ -89,6 +89,12 @@
   - Replaced all 11 alert() calls in the application
   - Smooth animations and dark mode support
   - Stack multiple toasts with manual dismiss option
+- ✅ Fixed Excessive Auto-Saving Issues
+  - Removed all automatic saves throughout the application
+  - Fixed performance issues from saves on every pixel movement
+  - Removed saves from: drag/resize, control/screen addition, menu insets, image operations, templates
+  - Now ONLY the save button or Cmd/Ctrl+S triggers saves
+  - Users have complete control over when work is persisted
 
 ## Deployment Progress Update
 

@@ -26,7 +26,8 @@
 - ✅ Clear screens when console changes - prevents incorrect screen configurations
 - ✅ Fix save functionality - replaced buggy autosave with explicit saves on all changes
 - ✅ Fix JSON preview to show landscape orientation when available
-- Add keyboard shortcuts for common actions
+- ✅ Add keyboard shortcuts for common actions
+- ✅ Fix Safari viewport crop issue in test feature - added safe area support
 
 ## Context
 - Full-featured skin editor with visual control and screen placement
@@ -474,6 +475,22 @@
 - ✅ Fixed "vite build exited with 127" error
   - Added buildCommand: "" to prevent frontend build
   - Added outputDirectory: "." for API-only deployment
+
+## Recent Safari Fix (Revised)
+- ✅ Fixed Safari viewport crop issue in test feature
+  - Issue: Safari's UI elements (status bar, URL bar, bottom toolbar) were cropping the skin display
+  - Initial approach with safe areas wasn't working properly
+  - Revised solution: 
+    - Initialized viewport dimensions with window values instead of 0
+    - Removed safe area padding that was reducing available space
+    - Calculate Safari UI offset dynamically (approximately 100px)
+    - Use available height for scaling calculation
+    - Added debug overlay to show viewport dimensions
+    - Added viewport CSS classes for better height handling
+    - Added body class to prevent scrolling in test mode
+    - Added minimal-ui support to viewport meta tag
+  - Debug button shows actual viewport values for troubleshooting
+  - Works on all iOS devices with proper Safari UI accommodation
 
 ## Recent Bug Fixes
 - ✅ Fixed undefined project ID errors when creating and saving projects
