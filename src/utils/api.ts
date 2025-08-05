@@ -32,20 +32,11 @@ interface Project {
   lastModified: number;
 }
 
-// API base URL - check if we have a configured API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// API base URL - always use integrated Vercel Functions
+const API_BASE_URL = '/api';
 
 // Check if API is available
 export const isApiAvailable = (): boolean => {
-  // In development, API functions are available through Vite's proxy
-  // In production, they're available through Vercel Functions
-  // But both require MongoDB to be configured
-  
-  // If we have a specific API URL configured, use that
-  if (import.meta.env.VITE_API_URL) {
-    return !import.meta.env.VITE_API_URL.includes('localhost');
-  }
-  
   // In production (Vercel), API should be available
   if (import.meta.env.PROD) {
     return true;

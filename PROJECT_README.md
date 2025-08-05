@@ -8,7 +8,7 @@ A web application for creating custom emulator skin files (.deltaskin/.gammaskin
 - 📱 Device-specific layouts for all iPhone models
 - 🎨 Visual drag-and-drop control positioning
 - 🔄 Portrait and landscape orientation support
-- 💾 Cloud sync across devices (when API is deployed)
+- 💾 Cloud sync across devices
 - 🧪 Interactive skin testing mode
 - 📤 Export as .deltaskin/.gammaskin files
 
@@ -27,38 +27,27 @@ npm run dev
 npm run build
 ```
 
-### Backend API Setup
+### API Development
 
-The app includes a backend API for cross-device synchronization:
+The app includes integrated API functions for cross-device synchronization:
 
 ```bash
-# Navigate to API directory
-cd api
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your MongoDB connection string
-
-# Run development server
-npm run dev
+# API functions are located in /api directory
+# They run as Vercel Functions during deployment
+# For local development, they're served alongside the frontend
 ```
 
 ## Deployment
 
-### Frontend (Vercel)
+### Vercel (Full-Stack)
 
 1. Deploy to Vercel: `vercel`
-2. Set environment variable: `VITE_API_URL=https://your-api-url.vercel.app`
+2. Set environment variables in Vercel dashboard:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `ALLOWED_ORIGINS`: CORS allowed origins
+   - Other frontend environment variables as needed
 
-### Backend API
-
-See [api/README.md](api/README.md) for detailed deployment instructions:
-- **Vercel**: Best for serverless deployment
-- **Railway**: Includes MongoDB hosting
-- **Render**: Free tier available
+The API functions deploy automatically as Vercel Functions alongside the frontend.
 
 ## Architecture
 
@@ -69,8 +58,8 @@ See [api/README.md](api/README.md) for detailed deployment instructions:
 - Local storage for offline use
 - R2/Cloudflare for image storage
 
-### Backend API
-- Express.js server
+### API (Vercel Functions)
+- Serverless functions in /api directory
 - MongoDB for data persistence
 - JWT authentication (WordPress integration)
 - RESTful endpoints for CRUD operations
@@ -92,14 +81,9 @@ emuskin-generator/
 │   ├── pages/             # Page components
 │   ├── types/             # TypeScript types
 │   └── utils/             # Utility functions
-├── api/                   # Backend API
-│   ├── src/
-│   │   ├── config/       # Configuration
-│   │   ├── controllers/  # Route handlers
-│   │   ├── middleware/   # Express middleware
-│   │   ├── models/       # Database models
-│   │   └── routes/       # API routes
-│   └── server.js         # Entry point
+├── api/                   # Vercel Functions
+│   ├── projects.js       # Projects CRUD endpoints
+│   └── health.js         # Health check endpoint
 ├── assets/               # Static assets
 └── claude_docs/          # Development documentation
 ```
@@ -107,18 +91,18 @@ emuskin-generator/
 ## Environment Variables
 
 ### Frontend
-- `VITE_API_URL`: Backend API URL
 - `VITE_WORDPRESS_URL`: WordPress site URL
 - `VITE_R2_PUBLIC_URL`: R2 bucket URL
+- `VITE_ENABLE_AUTH`: Enable authentication features
+- `VITE_ENABLE_CLOUD_SYNC`: Enable cloud synchronization
 
-### Backend
+### API (Vercel Functions)
 - `MONGODB_URI`: MongoDB connection string
 - `ALLOWED_ORIGINS`: Comma-separated CORS origins
-- `PORT`: Server port (default: 3001)
 
 ## Cross-Device Sync
 
-When the backend API is deployed and configured:
+With the integrated API functions:
 1. Projects automatically sync on login
 2. All changes save to both local storage and cloud
 3. Access your projects from any device

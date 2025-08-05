@@ -43,7 +43,7 @@ add_action('rest_api_init', function() {
     add_filter('rest_pre_serve_request', function($value) {
         $origin = get_http_origin();
         $allowed_origins = [
-            'http://localhost:3000',
+            'http://localhost:5173',
             'https://your-skin-generator-domain.com',
         ];
         
@@ -96,7 +96,7 @@ See the detailed [miniOrange Setup Guide](./miniorange-setup.md) for complete in
 2. Go to miniOrange OAuth > OAuth Server > Clients
 3. Add new client with:
    - **Client Name:** Emulator Skin Generator
-   - **Redirect URI:** `http://localhost:3000/auth/callback` (dev) or your production URL
+   - **Redirect URI:** `http://localhost:5173/auth/callback` (dev) or your production URL
    - **Grant Type:** Authorization Code
    - **Scopes:** openid, profile, email
 
@@ -118,8 +118,9 @@ VITE_OAUTH_CLIENT_ID=your-client-id-here
 VITE_OAUTH_CLIENT_SECRET=your-client-secret-here
 VITE_OAUTH_REDIRECT_URI=https://your-domain.com/auth/callback
 
-# Backend API
-VITE_API_URL=https://your-backend-api.com/api
+# Feature Flags
+VITE_ENABLE_AUTH=true
+VITE_ENABLE_CLOUD_SYNC=true
 ```
 
 **Note:** When using Vite, environment variables must be prefixed with `VITE_` to be exposed to the client.
@@ -150,9 +151,9 @@ curl -X GET https://playcase.gg/wp-json/wp/v2/users/me \
 4. **CORS:** Restrict CORS to your specific domain only
 5. **Secret Keys:** Use strong, unique secret keys for JWT signing
 
-## Backend Database Schema
+## Database Schema
 
-When implementing the backend, use this schema:
+The integrated API functions use this MongoDB schema:
 
 ```sql
 -- Users table (references WordPress users)
@@ -203,8 +204,8 @@ CREATE TABLE project_images (
 
 1. **Set up WordPress plugins** on playcase.gg
 2. **Configure OAuth client** and note credentials
-3. **Deploy backend API** with the database schema
-4. **Update environment variables** in the skin generator
+3. **Configure MongoDB** with the database schema
+4. **Update environment variables** in Vercel
 5. **Test the complete authentication flow**
 
 ## Troubleshooting

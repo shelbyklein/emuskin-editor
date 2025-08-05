@@ -78,9 +78,6 @@ Update your Emulator Skin Generator's `.env` file:
 # WordPress URL (no trailing slash)
 VITE_WORDPRESS_URL=https://playcase.gg
 
-# Backend API (if using separate backend)
-VITE_API_URL=http://localhost:3001/api
-
 # Feature Flags
 VITE_ENABLE_AUTH=true
 VITE_ENABLE_CLOUD_SYNC=true

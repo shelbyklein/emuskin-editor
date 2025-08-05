@@ -470,8 +470,16 @@
   - Added buildCommand: "" to prevent frontend build
   - Added outputDirectory: "." for API-only deployment
 
+## Recent Bug Fixes
+- ✅ Fixed undefined project ID errors when creating and saving projects
+  - Issue: API responses might only have _id field, not id field
+  - Solution: Normalized all project objects to have both id and _id fields
+  - Added defensive checks in saveProject to handle missing IDs
+  - Fixed createProject to return normalized ID
+  - Ensured consistent ID handling across loadProject, saveProject, and createProject
+
 ## Next Steps
-1. Run `vercel link` to create new API project
-2. Deploy with `npm run deploy`
-3. Set up DigitalOcean MongoDB
-4. Configure environment variables
+1. Continue testing project creation and saving functionality
+2. Monitor for any remaining ID-related issues
+3. Deploy API backend when ready
+4. Configure MongoDB and environment variables

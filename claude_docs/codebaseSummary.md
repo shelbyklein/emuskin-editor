@@ -325,6 +325,11 @@ emuskin-generator/
   - Created api/serverless.js entry point for Vercel
   - Added .vercelignore to exclude development files
   - Configured for API-only deployment without frontend build
+- ✅ Fixed undefined project ID errors
+  - Normalized project objects to ensure both 'id' and '_id' fields exist
+  - Added defensive checks in saveProject to handle missing IDs
+  - Fixed createProject to return normalized ID
+  - Projects now properly save and load without ID errors
 
 ## API Structure (Vercel Functions)
 ```

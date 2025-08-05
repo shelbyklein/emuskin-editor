@@ -40,7 +40,7 @@ After activation:
    **Basic Settings:**
    - **Client Name:** Emulator Skin Generator
    - **Redirect/Callback URL:** 
-     - Development: `http://localhost:3000/auth/callback`
+     - Development: `http://localhost:5173/auth/callback`
      - Production: `https://your-domain.com/auth/callback`
    
    **Grant Settings:**
@@ -62,7 +62,7 @@ miniOrange includes CORS configuration:
 1. Go to **miniOrange OAuth > OAuth Server > Settings**
 2. Under **CORS Settings**, add your domains:
    ```
-   http://localhost:3000
+   http://localhost:5173
    https://your-production-domain.com
    ```
 3. Enable **Allow Credentials**
@@ -87,10 +87,7 @@ Add these to your Emulator Skin Generator's `.env` file:
 VITE_WORDPRESS_URL=https://playcase.gg
 VITE_OAUTH_CLIENT_ID=your-client-id-from-miniorange
 VITE_OAUTH_CLIENT_SECRET=your-client-secret-from-miniorange
-VITE_OAUTH_REDIRECT_URI=http://localhost:3000/auth/callback
-
-# Backend API
-VITE_API_URL=http://localhost:3001/api
+VITE_OAUTH_REDIRECT_URI=http://localhost:5173/auth/callback
 
 # Feature Flags
 VITE_ENABLE_AUTH=true
@@ -103,7 +100,7 @@ VITE_ENABLE_CLOUD_SYNC=true
 
 Visit this URL in your browser (replace values):
 ```
-https://playcase.gg/wp-json/mo-oauth-server/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3000/auth/callback&scope=openid profile email
+https://playcase.gg/wp-json/mo-oauth-server/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:5173/auth/callback&scope=openid profile email
 ```
 
 Expected: You should see the miniOrange login/consent page.
@@ -115,7 +112,7 @@ curl -X POST https://playcase.gg/wp-json/mo-oauth-server/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=authorization_code" \
   -d "code=AUTHORIZATION_CODE" \
-  -d "redirect_uri=http://localhost:3000/auth/callback" \
+  -d "redirect_uri=http://localhost:5173/auth/callback" \
   -d "client_id=YOUR_CLIENT_ID" \
   -d "client_secret=YOUR_CLIENT_SECRET"
 ```
@@ -166,9 +163,9 @@ Enable debug logging:
 4. **Enable rate limiting** if available
 5. **Monitor OAuth logs** for suspicious activity
 
-## Backend Integration Notes
+## API Integration Notes
 
-Your backend API needs to:
+The integrated API functions need to:
 1. Exchange authorization codes with miniOrange
 2. Validate tokens with miniOrange
 3. Store user data from token response
@@ -195,6 +192,6 @@ Example token response from miniOrange:
 
 1. Complete miniOrange plugin setup on WordPress
 2. Configure OAuth client with your app's details
-3. Update environment variables
+3. Update environment variables in Vercel
 4. Test authentication flow
-5. Deploy backend API to handle token exchange
+5. Verify API functions handle token exchange properly

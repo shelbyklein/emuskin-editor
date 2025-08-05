@@ -1,54 +1,40 @@
-# Deployment Status and Issues
+# Deployment Status
 
-## Current Issue
-Projects are not syncing between devices because the frontend is still configured to use localhost API.
+## Current Architecture
 
-## Deployment Architecture
-
-### Frontend (Currently Deployed)
+### Full-Stack Application (Deployed)
 - **Platform**: Vercel (automatic deployment from GitHub)
 - **Repository**: https://github.com/shelbyklein/emuskin-editor.git
 - **Status**: ✅ Deployed
-- **Issue**: API URL points to localhost, preventing cloud sync
-
-### Backend API (Ready to Deploy)
-- **Platform**: Vercel (serverless functions)
-- **Database**: DigitalOcean MongoDB (configuration ready)
-- **Status**: ❌ Not deployed
-- **Location**: `/api` directory
+- **API**: Integrated Vercel Functions in `/api` directory
+- **Database**: DigitalOcean MongoDB
 
 ### Cloudflare R2 Storage
 - **Status**: ✅ Deployed and working
 - **URL**: https://emuskin-images-worker.emuskins.workers.dev
 
-## To Fix Project Sync
+## Project Sync Configuration
 
-1. **Deploy the Backend API**:
-   ```bash
-   cd api
-   vercel
-   # Follow prompts to create new project
-   vercel --prod
-   ```
-
-2. **Get the API URL** (e.g., `https://emuskin-api.vercel.app`)
-
-3. **Update Frontend Environment**:
-   - Go to Vercel dashboard for your frontend project
+1. **Configure Environment Variables**:
+   - Go to Vercel dashboard for your project
    - Settings → Environment Variables
-   - Add: `VITE_API_URL` = `https://your-api-url.vercel.app/api`
-   - Redeploy frontend
+   - Ensure these are set:
+     - `MONGODB_URI`: Your MongoDB connection string
+     - `ALLOWED_ORIGINS`: Your frontend URL for CORS
+     - `VITE_ENABLE_CLOUD_SYNC`: `true`
+   - Redeploy if variables were changed
 
-4. **Configure MongoDB** (if not already done):
-   - Create DigitalOcean MongoDB cluster
-   - Add connection string to API environment variables
+2. **MongoDB Configuration**:
+   - Ensure DigitalOcean MongoDB cluster is accessible
+   - Verify connection string includes proper authentication
+   - Check trusted sources includes Vercel IPs (0.0.0.0/0)
 
-## Why Projects Don't Sync Currently
+## How Project Sync Works
 
-1. Frontend checks if API is available: `!apiUrl.includes('localhost')`
-2. Since production still has `localhost`, cloud sync is disabled
-3. Projects only save to localStorage, not to cloud
-4. Each device has its own local storage
+1. Frontend uses integrated `/api/*` endpoints (Vercel Functions)
+2. Cloud sync is enabled when `VITE_ENABLE_CLOUD_SYNC=true`
+3. Projects save to both localStorage and MongoDB
+4. Sync occurs automatically on login and project changes
 
 ## Removing Vercel Deployment on Git Push
 
