@@ -28,6 +28,7 @@ emuskin-generator/
 │   │   ├── CustomButtonModal.tsx # Custom button creation dialog
 │   │   ├── DatabaseDebugger.tsx # Debug component to visualize user database
 │   │   ├── LoginModal.tsx       # Email/password login modal for JWT auth
+│   │   ├── MigrationDialog.tsx  # Dialog for migrating local projects to cloud
 │   │   ├── MenuInsetsPanel.tsx  # Menu insets configuration
 │   │   ├── DeviceInfo.tsx       # Device metrics display
 │   │   ├── ExportButton.tsx     # Export to .deltaskin/.gammaskin with validation
@@ -55,11 +56,13 @@ emuskin-generator/
 │   ├── utils/          # Helper functions
 │   │   ├── indexedDB.ts # IndexedDB manager for large file storage
 │   │   ├── api.ts      # API utilities for WordPress authentication
+│   │   ├── localStorageProjects.ts # localStorage utilities for non-authenticated users
 │   │   └── userDatabase.ts # User database for tracking logins and projects
 │   ├── contexts/       # React contexts
 │   │   ├── AuthContext.tsx    # WordPress user authentication state
 │   │   ├── EditorContext.tsx  # Editor settings (grid, etc) with persistence
-│   │   ├── ProjectContext.tsx # Project management state with screens
+│   │   ├── ProjectContextHybrid.tsx # Hybrid project management (API + localStorage)
+│   │   ├── ProjectContextV3.tsx # API-only project management (deprecated)
 │   │   └── ThemeContext.tsx   # Dark/light theme state
 │   ├── App.tsx         # Main app with routing
 │   ├── main.tsx        # Entry point
@@ -345,6 +348,12 @@ emuskin-generator/
   - Removed VITE_API_URL environment variable throughout codebase
   - Updated all documentation to reflect integrated Vercel Functions
   - API now runs at `/api/*` paths as part of single deployment
+- ✅ Implemented localStorage support for non-authenticated users
+  - Created ProjectContextHybrid with automatic storage switching
+  - Added comprehensive localStorage utilities
+  - Non-authenticated users can create and save projects locally
+  - Visual indicators show storage type (Local/Cloud)
+  - Migration dialog helps users move local projects to cloud when signing in
 
 ## API Structure (Vercel Functions)
 ```

@@ -143,6 +143,26 @@ class UserDatabaseManager {
       this.saveDatabase();
     }
   }
+
+  // Clear all projects for a user
+  clearUserProjects(email: string): void {
+    if (!this.db.users[email]) {
+      console.error(`User ${email} not found in database`);
+      return;
+    }
+
+    const projectCount = this.db.users[email].projects.length;
+    this.db.users[email].projects = [];
+    console.log(`Cleared ${projectCount} projects for user ${email}`);
+    this.saveDatabase();
+  }
+
+  // Clear entire database (for debugging/reset)
+  clearDatabase(): void {
+    this.db = { users: {} };
+    this.saveDatabase();
+    console.log('User database cleared completely');
+  }
 }
 
 // Export singleton instance

@@ -212,6 +212,12 @@
   - Removed VITE_API_URL environment variable
   - Updated all documentation for single deployment
   - API now runs at /api/* paths
+- [x] Allow non-authenticated users to create skins
+  - Created hybrid ProjectContext with localStorage fallback
+  - Non-authenticated users can save projects locally
+  - Visual indicators show storage type (Local/Cloud)
+  - Migration dialog helps users move projects to cloud
+  - Smooth onboarding experience without forced signup
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)
