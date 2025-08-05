@@ -1,14 +1,16 @@
 // Home page displaying all saved skin projects
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import ImportButton from '../components/ImportButton';
 import LoginModal from '../components/LoginModal';
+import MigrationDialog from '../components/MigrationDialog';
 import ConsoleIcon from '../components/ConsoleIcon';
 import { ControlMapping, ScreenMapping } from '../types';
 import { DatabaseDebugger } from '../components/DatabaseDebugger';
+import { getAllLocalStorageProjects } from '../utils/localStorageProjects';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -18,9 +20,20 @@ const Home: React.FC = () => {
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   
   // Use projects directly from the API - no filtering needed
   const userProjects = projects;
+  
+  // Check for local projects when user logs in
+  useEffect(() => {
+    if (isAuthenticated && !isAuthLoading) {
+      const localProjects = getAllLocalStorageProjects();
+      if (localProjects.length > 0) {
+        setShowMigrationDialog(true);
+      }
+    }
+  }, [isAuthenticated, isAuthLoading]);
 
   // Load preview images for projects
   useEffect(() => {
@@ -46,10 +59,6 @@ const Home: React.FC = () => {
   }, [userProjects]);
 
   const handleCreateNew = async () => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
-    }
     clearProject(); // Clear any current project
     const projectId = await createProject('New Skin');
     
@@ -199,62 +208,44 @@ const Home: React.FC = () => {
             <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading...</p>
           </div>
-        ) : !isAuthenticated ? (
-          <div id="login-prompt" className="text-center py-16 max-w-2xl mx-auto">
-            <svg className="mx-auto h-20 w-20 text-blue-500 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Sign in to Create Your Skins
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-              Create an account or sign in to start designing custom emulator skins. 
-              Your projects will be saved to your account and accessible from any device.
-            </p>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Benefits of signing in:</h3>
-              <ul className="text-left inline-block space-y-2 text-gray-600 dark:text-gray-400">
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Save unlimited skin projects</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Access your projects from any device</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Share skins with the community (coming soon)</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Automatic backups and version history</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2 mx-auto"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span>Sign in with Playcase</span>
-            </button>
-          </div>
         ) : (
           <div>
             
+            {/* Non-authenticated welcome message */}
+            {!isAuthenticated && (
+              <div className="mb-8 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6">
+                <div className="flex items-start space-x-3">
+                  <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                      You're using local storage
+                    </h3>
+                    <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                      Your projects are saved in this browser only. Sign in to sync across devices and never lose your work.
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={() => setShowLoginModal(true)}
+                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg text-sm transition-colors"
+                      >
+                        Sign in to save to cloud
+                      </button>
+                      <button
+                        onClick={handleCreateNew}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg text-sm transition-colors"
+                      >
+                        Continue without account
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* User Profile Section */}
-            {user && (
+            {isAuthenticated && user && (
               <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -376,6 +367,25 @@ const Home: React.FC = () => {
                     </div>
                   )}
                   
+                  {/* Storage Type Badge */}
+                  <div className="absolute top-2 left-2">
+                    {project.isLocal ? (
+                      <div className="bg-yellow-500 text-yellow-900 px-2 py-1 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-md">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        <span>Local</span>
+                      </div>
+                    ) : (
+                      <div className="bg-green-500 text-green-900 px-2 py-1 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-md">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
+                        </svg>
+                        <span>Cloud</span>
+                      </div>
+                    )}
+                  </div>
+                  
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <span className="text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -453,6 +463,12 @@ const Home: React.FC = () => {
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
+      />
+      
+      {/* Migration Dialog */}
+      <MigrationDialog
+        isOpen={showMigrationDialog}
+        onClose={() => setShowMigrationDialog(false)}
       />
       
       {/* Database Debugger */}

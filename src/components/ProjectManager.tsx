@@ -1,6 +1,6 @@
 // Project manager component for handling save/load operations
 import React, { useState } from 'react';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 
 interface ProjectManagerProps {
   onSave?: () => void;

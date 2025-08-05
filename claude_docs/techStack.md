@@ -5,10 +5,10 @@
 - **Justification**: Component flexibility for complex UI, strong TypeScript support, extensive ecosystem for touch/gesture libraries
 
 ## Backend API
-- **Framework**: Express.js with Node.js 18+
-- **Database**: MongoDB with Mongoose ODM
-- **Hosting**: Vercel serverless functions
-- **Security**: Helmet.js, CORS, express-rate-limit
+- **Framework**: Vercel Functions (integrated with frontend)
+- **Database**: MongoDB (DigitalOcean managed instance)
+- **Hosting**: Same Vercel deployment as frontend
+- **Endpoints**: Available at `/api/*` paths
 
 ## Styling
 - **CSS Framework**: Tailwind CSS (mobile-first)
@@ -48,8 +48,7 @@
 - **Benefits**: Cross-device sync, automatic backups, high availability
 
 ## Infrastructure
-- **Frontend Hosting**: Vercel (free tier)
-- **API Hosting**: Vercel serverless (free tier)
+- **Hosting**: Vercel (single deployment for frontend + API)
 - **Database**: DigitalOcean Managed MongoDB
 - **CDN**: Vercel Edge Network + Cloudflare R2
 - **SSL**: Automatic HTTPS via Vercel
@@ -58,8 +57,8 @@
 - **Version Control**: Git with GitHub
 - **Testing**: Custom test scripts for API and DB
 - **Linting**: ESLint + TypeScript strict mode
-- **Development Server**: Vite (frontend) + Nodemon (backend)
-- **Deployment**: Vercel CLI for both frontend and API
+- **Development Server**: Vite with integrated API proxy
+- **Deployment**: Vercel CLI
 
 ## Architecture Decisions
 - **API-First Architecture**: Database-backed storage for all projects
@@ -71,8 +70,8 @@
 - **No Local Storage**: Projects are only stored in the cloud database
 
 ## Production Stack Summary
-- **Frontend**: React + TypeScript + Vite → Vercel
-- **Backend**: Express + MongoDB → Vercel Serverless
+- **Application**: React + TypeScript + Vite → Vercel
+- **API**: Vercel Functions (integrated) → Same deployment
 - **Database**: DigitalOcean Managed MongoDB
 - **Images**: Cloudflare R2
 - **Auth**: WordPress JWT

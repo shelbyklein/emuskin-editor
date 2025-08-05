@@ -19,7 +19,7 @@ import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 // import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves

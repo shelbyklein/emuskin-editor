@@ -206,10 +206,16 @@
   - Normalized project IDs across all operations
   - Added defensive checks for missing IDs
   - Projects now save and load without errors
+- [x] Consolidate API deployment
+  - Removed redundant separate API deployment code
+  - Integrated Vercel Functions with frontend
+  - Removed VITE_API_URL environment variable
+  - Updated all documentation for single deployment
+  - API now runs at /api/* paths
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)
 - iPad support (touch support already implemented)
 - Community template sharing
 - Collaborative editing features
-- Backend API for project sync (local user database ready for backend migration)
+- Enhanced API features (caching, rate limiting, versioning)

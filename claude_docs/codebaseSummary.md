@@ -13,6 +13,10 @@ emuskin-generator/
 │   │   ├── templates/  # Pre-configured console templates
 │   │   └── ...        # Other asset files
 │   └── vite.svg
+├── api/                # Vercel Functions (integrated API)
+│   ├── health.js       # Health check endpoint
+│   ├── projects/       # Project CRUD endpoints
+│   └── lib/           # API utilities
 ├── src/
 │   ├── components/     # Reusable UI components
 │   │   ├── Canvas.tsx           # Visual editing canvas with drag/resize for controls and screens
@@ -121,9 +125,14 @@ emuskin-generator/
 - Vite for build tooling
 - Tailwind CSS for styling
 - React Router for navigation
-- JSZip for file generation (installed)
-- react-dnd for drag-and-drop (installed)
-- @use-gesture/react for touch support (installed)
+- JSZip for file generation
+- react-dnd for drag-and-drop
+- @use-gesture/react for touch support
+
+### API Dependencies
+- Vercel Functions (integrated with frontend)
+- MongoDB database (DigitalOcean managed instance)
+- JWT token validation
 
 ## Recent Significant Changes
 - Initial project setup completed
@@ -330,6 +339,12 @@ emuskin-generator/
   - Added defensive checks in saveProject to handle missing IDs
   - Fixed createProject to return normalized ID
   - Projects now properly save and load without ID errors
+- ✅ Consolidated API deployment
+  - Removed redundant separate API deployment code
+  - Deleted old ProjectContextV2.tsx with external API logic
+  - Removed VITE_API_URL environment variable throughout codebase
+  - Updated all documentation to reflect integrated Vercel Functions
+  - API now runs at `/api/*` paths as part of single deployment
 
 ## API Structure (Vercel Functions)
 ```
@@ -345,7 +360,7 @@ api/
         └── Project.js # MongoDB schema
 ```
 
-The API is built using Vercel Functions (serverless) and requires MongoDB to be configured. In development, the API endpoints are proxied through Vite, but MongoDB must still be available.
+The API is built using Vercel Functions (serverless) integrated directly with the frontend deployment. API endpoints are available at `/api/*` paths and require MongoDB to be configured via environment variables.
 
 ## User Feedback Integration
 - No user feedback yet (pre-development phase)

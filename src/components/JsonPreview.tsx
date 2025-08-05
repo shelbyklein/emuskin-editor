@@ -1,7 +1,7 @@
 // JSON Preview component for displaying generated skin configuration
 import React, { useState, useMemo } from 'react';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 
 interface JsonPreviewProps {
   skinName: string;

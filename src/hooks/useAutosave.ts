@@ -1,6 +1,6 @@
 // Hook for autosaving project changes
 import { useEffect, useRef } from 'react';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 
 interface AutosaveOptions {
   delay?: number; // Delay in milliseconds before saving (default: 2000)

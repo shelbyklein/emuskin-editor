@@ -9,14 +9,14 @@
   - Graceful fallback to localStorage when offline
   - Warning message when API not configured
   - Ready for backend API deployment
-- ✅ Backend API Created & Deployment Ready
-  - Express.js API with MongoDB integration
+- ✅ Backend API Created & Integrated
+  - Vercel Functions integrated with frontend
   - JWT authentication from WordPress tokens
   - Full CRUD endpoints for project sync
-  - Vercel deployment configuration
-  - MongoDB connection test scripts
-  - Comprehensive deployment guide
-  - Ready to deploy with DigitalOcean MongoDB
+  - MongoDB integration ready
+  - Connection test scripts included
+  - Single deployment for frontend + API
+  - Ready to connect DigitalOcean MongoDB
 - ✅ Skin Testing Feature
   - Added Test button to all project cards on home page
   - Created fullscreen TestSkin component for interactive testing
@@ -73,30 +73,28 @@
 
 ### 🚀 Ready to Deploy - Next Steps
 
-1. **Create New Vercel Project for API** (2 minutes)
-   ```bash
-   cd api
-   vercel link  # Create new project named "emuskin-api"
-   ```
-   
-2. **Set up DigitalOcean MongoDB** (10 minutes)
+1. **Set up DigitalOcean MongoDB** (10 minutes)
    - Create managed MongoDB cluster ($15/month)
    - Add `0.0.0.0/0` to trusted sources
    - Copy connection string
    
-3. **Deploy API to Vercel** (5 minutes)
+2. **Configure Vercel Environment** (5 minutes)
+   - Add `MONGODB_URI` to Vercel environment variables
+   - This will enable the integrated API functions
+   
+3. **Test Database Connection** (2 minutes)
    ```bash
-   npm run test:db  # Test connection first
-   npm run deploy   # Deploy to production
+   npm run test:db  # Test connection locally first
    ```
    
-4. **Update Frontend Environment** (2 minutes)
-   - Add `VITE_API_URL` in Vercel dashboard
-   - Redeploy frontend
+4. **Deploy to Production** (2 minutes)
+   ```bash
+   vercel --prod  # Deploy frontend with integrated API
+   ```
    
 5. **Test Cross-Device Sync**
    - Log in on multiple devices
-   - Verify projects sync
+   - Verify projects sync via integrated API
 
 ### 2. Control Alignment Tools
 - **Purpose**: Precise control positioning
@@ -115,17 +113,17 @@
   - Add loading states for async operations
   - Implement virtualization for control lists
 
-### 3. Backend API Development
-- **Purpose**: Enable cloud sync and multi-device access
+### 3. API Enhancement & Optimization
+- **Purpose**: Improve integrated API performance and features
 - **Implementation**:
-  - Set up Node.js/Express backend with JWT validation
-  - Migrate user database structure to backend
-  - Create database schema for users, projects, and images
-  - Implement project CRUD endpoints with user ownership
-  - Add image upload/storage endpoints (R2 already configured)
-  - Deploy to cloud platform (Heroku, AWS, etc.)
-  - Update ProjectContext to sync with API when authenticated
-  - Maintain local database as offline cache
+  - Add request caching for frequently accessed data
+  - Implement rate limiting to prevent abuse
+  - Add MongoDB indexes for query optimization
+  - Implement connection pooling for better performance
+  - Add comprehensive error handling and logging
+  - Create API documentation for endpoints
+  - Add project sharing and collaboration features
+  - Implement versioning for project history
 
 ## Completed Features (Recent)
 
@@ -273,11 +271,11 @@
    - Add opacity slider for button display overlay
    - Support for showing multiple screens (Nintendo DS)
    
-4. **Backend API Development** - Enable cloud sync
-   - Set up Node.js/Express backend with JWT validation
-   - Migrate user database structure to backend
-   - Create endpoints for project CRUD operations
-   - Implement real-time sync when online
+4. **API Testing & Monitoring** - Ensure reliability
+   - Test all API endpoints in production
+   - Set up error monitoring (Sentry or similar)
+   - Add performance monitoring
+   - Create health check dashboard
    
 5. **Performance Optimizations**
    - Review Canvas rendering for optimization opportunities

@@ -478,8 +478,16 @@
   - Fixed createProject to return normalized ID
   - Ensured consistent ID handling across loadProject, saveProject, and createProject
 
+## Recent API Consolidation
+- ✅ Removed redundant API deployment code
+  - Deleted old ProjectContextV2.tsx with separate API logic
+  - Removed VITE_API_URL from environment variables and type definitions
+  - Updated api.ts to always use integrated /api endpoints
+  - Cleaned up all documentation references to separate backend deployment
+  - Consolidated to single Vercel deployment with integrated API functions
+
 ## Next Steps
 1. Continue testing project creation and saving functionality
 2. Monitor for any remaining ID-related issues
-3. Deploy API backend when ready
-4. Configure MongoDB and environment variables
+3. Configure MongoDB connection for production environment
+4. Test integrated API endpoints in production

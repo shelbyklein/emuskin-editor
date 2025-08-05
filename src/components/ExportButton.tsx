@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { useProject } from '../contexts/ProjectContextV3';
+import { useProject } from '../contexts/ProjectContextHybrid';
 import { useToast } from '../contexts/ToastContext';
 
 interface ExportButtonProps {

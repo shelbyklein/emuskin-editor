@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { EditorProvider } from './contexts/EditorContext';
-import { ProjectProvider } from './contexts/ProjectContextV3';
+import { ProjectProvider } from './contexts/ProjectContextHybrid';
 import { ToastProvider } from './contexts/ToastContext';
 import { MigrationHandler } from './components/MigrationHandler';
 import Layout from './components/Layout';
