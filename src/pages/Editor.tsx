@@ -181,12 +181,16 @@ const Editor: React.FC = () => {
     const currentOrientation = currentProject.currentOrientation || 'portrait';
     const orientationChanged = previousOrientationRef.current !== currentOrientation;
     
+    // Check if this is just a timestamp update by comparing current values
+    // Also check latestSkinData to account for changes that might be in progress
     const isJustTimestampUpdate = 
       skinName === currentProject.name && 
       skinIdentifier === currentProject.identifier &&
       selectedConsole === currentProject.console?.shortName &&
       selectedDevice === currentProject.device?.model &&
-      !orientationChanged;
+      !orientationChanged &&
+      // Also check if latestSkinData matches (handles mid-update scenarios)
+      (!latestSkinData.current.device || latestSkinData.current.device === currentProject.device?.model);
       
     if (isJustTimestampUpdate) {
       console.log('Skipping project load - only timestamp changed');
@@ -298,9 +302,13 @@ const Editor: React.FC = () => {
     // Check if we should auto-detect device based on skin dimensions
     // This helps when a skin was created with one device but the project was saved with another
     if (devices.length > 0 && currentProject.device) {
-      // First, set the stored device as default
-      setSelectedDevice(currentProject.device.model);
-      setSelectedDeviceData(currentProject.device);
+      // Don't overwrite device if we have a newer value in latestSkinData (prevents race conditions)
+      const deviceToUse = latestSkinData.current.device || currentProject.device.model;
+      const deviceData = devices.find(d => d.model === deviceToUse) || currentProject.device;
+      
+      // First, set the device (using latest value if available)
+      setSelectedDevice(deviceToUse);
+      setSelectedDeviceData(deviceData);
       
       // Then check if we have orientation data with controls/screens
       if (orientationData && (orientationData.controls?.length > 0 || orientationData.screens?.length > 0)) {
@@ -400,7 +408,7 @@ const Editor: React.FC = () => {
       console.log('Marking project as configured:', currentProject.id);
       saveProject({ hasBeenConfigured: true });
     }
-  }, [currentProject, currentProject?.currentOrientation, getOrientationData, saveProject]);
+  }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
   
   // Watch for project name and identifier changes to update UI immediately
   useEffect(() => {

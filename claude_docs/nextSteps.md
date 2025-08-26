@@ -27,6 +27,15 @@
    - Consider adding project search/filter functionality
 
 ## Recently Completed
+- ✅ Safari Viewport Fix for Test Feature
+  - Fixed Safari's UI elements cropping the skin display
+  - Initialized viewport dimensions properly (was starting at 0)
+  - Removed problematic safe area padding
+  - Added dynamic Safari UI offset calculation (100px)
+  - Added debug overlay showing viewport dimensions
+  - Added CSS viewport units for better height handling
+  - Added body class to prevent scrolling in test mode
+  - Works properly on all iOS devices with Safari
 - ✅ Database Reset Functionality
   - Created `/api/reset.js` temporary endpoint for MongoDB cleanup
   - Enhanced DatabaseDebugger with tabbed interface

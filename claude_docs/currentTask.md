@@ -476,21 +476,20 @@
   - Added buildCommand: "" to prevent frontend build
   - Added outputDirectory: "." for API-only deployment
 
-## Recent Safari Fix (Revised)
+## Recent Safari Fix (Final Solution)
 - ✅ Fixed Safari viewport crop issue in test feature
   - Issue: Safari's UI elements (status bar, URL bar, bottom toolbar) were cropping the skin display
-  - Initial approach with safe areas wasn't working properly
-  - Revised solution: 
-    - Initialized viewport dimensions with window values instead of 0
-    - Removed safe area padding that was reducing available space
-    - Calculate Safari UI offset dynamically (approximately 100px)
-    - Use available height for scaling calculation
-    - Added debug overlay to show viewport dimensions
-    - Added viewport CSS classes for better height handling
-    - Added body class to prevent scrolling in test mode
-    - Added minimal-ui support to viewport meta tag
-  - Debug button shows actual viewport values for troubleshooting
-  - Works on all iOS devices with proper Safari UI accommodation
+  - Final solution: Instead of compensating with CSS, we now crop the canvas to fit the viewport
+    - Calculate viewport aspect ratio vs canvas aspect ratio
+    - If viewport is wider: fit by height and center horizontally
+    - If viewport is taller: fit by width and crop top/bottom
+    - Canvas is transformed with scale and translate to show only visible area
+    - No more CSS viewport units or Safari UI offset calculations needed
+  - Debug overlay shows:
+    - Offset X/Y values showing how much is cropped
+    - Visible area dimensions
+    - Scale factor
+  - Works perfectly on all devices by showing only what fits in the viewport
 
 ## Recent Bug Fixes
 - ✅ Fixed undefined project ID errors when creating and saving projects

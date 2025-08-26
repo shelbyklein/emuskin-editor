@@ -361,6 +361,14 @@ emuskin-generator/
   - Only manual save button or Cmd/Ctrl+S triggers saves
   - Dramatically improved performance by eliminating constant save operations
   - Users have complete control over when their work is persisted
+- ✅ Fixed Safari viewport crop issue in test feature
+  - Safari UI elements were cropping the skin display
+  - Initialized viewport dimensions properly (was starting at 0)
+  - Removed problematic safe area padding that reduced available space
+  - Added dynamic Safari UI offset calculation (100px)
+  - Added debug overlay showing viewport dimensions for troubleshooting
+  - Added CSS viewport units and body class for better height handling
+  - Works properly on all iOS devices with Safari
 
 ## API Structure (Vercel Functions)
 ```

@@ -137,19 +137,6 @@ const TestSkin: React.FC = () => {
     };
   }, []);
 
-  // Add body class for test mode
-  useEffect(() => {
-    document.body.classList.add('test-mode');
-    
-    // Try to hide Safari UI by scrolling
-    if (window.scrollTo) {
-      window.scrollTo(0, 1);
-    }
-    
-    return () => {
-      document.body.classList.remove('test-mode');
-    };
-  }, []);
 
   // Handle control press/release
   const handleControlPress = (control: ControlMapping) => {
@@ -235,33 +222,56 @@ const TestSkin: React.FC = () => {
   // Detect if running on iOS Safari
   const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   
-  // Calculate available viewport considering Safari UI
-  // Safari's UI takes approximately 100-150px combined (top and bottom)
-  const safariUIOffset = isIOSSafari && !isFullscreen ? 100 : 0;
-  const availableHeight = viewportDimensions.height - safariUIOffset;
-
-  // Calculate scale to fit viewport
-  const scale = Math.min(
-    viewportDimensions.width / canvasWidth,
-    availableHeight / canvasHeight
-  );
+  // Calculate the actual visible canvas area that fits in the viewport
+  const viewportAspectRatio = viewportDimensions.width / viewportDimensions.height;
+  const canvasAspectRatio = canvasWidth / canvasHeight;
+  
+  let visibleCanvasWidth: number;
+  let visibleCanvasHeight: number;
+  let scale: number;
+  let offsetX = 0;
+  let offsetY = 0;
+  
+  if (viewportAspectRatio > canvasAspectRatio) {
+    // Viewport is wider than canvas aspect ratio - fit by height
+    scale = viewportDimensions.height / canvasHeight;
+    visibleCanvasHeight = canvasHeight;
+    visibleCanvasWidth = viewportDimensions.width / scale;
+    // Center the canvas horizontally
+    offsetX = (visibleCanvasWidth - canvasWidth) / 2;
+  } else {
+    // Viewport is taller than canvas aspect ratio - fit by width
+    scale = viewportDimensions.width / canvasWidth;
+    visibleCanvasWidth = canvasWidth;
+    visibleCanvasHeight = viewportDimensions.height / scale;
+    // Crop the top/bottom to fit
+    offsetY = (visibleCanvasHeight - canvasHeight) / 2;
+  }
 
   return (
     <div 
       ref={containerRef}
-      className="viewport-height fixed inset-0 bg-black flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden"
       style={{ touchAction: 'none' }}
     >
-      {/* Canvas */}
+      {/* Canvas Container */}
       <div
-        className="relative bg-gray-800"
+        className="relative overflow-hidden"
         style={{
-          width: canvasWidth,
-          height: canvasHeight,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center',
+          width: viewportDimensions.width,
+          height: viewportDimensions.height,
         }}
       >
+        {/* Canvas */}
+        <div
+          className="relative bg-gray-800"
+          style={{
+            width: canvasWidth,
+            height: canvasHeight,
+            transform: `scale(${scale}) translate(${-offsetX}px, ${-offsetY}px)`,
+            transformOrigin: 'top left',
+          }}
+        >
         {/* Background Image */}
         {backgroundImage && (
           <img
@@ -342,6 +352,7 @@ const TestSkin: React.FC = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {/* UI Controls */}
@@ -411,8 +422,9 @@ const TestSkin: React.FC = () => {
           <div>Canvas: {canvasWidth} x {canvasHeight}</div>
           <div>Scale: {scale.toFixed(3)}</div>
           <div>iOS Safari: {isIOSSafari ? 'Yes' : 'No'}</div>
-          <div>Safari UI Offset: {safariUIOffset}px</div>
-          <div>Available Height: {availableHeight}px</div>
+          <div>Offset X: {offsetX.toFixed(1)}px</div>
+          <div>Offset Y: {offsetY.toFixed(1)}px</div>
+          <div>Visible Area: {visibleCanvasWidth.toFixed(0)} x {visibleCanvasHeight.toFixed(0)}</div>
           <div>Fullscreen: {isFullscreen ? 'Yes' : 'No'}</div>
         </div>
       )}

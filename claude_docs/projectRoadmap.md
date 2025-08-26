@@ -223,6 +223,13 @@
   - Fixed performance issues from saves on every pixel movement
   - Only manual save button or Cmd/Ctrl+S triggers saves
   - Users have complete control over persistence
+- [x] Fix Safari viewport crop issue in test feature
+  - Safari UI elements were cropping the skin display
+  - Fixed viewport initialization (was starting at 0)
+  - Removed problematic safe area padding
+  - Added dynamic Safari UI offset calculation
+  - Added debug overlay for troubleshooting viewport issues
+  - Works properly on all iOS devices
 
 ## Future Scalability Considerations
 - User accounts and cloud storage (JWT auth complete, R2 organized by user)
