@@ -41,6 +41,7 @@ const Editor: React.FC = () => {
   const [menuInsetsBottom, setMenuInsetsBottom] = useState<number>(0);
   const [menuInsetsLeft, setMenuInsetsLeft] = useState<number>(0);
   const [menuInsetsRight, setMenuInsetsRight] = useState<number>(0);
+  const [debug, setDebug] = useState<boolean>(false);
   const [thumbstickImages, setThumbstickImages] = useState<{ [controlId: string]: string }>({});
   const [thumbstickFiles, setThumbstickFiles] = useState<{ [controlId: string]: File }>({});
   const [isEditPanelOpen, setIsEditPanelOpen] = useState<boolean>(false);
@@ -182,19 +183,43 @@ const Editor: React.FC = () => {
     
     // Check if this is just a timestamp update by comparing current values
     // Also check latestSkinData to account for changes that might be in progress
+    const currentOrientationData = getOrientationData(currentOrientation);
+    const currentControlsMatch = currentOrientationData && 
+      currentOrientationData.controls.length === controls.length &&
+      JSON.stringify(currentOrientationData.controls) === JSON.stringify(controls);
+    const currentScreensMatch = currentOrientationData && 
+      currentOrientationData.screens.length === screens.length &&
+      JSON.stringify(currentOrientationData.screens) === JSON.stringify(screens);
+    
     const isJustTimestampUpdate = 
       skinName === currentProject.name && 
       skinIdentifier === currentProject.identifier &&
       selectedConsole === currentProject.console?.shortName &&
       selectedDevice === currentProject.device?.model &&
       !orientationChanged &&
+      currentControlsMatch &&
+      currentScreensMatch &&
       // Also check if latestSkinData matches (handles mid-update scenarios)
       (!latestSkinData.current.device || latestSkinData.current.device === currentProject.device?.model);
       
     if (isJustTimestampUpdate) {
-      console.log('Skipping project load - only timestamp changed');
+      console.log('Skipping project load - only timestamp changed, controls and screens unchanged');
       return;
     }
+    
+    console.log('Project loading needed - changes detected:', {
+      nameChanged: skinName !== currentProject.name,
+      identifierChanged: skinIdentifier !== currentProject.identifier,
+      consoleChanged: selectedConsole !== currentProject.console?.shortName,
+      deviceChanged: selectedDevice !== currentProject.device?.model,
+      orientationChanged,
+      controlsChanged: !currentControlsMatch,
+      screensChanged: !currentScreensMatch,
+      currentControlsCount: controls.length,
+      storedControlsCount: currentOrientationData?.controls.length || 0,
+      currentScreensCount: screens.length,
+      storedScreensCount: currentOrientationData?.screens.length || 0
+    });
     
     console.log('Orientation check:', {
       previous: previousOrientationRef.current,
@@ -215,6 +240,7 @@ const Editor: React.FC = () => {
     // Always update skin name/identifier from the current project to ensure UI consistency
     setSkinName(currentProject.name);
     setSkinIdentifier(currentProject.identifier);
+    setDebug(currentProject.debug || false);
     
     // Reset the latest data ref when loading a project
     latestSkinData.current = {
@@ -377,7 +403,7 @@ const Editor: React.FC = () => {
     }
     
     if (currentProject.console && consoles.length > 0) {
-      const consoleData = consoles.find(c => c.shortName === currentProject.console.shortName) || currentProject.console;
+      const consoleData = consoles.find(c => c.shortName === currentProject.console?.shortName) || currentProject.console;
       setSelectedConsole(currentProject.console.shortName);
       setSelectedConsoleData(consoleData);
     }
@@ -572,8 +598,10 @@ const Editor: React.FC = () => {
       console.log('=== SAVE DETAILS ===');
       console.log('Project Data:', projectData);
       console.log('Orientation Data:', orientationData);
-      console.log('Controls being saved:', orientationData.controls);
-      console.log('Screens being saved:', orientationData.screens);
+      console.log('Controls being saved (count):', orientationData.controls.length);
+      console.log('Screens being saved (count):', orientationData.screens.length);
+      console.log('Controls sample (first 2):', orientationData.controls.slice(0, 2));
+      console.log('Screens sample (first 2):', orientationData.screens.slice(0, 2));
       
       // Save project and orientation data first
       await saveProjectWithOrientation(projectData, orientationData);
@@ -1112,16 +1140,12 @@ const Editor: React.FC = () => {
         let url: string;
         
         if (isR2Enabled()) {
-          if (!user?.email) {
-            console.error('User must be logged in to upload images');
-            throw new Error('User authentication required');
-          }
           // Upload to R2
           console.log('Uploading thumbstick image to R2...');
           const { publicUrl } = await uploadImage(
             currentProject.id,
             file,
-            user.email,
+            'user@example.com', // Since we removed auth, use placeholder
             'thumbstick',
             getCurrentOrientation(),
             control.id
@@ -1682,6 +1706,7 @@ const Editor: React.FC = () => {
         skinIdentifier={skinIdentifier}
         selectedConsole={selectedConsole}
         selectedDevice={selectedDevice}
+        debug={debug}
         consoles={consoles}
         devices={devices}
         controls={controls}
@@ -1827,6 +1852,15 @@ const Editor: React.FC = () => {
               hasBeenConfigured: true
             });
             console.log('🔵 Editor: Created project with ID:', projectId);
+          }
+        }}
+        onDebugChange={(newDebug) => {
+          console.log('🔵 Editor: onDebugChange called with:', newDebug);
+          setDebug(newDebug);
+          
+          // Save debug setting to project if it exists
+          if (currentProject) {
+            saveProject({ debug: newDebug });
           }
         }}
       />

@@ -44,6 +44,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       name: skinName || 'Untitled Skin',
       identifier: skinIdentifier || 'com.playcase.default.skin',
       gameTypeIdentifier: selectedConsole.gameTypeIdentifier,
+      debug: currentProject?.debug || false,
       representations: {
         iphone: {
           edgeToEdge: {}

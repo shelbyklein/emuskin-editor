@@ -33,6 +33,7 @@ interface Project {
   identifier: string;
   console: Console | null;
   device: Device | null;
+  debug?: boolean;
   orientations?: {
     portrait: OrientationData;
     landscape: OrientationData;
@@ -157,6 +158,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         identifier: 'com.playcase.default.skin',
         console: null,
         device: null,
+        debug: false,
         orientations: {
           portrait: { ...defaultOrientationData },
           landscape: { ...defaultOrientationData }
@@ -215,10 +217,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
   }, [showError]);
 
-  const saveProject = useCallback(async (updates: Partial<Project>): Promise<void> => {
+  const saveProjectSilent = useCallback(async (updates: Partial<Project>): Promise<void> => {
     if (!currentProject) {
-      showError('No project to save');
-      return;
+      throw new Error('No project to save');
     }
 
     try {
@@ -232,14 +233,21 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       saveProjectToLocalStorage(updatedProject);
       setCurrentProject(updatedProject);
       setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-
-      showSuccess('Project saved');
     } catch (error) {
       console.error('Failed to save project:', error);
+      throw error;
+    }
+  }, [currentProject]);
+
+  const saveProject = useCallback(async (updates: Partial<Project>): Promise<void> => {
+    try {
+      await saveProjectSilent(updates);
+      showSuccess('Project saved');
+    } catch (error) {
       showError('Failed to save project');
       throw error;
     }
-  }, [currentProject, showError, showSuccess]);
+  }, [saveProjectSilent, showError, showSuccess]);
 
   const deleteProject = useCallback(async (id: string): Promise<void> => {
     if (!id) {
@@ -304,13 +312,13 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       ...data
     };
 
-    await saveProject({
+    await saveProjectSilent({
       orientations: {
         ...currentProject.orientations,
         [targetOrientation]: updatedOrientationData
       }
     });
-  }, [currentProject, getCurrentOrientation, getOrientationData, saveProject]);
+  }, [currentProject, getCurrentOrientation, getOrientationData, saveProjectSilent]);
 
   const saveProjectWithOrientation = useCallback(async (
     projectUpdates: Partial<Project>, 

@@ -39,7 +39,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const toastCounterRef = useRef(0);
 
   const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3000) => {
-    const id = `toast_${Date.now()}_${++toastCounterRef.current}`;
+    const id = `toast_${++toastCounterRef.current}`;
     const newToast: Toast = { id, message, type, duration };
     
     setToasts((prev) => [...prev, newToast]);

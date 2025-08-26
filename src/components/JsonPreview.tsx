@@ -45,6 +45,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       name: string;
       identifier: string;
       gameTypeIdentifier: string;
+      debug: boolean;
       representations: {
         iphone: {
           edgeToEdge: {
@@ -59,6 +60,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       name: skinName || 'Untitled Skin',
       identifier: skinIdentifier || 'com.playcase.default.skin',
       gameTypeIdentifier: selectedConsole.gameTypeIdentifier,
+      debug: currentProject?.debug || false,
       representations: {
         iphone: {
           edgeToEdge: {}

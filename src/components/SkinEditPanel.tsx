@@ -10,6 +10,7 @@ interface SkinEditPanelProps {
   skinIdentifier: string;
   selectedConsole: string;
   selectedDevice: string;
+  debug: boolean;
   consoles: Console[];
   devices: Device[];
   controls: ControlMapping[];
@@ -17,6 +18,7 @@ interface SkinEditPanelProps {
   onSkinIdentifierChange: (identifier: string) => void;
   onConsoleChange: (console: string) => void;
   onDeviceChange: (device: string) => void;
+  onDebugChange: (debug: boolean) => void;
 }
 
 const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
@@ -26,13 +28,15 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   skinIdentifier,
   selectedConsole,
   selectedDevice,
+  debug,
   consoles,
   devices,
   controls,
   onSkinNameChange,
   onSkinIdentifierChange,
   onConsoleChange,
-  onDeviceChange
+  onDeviceChange,
+  onDebugChange
 }) => {
   const { showWarning } = useToast();
   
@@ -41,6 +45,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   const [localSkinIdentifier, setLocalSkinIdentifier] = useState(skinIdentifier);
   const [localSelectedConsole, setLocalSelectedConsole] = useState(selectedConsole);
   const [localSelectedDevice, setLocalSelectedDevice] = useState(selectedDevice);
+  const [localDebug, setLocalDebug] = useState(debug);
   const [errors, setErrors] = useState<{ name?: string; identifier?: string; console?: string; device?: string }>({});
   
   // Update local state when props change
@@ -50,20 +55,23 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
       skinIdentifier,
       selectedConsole,
       selectedDevice,
+      debug,
       isOpen
     });
     setLocalSkinName(skinName);
     setLocalSkinIdentifier(skinIdentifier);
     setLocalSelectedConsole(selectedConsole);
     setLocalSelectedDevice(selectedDevice);
+    setLocalDebug(debug);
     setErrors({});
     console.log('🔵 SkinEditPanel: Local state updated to:', {
       localSkinName: skinName,
       localSkinIdentifier: skinIdentifier,
       localSelectedConsole: selectedConsole,
-      localSelectedDevice: selectedDevice
+      localSelectedDevice: selectedDevice,
+      localDebug: debug
     });
-  }, [isOpen, skinName, skinIdentifier, selectedConsole, selectedDevice]);
+  }, [isOpen, skinName, skinIdentifier, selectedConsole, selectedDevice, debug]);
   
   // Handle escape key
   useEffect(() => {
@@ -111,7 +119,8 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
       localSkinName,
       localSkinIdentifier,
       localSelectedConsole,
-      localSelectedDevice
+      localSelectedDevice,
+      localDebug
     });
     
     if (!validateInputs()) {
@@ -145,6 +154,9 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     console.log('📞 Calling onDeviceChange with:', localSelectedDevice);
     onDeviceChange(localSelectedDevice);
     
+    console.log('📞 Calling onDebugChange with:', localDebug);
+    onDebugChange(localDebug);
+    
     console.log('🟢 SkinEditPanel: All callbacks completed, closing modal');
     onClose();
   };
@@ -164,6 +176,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
     setLocalSkinIdentifier(skinIdentifier);
     setLocalSelectedConsole(selectedConsole);
     setLocalSelectedDevice(selectedDevice);
+    setLocalDebug(debug);
     setErrors({});
     onClose();
   };
@@ -323,6 +336,64 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
               {errors.device && (
                 <p id="skin-edit-panel-device-error" className="mt-1 text-sm text-red-500">{errors.device}</p>
               )}
+            </div>
+
+            {/* Debug Toggle */}
+            <div id="skin-edit-panel-debug-section">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <label htmlFor="edit-debug" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Debug Mode
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Enable debug information in the exported skin file
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="edit-debug"
+                  onClick={() => setLocalDebug(!localDebug)}
+                  className={`
+                    relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+                    transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2
+                    ${localDebug ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}
+                  `}
+                  role="switch"
+                  aria-checked={localDebug}
+                  aria-labelledby="edit-debug-label"
+                >
+                  <span
+                    className={`
+                      pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 
+                      transition duration-200 ease-in-out
+                      ${localDebug ? 'translate-x-5' : 'translate-x-0'}
+                    `}
+                  >
+                    <span
+                      className={`
+                        absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-200 ease-in-out
+                        ${localDebug ? 'opacity-0' : 'opacity-100'}
+                      `}
+                      aria-hidden="true"
+                    >
+                      <svg className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12">
+                        <path d="M4 8l2-2m0 0l2-2M6 6L4 4m2 2l2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span
+                      className={`
+                        absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-200 ease-in-out
+                        ${localDebug ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      aria-hidden="true"
+                    >
+                      <svg className="h-3 w-3 text-blue-600" fill="currentColor" viewBox="0 0 12 12">
+                        <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                      </svg>
+                    </span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 
