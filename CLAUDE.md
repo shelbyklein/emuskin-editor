@@ -51,22 +51,6 @@ Maintain a 'claude_docs' folder in the root directory (create if it doesn't exis
 - Examples include styleAesthetic.md or wireframes.md
 - Note these additional documents in codebaseSummary.md for easy reference
 
-### Adaptive Workflow
-- At the beginning of every task when instructed to "follow your custom instructions", read the essential documents in this order:
-  1. projectRoadmap.md (for high-level context and goals)
-  2. currentTask.md (for specific current objectives)
-  3. techStack.md
-  4. codebaseSummary.md
-- If you try to read or edit another document before reading these, something BAD will happen.
-- Update documents based on significant changes, not minor steps
-- If conflicting information is found between documents, ask the user for clarification
-- Create files in the userInstructions folder for tasks that require user action
-  - Provide detailed, step-by-step instructions
-  - Include all necessary details for ease of use
-  - No need for a formal structure, but ensure clarity and completeness
-  - Use numbered lists for sequential steps, code blocks for commands or code snippets
-- Prioritize frequent testing: test health of servers and test functionality regularly throughout development, rather than building extensive features before testing
-
 ## User Interaction and Adaptive Behavior
 - Ask follow-up questions when critical information is missing for task completion
 - Adjust approach based on project complexity and user preferences

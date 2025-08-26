@@ -3,10 +3,10 @@ import React, { createContext, useContext, ReactNode, useEffect, useState, useCa
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
 import { 
   saveProjectToLocalStorage, 
-  loadProjectFromLocalStorage, 
-  getAllLocalStorageProjects, 
+  getAllLocalStorageProjectsData, 
   deleteLocalStorageProject,
-  isLocalStorageAvailable 
+  isLocalStorageAvailable,
+  getStoredProjectData 
 } from '../utils/localStorageProjects';
 import { fileToDataURL } from '../utils/imageUtils';
 import { useToast } from './ToastContext';
@@ -118,14 +118,88 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     loadData();
   }, []);
 
+  // Reconstruct Console object from gameTypeIdentifier
+  const reconstructConsole = useCallback((gameTypeIdentifier: string): Console | null => {
+    return consoles.find(c => c.gameTypeIdentifier === gameTypeIdentifier) || null;
+  }, [consoles]);
+
+  // Reconstruct Device object from dimensions
+  const reconstructDevice = useCallback((width: number, height: number): Device | null => {
+    return devices.find(d => d.logicalWidth === width && d.logicalHeight === height) || null;
+  }, [devices]);
+
+  // Convert minimal stored data to full project
+  const reconstructProject = useCallback(async (storedData: any): Promise<Project> => {
+    const project: Project = {
+      id: storedData.id,
+      name: storedData.name,
+      identifier: storedData.identifier,
+      console: reconstructConsole(storedData.gameTypeIdentifier),
+      device: reconstructDevice(storedData.mappingSize.width, storedData.mappingSize.height),
+      debug: storedData.debug,
+      lastModified: Date.now(),
+      availableOrientations: [],
+      currentOrientation: 'portrait',
+      hasBeenConfigured: true
+    };
+
+    // Reconstruct orientations
+    if (storedData.orientations) {
+      project.orientations = {};
+      
+      if (storedData.orientations.portrait) {
+        const minPortrait = storedData.orientations.portrait;
+        project.orientations.portrait = {
+          controls: minPortrait.controls || [],
+          screens: minPortrait.screens || [],
+          backgroundImage: minPortrait.backgroundImageDataURL ? {
+            fileName: 'background.png',
+            url: null,
+            hasStoredImage: true,
+            dataURL: minPortrait.backgroundImageDataURL
+          } : null,
+          menuInsetsEnabled: minPortrait.menuInsetsEnabled,
+          menuInsetsBottom: minPortrait.menuInsetsBottom,
+          menuInsetsLeft: minPortrait.menuInsetsLeft,
+          menuInsetsRight: minPortrait.menuInsetsRight
+        };
+        project.availableOrientations?.push('portrait');
+      }
+      
+      if (storedData.orientations.landscape) {
+        const minLandscape = storedData.orientations.landscape;
+        project.orientations.landscape = {
+          controls: minLandscape.controls || [],
+          screens: minLandscape.screens || [],
+          backgroundImage: minLandscape.backgroundImageDataURL ? {
+            fileName: 'background.png',
+            url: null,
+            hasStoredImage: true,
+            dataURL: minLandscape.backgroundImageDataURL
+          } : null,
+          menuInsetsEnabled: minLandscape.menuInsetsEnabled,
+          menuInsetsBottom: minLandscape.menuInsetsBottom,
+          menuInsetsLeft: minLandscape.menuInsetsLeft,
+          menuInsetsRight: minLandscape.menuInsetsRight
+        };
+        project.availableOrientations?.push('landscape');
+      }
+    }
+    
+    return project;
+  }, [reconstructConsole, reconstructDevice]);
+
   // Load projects from localStorage
   useEffect(() => {
     const loadProjects = async () => {
       setIsLoading(true);
       try {
-        if (isLocalStorageAvailable()) {
-          const localProjects = getAllLocalStorageProjects();
-          setProjects(localProjects);
+        if (isLocalStorageAvailable() && consoles.length > 0 && devices.length > 0) {
+          const storedProjectsData = getAllLocalStorageProjectsData();
+          const reconstructedProjects = await Promise.all(
+            storedProjectsData.map(stored => reconstructProject(stored))
+          );
+          setProjects(reconstructedProjects);
         } else {
           setProjects([]);
         }
@@ -137,8 +211,11 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       }
     };
 
-    loadProjects();
-  }, [showError]);
+    // Only load projects after consoles and devices are loaded
+    if (consoles.length > 0 && devices.length > 0) {
+      loadProjects();
+    }
+  }, [showError, consoles, devices, reconstructProject]);
 
   const normalizeProject = (project: any): Project => {
     // Ensure both id and _id exist
@@ -192,10 +269,11 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      const project = loadProjectFromLocalStorage(id);
-
-      if (project) {
-        const normalized = normalizeProject(project);
+      const storedData = getStoredProjectData(id);
+      
+      if (storedData) {
+        const reconstructed = await reconstructProject(storedData);
+        const normalized = normalizeProject(reconstructed);
         setCurrentProject(normalized);
         
         // Also ensure it's in the projects list
@@ -215,7 +293,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, [showError, reconstructProject]);
 
   const saveProjectSilent = useCallback(async (updates: Partial<Project>): Promise<void> => {
     if (!currentProject) {

@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 interface SkinEditPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
   skinName: string;
   skinIdentifier: string;
   selectedConsole: string;
@@ -24,6 +25,7 @@ interface SkinEditPanelProps {
 const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   isOpen,
   onClose,
+  onSave,
   skinName,
   skinIdentifier,
   selectedConsole,
@@ -50,27 +52,12 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   
   // Update local state when props change
   useEffect(() => {
-    console.log('🔵 SkinEditPanel: useEffect updating local state from props:', {
-      skinName,
-      skinIdentifier,
-      selectedConsole,
-      selectedDevice,
-      debug,
-      isOpen
-    });
     setLocalSkinName(skinName);
     setLocalSkinIdentifier(skinIdentifier);
     setLocalSelectedConsole(selectedConsole);
     setLocalSelectedDevice(selectedDevice);
     setLocalDebug(debug);
     setErrors({});
-    console.log('🔵 SkinEditPanel: Local state updated to:', {
-      localSkinName: skinName,
-      localSkinIdentifier: skinIdentifier,
-      localSelectedConsole: selectedConsole,
-      localSelectedDevice: selectedDevice,
-      localDebug: debug
-    });
   }, [isOpen, skinName, skinIdentifier, selectedConsole, selectedDevice, debug]);
   
   // Handle escape key
@@ -115,16 +102,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
   };
   
   const handleSave = () => {
-    console.log('🔵 SkinEditPanel: handleSave called', {
-      localSkinName,
-      localSkinIdentifier,
-      localSelectedConsole,
-      localSelectedDevice,
-      localDebug
-    });
-    
     if (!validateInputs()) {
-      console.log('❌ SkinEditPanel: Validation failed');
       return;
     }
     
@@ -134,30 +112,22 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
         'Changing the console or device will reset all placed controls. Are you sure you want to continue?'
       );
       if (!confirmed) {
-        console.log('❌ SkinEditPanel: User cancelled confirmation dialog');
         return;
       }
     }
     
-    console.log('🟢 SkinEditPanel: About to call callbacks...');
-    
     // Apply changes - call all callbacks to ensure state updates
-    console.log('📞 Calling onSkinNameChange with:', localSkinName);
     onSkinNameChange(localSkinName);
-    
-    console.log('📞 Calling onSkinIdentifierChange with:', localSkinIdentifier);
     onSkinIdentifierChange(localSkinIdentifier);
-    
-    console.log('📞 Calling onConsoleChange with:', localSelectedConsole);
     onConsoleChange(localSelectedConsole);
-    
-    console.log('📞 Calling onDeviceChange with:', localSelectedDevice);
     onDeviceChange(localSelectedDevice);
-    
-    console.log('📞 Calling onDebugChange with:', localDebug);
     onDebugChange(localDebug);
     
-    console.log('🟢 SkinEditPanel: All callbacks completed, closing modal');
+    // Call custom onSave handler if provided
+    if (onSave) {
+      onSave();
+    }
+    
     onClose();
   };
   
@@ -224,11 +194,7 @@ const SkinEditPanel: React.FC<SkinEditPanelProps> = ({
                 type="text"
                 id="edit-skinName"
                 value={localSkinName}
-                onChange={(e) => {
-                  console.log('🔵 SkinEditPanel: edit-skinName input changed to:', e.target.value);
-                  setLocalSkinName(e.target.value);
-                  console.log('🔵 SkinEditPanel: setLocalSkinName called with:', e.target.value);
-                }}
+                onChange={(e) => setLocalSkinName(e.target.value)}
                 className={`w-full input-field ${errors.name ? 'border-red-500' : ''}`}
                 placeholder="My Custom Skin"
               />

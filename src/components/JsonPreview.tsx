@@ -1,5 +1,5 @@
 // JSON Preview component for displaying generated skin configuration
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { useProject } from '../contexts/ProjectContext';
 
@@ -30,8 +30,23 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
   const { currentProject } = useProject();
 
+  // Debug: Log when skinName prop changes
+  useEffect(() => {
+    console.log('🐛 JsonPreview: skinName prop updated:', {
+      skinName,
+      currentProjectName: currentProject?.name,
+      timestamp: Date.now()
+    });
+  }, [skinName, currentProject?.name]);
+
   // Generate the JSON configuration
   const jsonConfig = useMemo(() => {
+    console.log('🐛 JsonPreview: useMemo recalculating with:', {
+      skinName,
+      currentProjectName: currentProject?.name,
+      timestamp: Date.now()
+    });
+    
     if (!selectedConsole || !selectedDevice) {
       return null;
     }
@@ -67,6 +82,8 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
         }
       }
     };
+
+    console.log('🐛 JsonPreview: Generated config with name:', config.name, 'from skinName prop:', skinName);
 
     // Helper function to create orientation data
     const createOrientationData = (orientationData: any, isLandscape: boolean = false) => {

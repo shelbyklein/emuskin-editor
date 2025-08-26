@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { uploadImage, isR2Enabled } from '../utils/r2Client';
 import { fileToDataURL } from '../utils/imageUtils';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
@@ -48,23 +47,6 @@ const Editor: React.FC = () => {
   const [selectedControlIndex, setSelectedControlIndex] = useState<number | null>(null);
   const [selectedScreenIndex, setSelectedScreenIndex] = useState<number | null>(null);
   
-  // Clean up blob URLs on unmount only if R2 is not enabled
-  useEffect(() => {
-    if (!isR2Enabled()) {
-      return () => {
-        // Clean up any local blob URLs on unmount
-        if (uploadedImage?.url && uploadedImage.url.startsWith('blob:')) {
-          URL.revokeObjectURL(uploadedImage.url);
-        }
-        Object.values(thumbstickImages).forEach(url => {
-          if (url && url.startsWith('blob:')) {
-            URL.revokeObjectURL(url);
-          }
-        });
-      };
-    }
-  }, []); // Empty dependencies - only run on unmount
-  
   const { settings } = useEditor();
   const { 
     currentProject, 
@@ -75,7 +57,8 @@ const Editor: React.FC = () => {
     setOrientation, 
     getOrientationData, 
     saveOrientationData,
-    saveProjectWithOrientation
+    saveProjectWithOrientation,
+    isLoading: isProjectsLoading
   } = useProject();
   const { showError, showWarning, showInfo } = useToast();
   
@@ -100,48 +83,14 @@ const Editor: React.FC = () => {
     });
   };
   
-  // Autosave disabled - using explicit saves instead
-  // All changes are now saved immediately when:
-  // - Controls are added/updated/deleted
-  // - Screens are added/updated/deleted
-  // - Console or device changes
-  // - Manual save button is clicked
-  // - Project name/identifier changes
-  
-  // const orientationDataForAutosave = getOrientationData();
-  // console.log('🔄 Autosave: Getting orientation data for autosave:', {
-  //   orientation: getCurrentOrientation(),
-  //   hasOrientationData: !!orientationDataForAutosave,
-  //   hasBackgroundImage: !!orientationDataForAutosave?.backgroundImage,
-  //   backgroundImageUrl: orientationDataForAutosave?.backgroundImage?.url,
-  //   backgroundImageFileName: orientationDataForAutosave?.backgroundImage?.fileName
-  // });
-  
-  // useAutosave({
-  //   controls,
-  //   screens,
-  //   menuInsetsEnabled,
-  //   menuInsetsBottom,
-  //   skinName,
-  //   skinIdentifier,
-  //   backgroundImage: getOrientationData()?.backgroundImage || null
-  // }, {
-  //   enabled: !!currentProject,
-  //   delay: 3000 // Save after 3 seconds of inactivity
-  // });
-  
   // Debug log current project changes
   useEffect(() => {
-    console.log('Editor: currentProject changed:', {
-      id: currentProject?.id,
-      name: currentProject?.name,
-      identifier: currentProject?.identifier,
-      lastModified: currentProject?.lastModified
-    });
+    // Current project changed
   }, [currentProject]);
 
   // Track if we're saving to prevent state reset
   const isSavingRef = useRef(false);
+  const previouslySavingRef = useRef(false);
   
   // Track the latest values from SkinEditPanel callbacks to avoid stale state issues
   const latestSkinData = useRef({
@@ -151,22 +100,16 @@ const Editor: React.FC = () => {
     device: ''
   });
 
-  // Set default skin name if empty
+
+  // Auto-create project if none exists (since we removed the Home screen)
   useEffect(() => {
-    if (!currentProject && skinName === '') {
-      setSkinName('Untitled Skin');
+    if (!currentProject && !isProjectsLoading && consoles.length > 0 && devices.length > 0) {
+      console.log('📝 Auto-creating new project since none exists');
+      createProject('New Skin');
     }
-  }, [currentProject, skinName]);
+  }, [currentProject, isProjectsLoading, createProject, consoles.length, devices.length]);
   
-  // Keep latestSkinData.current in sync with state
-  useEffect(() => {
-    latestSkinData.current = {
-      name: skinName,
-      identifier: skinIdentifier,
-      console: selectedConsole,
-      device: selectedDevice
-    };
-  }, [skinName, skinIdentifier, selectedConsole, selectedDevice]);
+
 
 
   // Load project data when current project changes or orientation changes
@@ -177,6 +120,23 @@ const Editor: React.FC = () => {
         console.log('⚠️ Skipping project load - save in progress to prevent race condition');
       }
       return;
+    }
+
+    // Skip unnecessary processing if project is already configured and data hasn't meaningfully changed
+    if (currentProject.hasBeenConfigured && 
+        currentProject.console && 
+        currentProject.device && 
+        devices.length > 0 && 
+        consoles.length > 0) {
+      // Only process if there's a real change in project data
+      const currentOrientation = getCurrentOrientation();
+      const previousOrientation = previousOrientationRef.current;
+      const orientationChanged = previousOrientation !== currentOrientation;
+      
+      if (!orientationChanged) {
+        console.log('⚡ Skipping project load - already configured and no orientation change');
+        return;
+      }
     }
     
     // Skip if this is just a lastModified update (not actual data change)
@@ -210,35 +170,30 @@ const Editor: React.FC = () => {
       return;
     }
     
-    console.log('Project loading needed - changes detected:', {
-      nameChanged: skinName !== currentProject.name,
-      identifierChanged: skinIdentifier !== currentProject.identifier,
-      consoleChanged: selectedConsole !== currentProject.console?.shortName,
-      deviceChanged: selectedDevice !== currentProject.device?.model,
-      orientationChanged,
-      controlsChanged: !currentControlsMatch,
-      screensChanged: !currentScreensMatch,
-      currentControlsCount: controls.length,
-      storedControlsCount: currentOrientationData?.controls.length || 0,
-      currentScreensCount: screens.length,
-      storedScreensCount: currentOrientationData?.screens.length || 0
-    });
+    // console.log('Project loading needed - changes detected:', {
+    //   nameChanged: skinName !== currentProject.name,
+    //   identifierChanged: skinIdentifier !== currentProject.identifier,
+    //   consoleChanged: selectedConsole !== currentProject.console?.shortName,
+    //   deviceChanged: selectedDevice !== currentProject.device?.model,
+    //   orientationChanged,
+    //   controlsChanged: !currentControlsMatch,
+    //   screensChanged: !currentScreensMatch,
+    //   currentControlsCount: controls.length,
+    //   storedControlsCount: currentOrientationData?.controls.length || 0,
+    //   currentScreensCount: screens.length,
+    //   storedScreensCount: currentOrientationData?.screens.length || 0
+    // });
     
-    console.log('Orientation check:', {
-      previous: previousOrientationRef.current,
-      current: currentOrientation,
-      changed: orientationChanged
-    });
+    // console.log('Orientation check:', {
+    //   previous: previousOrientationRef.current,
+    //   current: currentOrientation,
+    //   changed: orientationChanged
+    // });
     
     // Update the previous orientation ref after logging
     previousOrientationRef.current = currentOrientation;
     
-    console.log('Loading project data into UI:', {
-      oldName: skinName,
-      newName: currentProject.name,
-      oldIdentifier: skinIdentifier,
-      newIdentifier: currentProject.identifier
-    });
+    // Loading project data
     
     // Always update skin name/identifier from the current project to ensure UI consistency
     setSkinName(currentProject.name);
@@ -260,23 +215,12 @@ const Editor: React.FC = () => {
     
     // Check if this is a project that hasn't been configured yet
     const isUnconfiguredProject = !currentProject.hasBeenConfigured;
-    console.log('Loading project:', {
-      id: currentProject.id,
-      name: currentProject.name,
-      hasConsole: !!currentProject.console,
-      hasDevice: !!currentProject.device,
-      hasBeenConfigured: currentProject.hasBeenConfigured,
-      isUnconfiguredProject
-    });
+    // Loading project data
     
     // Load orientation-specific data
     const orientationData = getOrientationData();
     
-    console.log('Loading orientation data for:', getCurrentOrientation(), {
-      hasData: !!orientationData,
-      controlsCount: orientationData?.controls?.length || 0,
-      screensCount: orientationData?.screens?.length || 0
-    });
+    // Loading orientation data
     
     if (orientationData) {
       setControls(orientationData.controls || []);
@@ -295,14 +239,7 @@ const Editor: React.FC = () => {
       }]);
       setHistoryIndex(0);
       
-      // Handle background image
-      console.log('🖼️ Loading background image state:', {
-        hasOrientationData: !!orientationData,
-        hasBackgroundImage: !!orientationData.backgroundImage,
-        backgroundImageDetails: orientationData.backgroundImage,
-        currentProjectStructure: JSON.stringify(currentProject, null, 2)
-      });
-      
+     
       if (orientationData.backgroundImage) {
         const { url, dataURL, fileName } = orientationData.backgroundImage;
         
@@ -478,11 +415,33 @@ const Editor: React.FC = () => {
   
   // Watch for project name and identifier changes to update UI immediately
   useEffect(() => {
-    if (currentProject && !isSavingRef.current) {
+    if (currentProject) {
+      console.log('🐛 Editor: Updating skinName from project:', {
+        oldSkinName: skinName,
+        newSkinName: currentProject.name,
+        projectLastModified: currentProject.lastModified,
+        isSaving: isSavingRef.current,
+        timestamp: Date.now()
+      });
       setSkinName(currentProject.name);
       setSkinIdentifier(currentProject.identifier);
     }
   }, [currentProject?.name, currentProject?.identifier, currentProject?.lastModified]);
+
+  // Additional sync when save completes - runs on every render to check saving state
+  useEffect(() => {
+    if (previouslySavingRef.current && !isSavingRef.current && currentProject) {
+      console.log('🐛 Editor: Save completed, syncing state with project:', {
+        projectName: currentProject.name,
+        currentSkinName: skinName,
+        timestamp: Date.now()
+      });
+      setSkinName(currentProject.name);
+      setSkinIdentifier(currentProject.identifier);
+    }
+    
+    previouslySavingRef.current = isSavingRef.current;
+  });
   
   // Handle pending image save after project creation
   useEffect(() => {
@@ -889,26 +848,10 @@ const Editor: React.FC = () => {
     setIsUploadingImage(true);
     
     try {
-      let imageUrl: string;
-      
-      if (isR2Enabled()) {
-        // Upload to R2 if enabled and user is authenticated
-        console.log('Uploading image to R2...');
-        const { publicUrl } = await uploadImage(
-          currentProject.id,
-          file,
-          'user@example.com', // Since we removed auth, use placeholder
-          'background',
-          getCurrentOrientation()
-        );
-        imageUrl = publicUrl;
-        console.log('Image uploaded to R2:', imageUrl);
-      } else {
-        // Use local blob URL for localStorage-based projects
-        console.log('Using local blob URL for image storage');
-        imageUrl = URL.createObjectURL(file);
-        console.log('Image stored as blob URL:', imageUrl);
-      }
+      // Use local blob URL for display
+      console.log('Using local blob URL for image storage');
+      const imageUrl = URL.createObjectURL(file);
+      console.log('Image stored as blob URL:', imageUrl);
       
       // Set the uploaded image for display
       setUploadedImage({ file, url: imageUrl });
@@ -1194,26 +1137,9 @@ const Editor: React.FC = () => {
     const control = controls[controlIndex];
     if (control && control.id && currentProject) {
       try {
-        let url: string;
-        
-        if (isR2Enabled()) {
-          // Upload to R2
-          console.log('Uploading thumbstick image to R2...');
-          const { publicUrl } = await uploadImage(
-            currentProject.id,
-            file,
-            'user@example.com', // Since we removed auth, use placeholder
-            'thumbstick',
-            getCurrentOrientation(),
-            control.id
-          );
-          url = publicUrl;
-          console.log('Thumbstick image uploaded to R2:', url);
-        } else {
-          // For localStorage projects, use blob URL for display
-          url = URL.createObjectURL(file);
-          console.log('Using blob URL for thumbstick image:', url);
-        }
+        // Use blob URL for display
+        const url = URL.createObjectURL(file);
+        console.log('Using blob URL for thumbstick image:', url);
         
         // Update thumbstick images state
         setThumbstickImages(prev => ({
@@ -1227,11 +1153,8 @@ const Editor: React.FC = () => {
           [control.id!]: file
         }));
         
-        // Convert to dataURL for localStorage storage if not using R2
-        let dataURL: string | undefined;
-        if (!isR2Enabled()) {
-          dataURL = await fileToDataURL(file);
-        }
+        // Convert to dataURL for localStorage storage
+        const dataURL = await fileToDataURL(file);
         
         // Update the control with thumbstick info
         const updatedControls = [...controls];
@@ -1241,8 +1164,8 @@ const Editor: React.FC = () => {
             name: file.name,
             width: control.thumbstick?.width || 85,
             height: control.thumbstick?.height || 87,
-            url: isR2Enabled() ? url : url, // Store blob URL for display
-            dataURL: isR2Enabled() ? undefined : dataURL // Store dataURL for persistence
+            url: url, // Store blob URL for display
+            dataURL: dataURL // Store dataURL for persistence
           }
         };
         setControls(updatedControls);
@@ -1295,12 +1218,12 @@ const Editor: React.FC = () => {
     // Set background image
     if (importedImage) {
       setUploadedImage(importedImage);
-      // Upload to R2 if we have a project
-      if (currentProject && isR2Enabled()) {
+      // Save image to project using local storage
+      if (currentProject) {
         try {
-          handleImageUpload(importedImage.file);
+          saveProjectImage(importedImage.file);
         } catch (error) {
-          console.error('Failed to upload imported image:', error);
+          console.error('Failed to save imported image:', error);
         }
       }
     }
@@ -1314,18 +1237,7 @@ const Editor: React.FC = () => {
         imageMap[thumbstickData.controlId] = thumbstickData.url;
         fileMap[thumbstickData.controlId] = thumbstickData.file;
         
-        // Upload to R2
-        if (isR2Enabled()) {
-          try {
-            const control = controls.find(c => c.id === thumbstickData.controlId);
-            if (control) {
-              const controlIndex = controls.indexOf(control);
-              await handleThumbstickImageUpload(thumbstickData.file, controlIndex);
-            }
-          } catch (error) {
-            console.error(`Failed to upload thumbstick image for control ${thumbstickData.controlId}:`, error);
-          }
-        }
+        // Note: Thumbstick images are stored locally via imageMap and fileMap
       }
       
       setThumbstickImages(imageMap);
@@ -1370,23 +1282,23 @@ const Editor: React.FC = () => {
       {/* Header with Title and Project Manager */}
       <div id="editor-header" className="flex justify-between items-center mb-4">
         {/* Left side - Title and Edit button */}
-        <div className="flex items-center space-x-3">
+        <div id="editor-title-section" className="flex items-center space-x-3">
           {/* Console Icon or Placeholder */}
           {selectedConsole ? (
             <ConsoleIcon console={selectedConsole} className="w-8 h-8" />
           ) : (
-            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-              <span className="text-gray-500 dark:text-gray-400 text-xs">?</span>
+            <div id="console-icon-placeholder" className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+              <span id="console-icon-placeholder-text" className="text-gray-500 dark:text-gray-400 text-xs">?</span>
             </div>
           )}
           
           {/* Skin Title */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div id="skin-title-container">
+            <h1 id="editor-skin-title" className="text-2xl font-bold text-gray-900 dark:text-white">
               {skinName || 'Untitled Skin'}
             </h1>
             {skinIdentifier && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p id="editor-skin-identifier" className="text-sm text-gray-500 dark:text-gray-400">
                 {skinIdentifier}
               </p>
             )}
@@ -1394,6 +1306,7 @@ const Editor: React.FC = () => {
           
           {/* Edit Button */}
           <button
+            id="edit-skin-button"
             onClick={() => setIsEditPanelOpen(true)}
             className={`p-2 transition-all duration-200 rounded-lg ${
               isEditPanelOpen 
@@ -1402,20 +1315,20 @@ const Editor: React.FC = () => {
             }`}
             title="Edit skin settings"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="edit-skin-icon" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
         </div>
         
         {/* Right side - Project Manager and Import/Export */}
-        <div className="flex items-center space-x-3">
+        <div id="editor-header-buttons" className="flex items-center space-x-3">
           <ProjectManager 
             onSave={handleSave}
             hasUnsavedChanges={hasUnsavedChanges}
             showSavedMessage={showSavedMessage}
           />
-          <div className="border-l border-gray-300 dark:border-gray-600 h-5 mx-2" />
+          <div id="header-divider" className="border-l border-gray-300 dark:border-gray-600 h-5 mx-2" />
           <ImportButton onImport={handleImport} />
           <ExportButton
             skinName={skinName}
@@ -1439,13 +1352,14 @@ const Editor: React.FC = () => {
           {/* Show configuration prompt if console/device not selected */}
           {!selectedConsole || !selectedDevice ? (
             <div id="configuration-prompt" className="card animate-slide-up">
-              <div className="text-center p-8">
-                <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div id="configuration-prompt-content" className="text-center p-8">
+                <svg id="configuration-prompt-icon" className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Get Started</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Configure your skin settings to begin designing</p>
+                <h3 id="configuration-prompt-title" className="text-lg font-medium text-gray-900 dark:text-white mb-2">Get Started</h3>
+                <p id="configuration-prompt-text" className="text-gray-600 dark:text-gray-400 mb-4">Configure your skin settings to begin designing</p>
                 <button
+                  id="configure-skin-button"
                   onClick={() => setIsEditPanelOpen(true)}
                   className="btn-primary"
                 >
@@ -1464,7 +1378,7 @@ const Editor: React.FC = () => {
                   onScreenAdd={handleScreenAdd}
                 />
                 {screens.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div id="screen-list-section" className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <ScreenList
                       screens={screens}
                       onScreenDelete={handleDeleteScreen}
@@ -1560,12 +1474,13 @@ const Editor: React.FC = () => {
           <div id="canvas-section" className="card">
             <div id="canvas-header" className="flex flex-col space-y-4 mb-4">
               <div id="canvas-toolbar" className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
+                <div id="canvas-title-and-history" className="flex items-center space-x-4">
                   <h3 id="canvas-title" className="text-lg font-medium text-gray-900 dark:text-white">Design Canvas</h3>
                   
                   {/* Undo/Redo Buttons */}
-                  <div className="flex items-center space-x-1">
+                  <div id="history-buttons" className="flex items-center space-x-1">
                     <button
+                      id="undo-button"
                       onClick={handleUndo}
                       disabled={historyIndex <= 0}
                       className={`p-1.5 rounded-lg transition-all duration-200 ${
@@ -1575,11 +1490,12 @@ const Editor: React.FC = () => {
                       }`}
                       title="Undo (Cmd/Ctrl+Z)"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg id="undo-icon" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                       </svg>
                     </button>
                     <button
+                      id="redo-button"
                       onClick={handleRedo}
                       disabled={historyIndex >= history.length - 1}
                       className={`p-1.5 rounded-lg transition-all duration-200 ${
@@ -1589,7 +1505,7 @@ const Editor: React.FC = () => {
                       }`}
                       title="Redo (Cmd/Ctrl+Shift+Z)"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg id="redo-icon" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
                       </svg>
                     </button>
@@ -1598,14 +1514,14 @@ const Editor: React.FC = () => {
                 
                 {/* Grid Controls - moved into toolbar */}
                 {selectedDeviceData && (
-                  <div className="flex-shrink-0">
+                  <div id="grid-controls-container" className="flex-shrink-0">
                     <GridControls />
                   </div>
                 )}
                 
                 {/* Orientation Manager - moved from left column */}
                 {currentProject && (
-                  <div className="flex items-center">
+                  <div id="orientation-manager-container" className="flex items-center">
                     <OrientationManager
                       key={`orientation-manager-${currentProject.availableOrientations?.length || 0}-${currentProject.availableOrientations?.join(',') || 'portrait'}`}
                       availableOrientations={currentProject.availableOrientations || ['portrait']}
@@ -1657,9 +1573,9 @@ const Editor: React.FC = () => {
                 
                 {/* Orientation Image Status */}
                 {currentProject && !uploadedImage && (
-                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div id="orientation-image-status" className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <div id="orientation-image-status-content" className="flex items-center justify-between">
+                      <p id="no-image-message" className="text-sm text-gray-600 dark:text-gray-400">
                         No image for {getCurrentOrientation()} orientation
                       </p>
                       {(() => {
@@ -1668,6 +1584,7 @@ const Editor: React.FC = () => {
                         if (otherData?.backgroundImage) {
                           return (
                             <button
+                              id="copy-from-other-orientation-button"
                               onClick={async () => {
                                 try {
                                   if (otherData.backgroundImage?.url) {
@@ -1695,13 +1612,13 @@ const Editor: React.FC = () => {
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                <div className="text-center">
-                  <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div id="empty-canvas-state" className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                <div id="empty-canvas-content" className="text-center">
+                  <svg id="empty-canvas-icon" className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-lg font-medium mb-2">Configure Your Skin First</p>
-                  <p className="text-sm">Please select a console and device to begin designing</p>
+                  <p id="empty-canvas-title" className="text-lg font-medium mb-2">Configure Your Skin First</p>
+                  <p id="empty-canvas-subtitle" className="text-sm">Please select a console and device to begin designing</p>
                 </div>
               </div>
             )}
@@ -1739,21 +1656,22 @@ const Editor: React.FC = () => {
         devices={devices}
         controls={controls}
         onSkinNameChange={(newName) => {
-          console.log('🔵 Editor: onSkinNameChange called with:', newName);
-          console.log('🔵 Editor: currentProject exists?', !!currentProject);
+          console.log('🐛 Editor: onSkinNameChange called with:', newName);
+          console.log('🐛 Editor: currentProject exists?', !!currentProject);
+          console.log('🐛 Editor: current skinName state before update:', skinName);
           
           // Track the latest value to avoid stale state issues
           latestSkinData.current.name = newName;
           
           // Update local state immediately for responsive UI
           setSkinName(newName);
-          console.log('🔵 Editor: setSkinName called with:', newName);
+          console.log('🐛 Editor: setSkinName called with:', newName);
           
           // Don't save here - wait for all data to be collected
           if (currentProject) {
-            console.log('🔵 Editor: Project exists, will save all data in device callback');
+            console.log('🐛 Editor: Project exists, will save all data in device callback');
           } else {
-            console.log('🔵 Editor: No current project, waiting for device callback');
+            console.log('🐛 Editor: No current project, waiting for device callback');
           }
           // Don't create project here - wait for all data to be set
         }}
