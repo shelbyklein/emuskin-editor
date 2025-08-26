@@ -290,24 +290,74 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       const landscapeData = currentProject?.orientations?.landscape;
       
       // Add portrait background image
-      if (portraitData?.backgroundImage?.url && currentProject?.id) {
+      if (portraitData?.backgroundImage && currentProject?.id) {
+        const { url, dataURL, fileName } = portraitData.backgroundImage;
         try {
-          const response = await fetch(portraitData.backgroundImage.url);
-          const blob = await response.blob();
-          const fileName = portraitData.backgroundImage.fileName || 'portrait.png';
-          zip.file(fileName, blob);
+          let blob: Blob | null = null;
+          
+          // Try to get image from URL first, then fallback to dataURL
+          if (url && url.startsWith('blob:')) {
+            try {
+              const response = await fetch(url);
+              if (response.ok) {
+                blob = await response.blob();
+              }
+            } catch (error) {
+              console.log('Blob URL failed, trying dataURL fallback');
+            }
+          }
+          
+          // If blob URL failed or unavailable, use dataURL
+          if (!blob && dataURL) {
+            // Convert dataURL to blob
+            const response = await fetch(dataURL);
+            blob = await response.blob();
+          }
+          
+          if (blob) {
+            const imageFileName = fileName || 'portrait.png';
+            zip.file(imageFileName, blob);
+            console.log('✅ Added portrait image to export');
+          } else {
+            console.error('No valid portrait image data available for export');
+          }
         } catch (error) {
           console.error('Failed to retrieve portrait background image:', error);
         }
       }
       
-      // Add landscape background image
-      if (landscapeData?.backgroundImage?.url && currentProject?.id) {
+      // Add landscape background image  
+      if (landscapeData?.backgroundImage && currentProject?.id) {
+        const { url, dataURL, fileName } = landscapeData.backgroundImage;
         try {
-          const response = await fetch(landscapeData.backgroundImage.url);
-          const blob = await response.blob();
-          const fileName = landscapeData.backgroundImage.fileName || 'landscape.png';
-          zip.file(fileName, blob);
+          let blob: Blob | null = null;
+          
+          // Try to get image from URL first, then fallback to dataURL
+          if (url && url.startsWith('blob:')) {
+            try {
+              const response = await fetch(url);
+              if (response.ok) {
+                blob = await response.blob();
+              }
+            } catch (error) {
+              console.log('Blob URL failed, trying dataURL fallback');
+            }
+          }
+          
+          // If blob URL failed or unavailable, use dataURL
+          if (!blob && dataURL) {
+            // Convert dataURL to blob
+            const response = await fetch(dataURL);
+            blob = await response.blob();
+          }
+          
+          if (blob) {
+            const imageFileName = fileName || 'landscape.png';
+            zip.file(imageFileName, blob);
+            console.log('✅ Added landscape image to export');
+          } else {
+            console.error('No valid landscape image data available for export');
+          }
         } catch (error) {
           console.error('Failed to retrieve landscape background image:', error);
         }
@@ -320,11 +370,35 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       ];
       
       for (const control of allControls) {
-        if (control.thumbstick && 'url' in control.thumbstick && control.thumbstick.url && control.id && currentProject?.id) {
+        if (control.thumbstick && control.id && currentProject?.id) {
+          const { url, dataURL, name } = control.thumbstick;
           try {
-            const response = await fetch(control.thumbstick.url);
-            const blob = await response.blob();
-            zip.file(control.thumbstick.name, blob);
+            let blob: Blob | null = null;
+            
+            // Try to get image from URL first, then fallback to dataURL
+            if (url) {
+              try {
+                const response = await fetch(url);
+                if (response.ok) {
+                  blob = await response.blob();
+                }
+              } catch (error) {
+                console.log(`Thumbstick blob URL failed for ${control.id}, trying dataURL fallback`);
+              }
+            }
+            
+            // If URL failed or unavailable, use dataURL
+            if (!blob && dataURL) {
+              const response = await fetch(dataURL);
+              blob = await response.blob();
+            }
+            
+            if (blob && name) {
+              zip.file(name, blob);
+              console.log(`✅ Added thumbstick image ${name} to export`);
+            } else {
+              console.error(`No valid thumbstick image data for control ${control.id}`);
+            }
           } catch (error) {
             console.error(`Failed to retrieve thumbstick image for control ${control.id}:`, error);
           }

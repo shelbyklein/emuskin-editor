@@ -45,6 +45,7 @@ export interface ControlMapping {
     width: number;
     height: number;
     url?: string;
+    dataURL?: string; // For localStorage persistence
   };
   mirrorBottomScreen?: boolean; // For touchscreen controls
   locked?: boolean; // Prevents moving/resizing when true

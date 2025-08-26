@@ -173,6 +173,9 @@ const Editor: React.FC = () => {
   useEffect(() => {
     // Skip loading if we're in the middle of saving to prevent overwriting user input
     if (!currentProject || isSavingRef.current) {
+      if (isSavingRef.current) {
+        console.log('⚠️ Skipping project load - save in progress to prevent race condition');
+      }
       return;
     }
     
@@ -300,13 +303,45 @@ const Editor: React.FC = () => {
         currentProjectStructure: JSON.stringify(currentProject, null, 2)
       });
       
-      if (orientationData.backgroundImage?.url) {
-        // R2 URL available - use it directly
-        console.log('✅ Loading image from R2 URL:', orientationData.backgroundImage.url);
-        setUploadedImage({
-          file: new File([], orientationData.backgroundImage.fileName || 'image.png'),
-          url: orientationData.backgroundImage.url
-        });
+      if (orientationData.backgroundImage) {
+        const { url, dataURL, fileName } = orientationData.backgroundImage;
+        
+        // Handle image loading with async fallback logic
+        const loadImage = async () => {
+          let imageUrl = url;
+          
+          if (url && url.startsWith('blob:')) {
+            // Check if blob URL is still valid by trying to fetch it
+            try {
+              const response = await fetch(url);
+              if (!response.ok) {
+                // Blob URL expired, use dataURL instead
+                imageUrl = dataURL || null;
+                console.log('⚠️ Blob URL expired, using dataURL fallback');
+              }
+            } catch (error) {
+              // Blob URL is invalid, use dataURL
+              imageUrl = dataURL || null;
+              console.log('⚠️ Blob URL invalid, using dataURL fallback');
+            }
+          } else if (dataURL && !url) {
+            // Only dataURL available
+            imageUrl = dataURL;
+          }
+          
+          if (imageUrl) {
+            console.log('✅ Loading image:', imageUrl.startsWith('data:') ? 'from dataURL' : 'from URL');
+            setUploadedImage({
+              file: new File([], fileName || 'image.png'),
+              url: imageUrl
+            });
+          } else {
+            console.log('❌ No valid image URL or dataURL found');
+            setUploadedImage(null);
+          }
+        };
+        
+        loadImage();
       } else {
         // No image stored
         console.log('❌ No background image found for', getCurrentOrientation());
@@ -439,7 +474,7 @@ const Editor: React.FC = () => {
       console.log('Marking project as configured:', currentProject.id);
       saveProject({ hasBeenConfigured: true });
     }
-  }, [currentProject, currentProject?.currentOrientation, getOrientationData, devices, consoles]);
+  }, [currentProject, currentProject?.currentOrientation, devices, consoles]);
   
   // Watch for project name and identifier changes to update UI immediately
   useEffect(() => {
@@ -477,13 +512,33 @@ const Editor: React.FC = () => {
       const imageMap: { [controlId: string]: string } = {};
       const fileMap: { [controlId: string]: File } = {};
       
-      // Check controls for R2 URLs
+      // Check controls for thumbstick images with fallback handling
       const orientationData = getOrientationData();
       if (orientationData?.controls) {
         for (const control of orientationData.controls) {
-          if (control.thumbstick?.url && control.id) {
-            imageMap[control.id] = control.thumbstick.url;
-            fileMap[control.id] = new File([], control.thumbstick.name || 'thumbstick.png');
+          if (control.thumbstick && control.id) {
+            const { url, dataURL, name } = control.thumbstick;
+            
+            // For thumbstick images, we'll use a simpler approach to avoid async/await issues
+            // If we have a blob URL, we'll assume it might be invalid and prefer dataURL if available
+            let imageUrl = url;
+            
+            // If we have both URL and dataURL, and URL is a blob, prefer dataURL for persistence
+            if (dataURL && url && url.startsWith('blob:')) {
+              imageUrl = dataURL;
+              console.log(`Using dataURL for thumbstick ${control.id} (blob URL may expire)`);
+            } else if (dataURL && !url) {
+              // Only dataURL available
+              imageUrl = dataURL;
+            } else if (url) {
+              // Use the URL (could be R2 or other persistent URL)
+              imageUrl = url;
+            }
+            
+            if (imageUrl) {
+              imageMap[control.id] = imageUrl;
+              fileMap[control.id] = new File([], name || 'thumbstick.png');
+            }
           }
         }
       }
@@ -515,6 +570,7 @@ const Editor: React.FC = () => {
     
     // Set saving flag to prevent state reset
     isSavingRef.current = true;
+    console.log('🔒 Setting save flag to prevent race condition');
     
     // If no current project, create one with all the current data
     if (!currentProject) {
@@ -626,6 +682,7 @@ const Editor: React.FC = () => {
     
     // Reset saving flag immediately after save completes
     isSavingRef.current = false;
+    console.log('🔓 Reset save flag - save complete');
     
     // Log what's currently in the database vs UI state
     console.log('=== DATABASE STATE AFTER SAVE ===');
@@ -1153,8 +1210,9 @@ const Editor: React.FC = () => {
           url = publicUrl;
           console.log('Thumbstick image uploaded to R2:', url);
         } else {
-          console.error('R2 storage is required for thumbstick uploads');
-          throw new Error('R2 storage is not enabled');
+          // For localStorage projects, use blob URL for display
+          url = URL.createObjectURL(file);
+          console.log('Using blob URL for thumbstick image:', url);
         }
         
         // Update thumbstick images state
@@ -1169,6 +1227,12 @@ const Editor: React.FC = () => {
           [control.id!]: file
         }));
         
+        // Convert to dataURL for localStorage storage if not using R2
+        let dataURL: string | undefined;
+        if (!isR2Enabled()) {
+          dataURL = await fileToDataURL(file);
+        }
+        
         // Update the control with thumbstick info
         const updatedControls = [...controls];
         updatedControls[controlIndex] = {
@@ -1176,8 +1240,9 @@ const Editor: React.FC = () => {
           thumbstick: {
             name: file.name,
             width: control.thumbstick?.width || 85,
-            url: isR2Enabled() ? url : undefined,
-            height: control.thumbstick?.height || 87
+            height: control.thumbstick?.height || 87,
+            url: isR2Enabled() ? url : url, // Store blob URL for display
+            dataURL: isR2Enabled() ? undefined : dataURL // Store dataURL for persistence
           }
         };
         setControls(updatedControls);
@@ -1286,43 +1351,6 @@ const Editor: React.FC = () => {
     }
   }, [location.state, devices]);
 
-  // Handle template data from navigation state
-  useEffect(() => {
-    const templateData = location.state?.templateData;
-    if (templateData && consoles.length > 0 && devices.length > 0) {
-      // Find the console based on gameTypeIdentifier
-      const console = consoles.find(c => c.gameTypeIdentifier === templateData.gameTypeIdentifier);
-      if (console) {
-        // Set the skin data
-        setSkinName(templateData.name);
-        setSkinIdentifier(templateData.identifier);
-        setSelectedConsole(console.shortName);
-        setSelectedConsoleData(console);
-        
-        // Find a default device (using iPhone 16 Pro Max as default)
-        const defaultDevice = devices.find(d => d.model === 'iPhone 16 Pro Max') || devices[0];
-        if (defaultDevice) {
-          setSelectedDevice(defaultDevice.model);
-          setSelectedDeviceData(defaultDevice);
-        }
-        
-        // Set controls and screens
-        setControls(templateData.items || []);
-        setScreens(templateData.screens || []);
-        
-        // Set menu insets if present
-        if (templateData.menuInsets?.bottom) {
-          setMenuInsetsEnabled(true);
-          setMenuInsetsBottom(templateData.menuInsets.bottom);
-        }
-        
-        // Don't save automatically - user must click save button
-        // Template data is already loaded into state
-      }
-      // Clear the state to prevent re-loading on refresh
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, consoles, devices, saveOrientationData]);
 
   // Add keyboard shortcut for save (Cmd/Ctrl + S)
   useEffect(() => {

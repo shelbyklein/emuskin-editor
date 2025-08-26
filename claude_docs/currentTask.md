@@ -338,12 +338,9 @@
 - ✅ Fixed grid size dropdown text color in dark mode
   - Added proper text color classes (text-gray-900 dark:text-gray-100)
   - Grid size options now properly visible in both light and dark themes
-- ✅ Implemented template selection feature
-  - Created /public/assets/templates/ directory with 8 console templates
-  - Added "Start with a template:" section to home page for authenticated users
-  - Each template includes pre-configured control layouts and screen positions
-  - Templates load automatically when selected, navigating to editor with data
-  - Quick start workflow significantly improves new user experience
+- ✅ Implemented template selection feature - **REMOVED**
+  - Templates have been removed to simplify the application
+  - Users now start with empty skins and build from scratch
 - ✅ Fixed menu insets not appearing in JSON preview
   - Issue: Menu insets changes were only updating local state, not project context
   - Updated MenuInsetsPanel callbacks to save changes via saveOrientationData
@@ -390,11 +387,6 @@
   - Projects now auto-select correct device based on mappingSize
   - Toast notification shows when device is changed
   - Prevents skins from always loading at iPhone 16 Pro Max size
-- ✅ Fixed template visibility for new users
-  - Templates now show for all authenticated users
-  - Moved template section outside userProjects.length condition
-  - New users see templates immediately after signing in
-  - Empty state message updated to reference templates
 - ✅ Implemented skin testing feature
   - Added "Test" button to project cards on home page
   - Created fullscreen TestSkin component for interactive testing
@@ -404,15 +396,8 @@
   - Fullscreen mode support with toggle button
   - Orientation switching for projects with both layouts
   - Exit button and project info display
-- ✅ Fixed missing save button when starting with template
-  - Issue: Race condition where navigation happened before project was fully loaded
-  - Solution: Added await loadProject() after createProject() in handleTemplateSelect
-  - Save button now appears correctly when starting with a template
-- ✅ Fixed controls disappearing after saving template-based projects
-  - Issue: handleSave was missing menuInsetsLeft and menuInsetsRight in orientation data
-  - Also missing saveOrientationData dependency in template loading effect
-  - Solution: Added all menu inset values to save data and fixed dependency array
-  - Controls now persist correctly after saving
+- ✅ **REMOVED**: Template-related fixes no longer needed
+  - Templates have been removed from the application
 - ✅ Fixed TestSkin component crash when clicking "Test" button
   - Issue: TypeError trying to access screen.frame.x when screens use outputFrame
   - Solution: Updated screen rendering to use screen.outputFrame instead of screen.frame
