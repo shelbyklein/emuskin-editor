@@ -1,8 +1,6 @@
-// Hybrid Project Context - Uses API for authenticated users, localStorage for non-authenticated
+// Project Context - Uses only localStorage for all project storage
 import React, { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
-import { useAuth } from './AuthContext';
-import { projectsAPI, isApiAvailable } from '../utils/api';
 import { 
   saveProjectToLocalStorage, 
   loadProjectFromLocalStorage, 
@@ -10,6 +8,7 @@ import {
   deleteLocalStorageProject,
   isLocalStorageAvailable 
 } from '../utils/localStorageProjects';
+import { fileToDataURL } from '../utils/imageUtils';
 import { useToast } from './ToastContext';
 
 interface OrientationData {
@@ -19,6 +18,7 @@ interface OrientationData {
     fileName?: string;
     url: string | null;
     hasStoredImage?: boolean;
+    dataURL?: string; // For localStorage persistence
   } | null;
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
@@ -41,9 +41,7 @@ interface Project {
   currentOrientation?: 'portrait' | 'landscape';
   hasBeenConfigured?: boolean;
   lastModified: number;
-  userId?: string;
   createdAt?: number;
-  isLocal?: boolean; // Flag to indicate if project is stored locally
 }
 
 interface ProjectContextType {
@@ -62,7 +60,6 @@ interface ProjectContextType {
   saveOrientationData: (data: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => Promise<void>;
   saveProjectWithOrientation: (projectUpdates: Partial<Project>, orientationData?: Partial<OrientationData>, orientation?: 'portrait' | 'landscape') => Promise<void>;
   isLoading: boolean;
-  migrateLocalProjectsToCloud: () => Promise<number>; // Returns number of migrated projects
 }
 
 const defaultOrientationData: OrientationData = {
@@ -93,7 +90,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, isAuthenticated } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
 
   // Load consoles and devices data
@@ -121,17 +117,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     loadData();
   }, []);
 
-  // Load projects based on authentication status
+  // Load projects from localStorage
   useEffect(() => {
     const loadProjects = async () => {
       setIsLoading(true);
       try {
-        if (isAuthenticated && isApiAvailable()) {
-          // Load from API for authenticated users
-          const apiProjects = await projectsAPI.getProjects();
-          setProjects(apiProjects);
-        } else if (!isAuthenticated && isLocalStorageAvailable()) {
-          // Load from localStorage for non-authenticated users
+        if (isLocalStorageAvailable()) {
           const localProjects = getAllLocalStorageProjects();
           setProjects(localProjects);
         } else {
@@ -140,19 +131,13 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       } catch (error) {
         console.error('Failed to load projects:', error);
         showError('Failed to load projects');
-        
-        // Fallback to localStorage if API fails
-        if (!isAuthenticated && isLocalStorageAvailable()) {
-          const localProjects = getAllLocalStorageProjects();
-          setProjects(localProjects);
-        }
       } finally {
         setIsLoading(false);
       }
     };
 
     loadProjects();
-  }, [isAuthenticated, showError]);
+  }, [showError]);
 
   const normalizeProject = (project: any): Project => {
     // Ensure both id and _id exist
@@ -184,36 +169,18 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         ...initialData
       };
 
-      if (isAuthenticated && isApiAvailable()) {
-        // Create in API for authenticated users
-        const createdProject = await projectsAPI.createProject({
-          ...newProject,
-          userId: user?.id || user?.email
-        });
-        const normalized = normalizeProject(createdProject);
-        setProjects(prev => [...prev, normalized]);
-        setCurrentProject(normalized);
-        return normalized.id;
-      } else {
-        // Create in localStorage for non-authenticated users
-        newProject.isLocal = true;
-        saveProjectToLocalStorage(newProject);
-        setProjects(prev => [...prev, newProject]);
-        setCurrentProject(newProject);
-        
-        // Show warning about local storage
-        if (!isAuthenticated) {
-          showWarning('Project saved locally. Sign in to sync across devices.');
-        }
-        
-        return newProject.id;
-      }
+      // Save to localStorage
+      saveProjectToLocalStorage(newProject);
+      setProjects(prev => [...prev, newProject]);
+      setCurrentProject(newProject);
+      
+      return newProject.id;
     } catch (error) {
       console.error('Failed to create project:', error);
       showError('Failed to create project');
       throw error;
     }
-  }, [isAuthenticated, user, showError, showWarning]);
+  }, [showError]);
 
   const loadProject = useCallback(async (id: string): Promise<void> => {
     if (!id) {
@@ -223,15 +190,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      let project: Project | null = null;
-
-      if (isAuthenticated && isApiAvailable()) {
-        // Load from API for authenticated users
-        project = await projectsAPI.getProject(id);
-      } else {
-        // Load from localStorage
-        project = loadProjectFromLocalStorage(id);
-      }
+      const project = loadProjectFromLocalStorage(id);
 
       if (project) {
         const normalized = normalizeProject(project);
@@ -254,7 +213,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, showError]);
+  }, [showError]);
 
   const saveProject = useCallback(async (updates: Partial<Project>): Promise<void> => {
     if (!currentProject) {
@@ -269,18 +228,10 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         lastModified: Date.now()
       };
 
-      if (isAuthenticated && isApiAvailable() && !currentProject.isLocal) {
-        // Save to API for authenticated users (non-local projects)
-        const savedProject = await projectsAPI.updateProject(currentProject.id, updatedProject);
-        const normalized = normalizeProject(savedProject);
-        setCurrentProject(normalized);
-        setProjects(prev => prev.map(p => p.id === normalized.id ? normalized : p));
-      } else {
-        // Save to localStorage
-        saveProjectToLocalStorage(updatedProject);
-        setCurrentProject(updatedProject);
-        setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-      }
+      // Save to localStorage
+      saveProjectToLocalStorage(updatedProject);
+      setCurrentProject(updatedProject);
+      setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
 
       showSuccess('Project saved');
     } catch (error) {
@@ -288,7 +239,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       showError('Failed to save project');
       throw error;
     }
-  }, [currentProject, isAuthenticated, showError, showSuccess]);
+  }, [currentProject, showError, showSuccess]);
 
   const deleteProject = useCallback(async (id: string): Promise<void> => {
     if (!id) {
@@ -297,16 +248,9 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     }
 
     try {
-      const projectToDelete = projects.find(p => p.id === id);
+      // Delete from localStorage
+      deleteLocalStorageProject(id);
       
-      if (projectToDelete?.isLocal || !isAuthenticated || !isApiAvailable()) {
-        // Delete from localStorage
-        deleteLocalStorageProject(id);
-      } else {
-        // Delete from API
-        await projectsAPI.deleteProject(id);
-      }
-
       setProjects(prev => prev.filter(p => p.id !== id));
       if (currentProject?.id === id) {
         setCurrentProject(null);
@@ -318,50 +262,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       showError('Failed to delete project');
       throw error;
     }
-  }, [projects, currentProject, isAuthenticated, showError, showSuccess]);
+  }, [currentProject, showError, showSuccess]);
 
-  // Migrate local projects to cloud when user logs in
-  const migrateLocalProjectsToCloud = useCallback(async (): Promise<number> => {
-    if (!isAuthenticated || !isApiAvailable()) {
-      return 0;
-    }
-
-    try {
-      const localProjects = getAllLocalStorageProjects();
-      let migratedCount = 0;
-
-      for (const localProject of localProjects) {
-        try {
-          // Create project in API
-          const cloudProject = await projectsAPI.createProject({
-            ...localProject,
-            userId: user?.id || user?.email,
-            isLocal: undefined // Remove local flag
-          });
-
-          // Delete from localStorage after successful migration
-          deleteLocalStorageProject(localProject.id);
-          migratedCount++;
-        } catch (error) {
-          console.error(`Failed to migrate project ${localProject.name}:`, error);
-        }
-      }
-
-      // Reload projects from API
-      const apiProjects = await projectsAPI.getProjects();
-      setProjects(apiProjects);
-
-      if (migratedCount > 0) {
-        showSuccess(`Migrated ${migratedCount} project${migratedCount > 1 ? 's' : ''} to cloud`);
-      }
-
-      return migratedCount;
-    } catch (error) {
-      console.error('Failed to migrate projects:', error);
-      showError('Failed to migrate projects to cloud');
-      return 0;
-    }
-  }, [isAuthenticated, user, showError, showSuccess]);
 
   // Implement remaining methods (saveProjectImage, storeTemporaryImage, etc.)
   // These remain largely the same as the original implementation
@@ -435,11 +337,32 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   }, [currentProject, getCurrentOrientation, getOrientationData, saveProject]);
 
   const saveProjectImage = useCallback(async (file: File, orientation?: 'portrait' | 'landscape'): Promise<void> => {
-    // Implementation would handle both R2 upload for authenticated users
-    // and IndexedDB storage for non-authenticated users
-    // For now, this is a placeholder
-    showWarning('Image upload implementation needed');
-  }, [showWarning]);
+    if (!currentProject) return;
+    
+    try {
+      // Convert file to data URL for localStorage storage
+      const dataURL = await fileToDataURL(file);
+      const targetOrientation = orientation || getCurrentOrientation();
+      
+      // Update the background image in orientation data
+      const orientationData = getOrientationData(targetOrientation) || defaultOrientationData;
+      const updatedOrientationData = {
+        ...orientationData,
+        backgroundImage: {
+          fileName: file.name,
+          url: URL.createObjectURL(file), // Blob URL for immediate display
+          hasStoredImage: true,
+          dataURL // Store the data URL for persistence
+        }
+      };
+      
+      await saveOrientationData(updatedOrientationData, targetOrientation);
+      showSuccess('Image saved successfully');
+    } catch (error) {
+      console.error('Failed to save image:', error);
+      showError('Failed to save image');
+    }
+  }, [currentProject, getCurrentOrientation, getOrientationData, saveOrientationData, showSuccess, showError]);
 
   const storeTemporaryImage = useCallback(async (file: File, orientation?: 'portrait' | 'landscape'): Promise<string> => {
     // Create a temporary URL for the image
@@ -462,7 +385,6 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     saveOrientationData,
     saveProjectWithOrientation,
     isLoading,
-    migrateLocalProjectsToCloud
   };
 
   return (

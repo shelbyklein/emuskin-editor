@@ -1,14 +1,3 @@
 {
-  "devCommand": "vite --port $PORT --host",
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/projects/:id",
-      "destination": "/api/projects/[id]"
-    }
-  ]
+  "devCommand": "vite --port $PORT --host"
 }

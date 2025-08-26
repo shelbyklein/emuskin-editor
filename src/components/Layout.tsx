@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import AuthButton from './AuthButton';
 
 const Layout: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -61,11 +60,6 @@ const Layout: React.FC = () => {
               >
                 About
               </Link>
-              
-              {/* Authentication */}
-              <div className="ml-4">
-                <AuthButton />
-              </div>
               
               {/* Theme Toggle */}
               <button
@@ -162,11 +156,6 @@ const Layout: React.FC = () => {
               >
                 About
               </Link>
-              
-              {/* Authentication in Mobile Menu */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 px-3">
-                <AuthButton />
-              </div>
             </div>
           </div>
         )}

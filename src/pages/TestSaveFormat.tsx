@@ -1,6 +1,6 @@
 // Test page to verify minimal save format
 import React, { useState } from 'react';
-import { useProject } from '../contexts/ProjectContextHybrid';
+import { useProject } from '../contexts/ProjectContext';
 
 const TestSaveFormat: React.FC = () => {
   const { projects, createProject, saveOrientationData } = useProject();

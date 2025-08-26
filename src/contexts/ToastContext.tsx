@@ -1,5 +1,5 @@
 // Toast context for managing toast notifications globally
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { ToastType } from '../components/Toast';
 import ToastContainer from '../components/ToastContainer';
 
@@ -34,9 +34,12 @@ interface ToastProviderProps {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  // Counter to ensure unique IDs even when created at the same time
+  const toastCounterRef = useRef(0);
 
   const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3000) => {
-    const id = Date.now().toString();
+    const id = `toast_${Date.now()}_${++toastCounterRef.current}`;
     const newToast: Toast = { id, message, type, duration };
     
     setToasts((prev) => [...prev, newToast]);

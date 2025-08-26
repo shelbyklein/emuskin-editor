@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
 import { uploadImage, isR2Enabled } from '../utils/r2Client';
+import { fileToDataURL } from '../utils/imageUtils';
 import ImageUploader from '../components/ImageUploader';
 import Canvas from '../components/Canvas';
 import ControlPalette from '../components/ControlPalette';
@@ -19,8 +20,7 @@ import MenuInsetsPanel from '../components/MenuInsetsPanel';
 import ConsoleIcon from '../components/ConsoleIcon';
 import SkinEditPanel from '../components/SkinEditPanel';
 import { useEditor } from '../contexts/EditorContext';
-import { useProject } from '../contexts/ProjectContextHybrid';
-import { useAuth } from '../contexts/AuthContext';
+import { useProject } from '../contexts/ProjectContext';
 import { useToast } from '../contexts/ToastContext';
 // import { useAutosave } from '../hooks/useAutosave'; // Autosave disabled - using explicit saves
 
@@ -76,7 +76,6 @@ const Editor: React.FC = () => {
     saveOrientationData,
     saveProjectWithOrientation
   } = useProject();
-  const { user } = useAuth();
   const { showError, showWarning, showInfo } = useToast();
   
   // Wrapper to handle async saves without blocking UI
@@ -367,14 +366,20 @@ const Editor: React.FC = () => {
           }
         }
       }
+    } else if (currentProject.device && devices.length === 0) {
+      // Devices not loaded yet - this useEffect will run again once devices load
+      console.log('Waiting for devices to load before setting device selection');
+      return;
     } else if (currentProject.device) {
-      // No devices loaded yet, just set the stored device
+      // Device stored but devices loaded - set the stored device  
       setSelectedDevice(currentProject.device.model);
       setSelectedDeviceData(currentProject.device);
     }
     
-    if (currentProject.console) {
+    if (currentProject.console && consoles.length > 0) {
+      const consoleData = consoles.find(c => c.shortName === currentProject.console.shortName) || currentProject.console;
       setSelectedConsole(currentProject.console.shortName);
+      setSelectedConsoleData(consoleData);
     }
     
     // Load thumbstick images
@@ -408,7 +413,7 @@ const Editor: React.FC = () => {
       console.log('Marking project as configured:', currentProject.id);
       saveProject({ hasBeenConfigured: true });
     }
-  }, [currentProject, currentProject?.currentOrientation, getOrientationData]);
+  }, [currentProject, currentProject?.currentOrientation, getOrientationData, devices, consoles]);
   
   // Watch for project name and identifier changes to update UI immediately
   useEffect(() => {
@@ -487,12 +492,35 @@ const Editor: React.FC = () => {
     
     // If no current project, create one with all the current data
     if (!currentProject) {
-      // Create project with current form data - use state values directly
+      // Create project with current form data AND current orientation data to prevent loss
+      const currentOrientationData = {
+        controls,
+        screens,
+        menuInsetsEnabled,
+        menuInsetsBottom,
+        menuInsetsLeft,
+        menuInsetsRight,
+        backgroundImage: uploadedImage ? {
+          fileName: uploadedImage.file.name,
+          url: null, // URL will be set when saveProjectImage completes
+          hasStoredImage: true
+        } : null
+      };
+      
+      console.log('Creating project with current orientation data:', {
+        numControls: currentOrientationData.controls.length,
+        numScreens: currentOrientationData.screens.length
+      });
+      
       createProject(skinName || 'Untitled Skin', {
         identifier: skinIdentifier || 'com.playcase.default.skin',
         console: selectedConsoleData,
         device: selectedDeviceData,
-        hasBeenConfigured: !!(selectedConsoleData && selectedDeviceData)
+        hasBeenConfigured: !!(selectedConsoleData && selectedDeviceData),
+        orientations: {
+          portrait: getCurrentOrientation() === 'portrait' ? currentOrientationData : { controls: [], screens: [], backgroundImage: null, menuInsetsEnabled: false, menuInsetsBottom: 0, menuInsetsLeft: 0, menuInsetsRight: 0 },
+          landscape: getCurrentOrientation() === 'landscape' ? currentOrientationData : { controls: [], screens: [], backgroundImage: null, menuInsetsEnabled: false, menuInsetsBottom: 0, menuInsetsLeft: 0, menuInsetsRight: 0 }
+        }
       });
       
       // Mark that we need to save the image after project creation
@@ -503,22 +531,6 @@ const Editor: React.FC = () => {
           orientation: getCurrentOrientation()
         };
       }
-      
-      // Immediately save orientation data with image metadata
-      saveOrientationDataAsync({
-        controls,
-        screens,
-        menuInsetsEnabled,
-        menuInsetsBottom,
-        menuInsetsLeft,
-        menuInsetsRight,
-        // Include backgroundImage metadata so it can be loaded later
-        backgroundImage: uploadedImage ? {
-          fileName: uploadedImage.file.name,
-          url: null, // URL will be set when saveProjectImage completes
-          hasStoredImage: true
-        } : null
-      });
     } else {
       // Save project and orientation data together atomically
       const projectData = {
@@ -587,13 +599,20 @@ const Editor: React.FC = () => {
     // Reset saving flag immediately after save completes
     isSavingRef.current = false;
     
-    // Log what's currently in the database
+    // Log what's currently in the database vs UI state
     console.log('=== DATABASE STATE AFTER SAVE ===');
     const currentOrientationData = getOrientationData();
     console.log('Current orientation data in DB:', currentOrientationData);
     console.log('Background image URL:', currentOrientationData?.backgroundImage?.url);
-    console.log('Total controls:', currentOrientationData?.controls?.length || 0);
-    console.log('Total screens:', currentOrientationData?.screens?.length || 0);
+    console.log('Total controls in DB:', currentOrientationData?.controls?.length || 0);
+    console.log('Total screens in DB:', currentOrientationData?.screens?.length || 0);
+    
+    // Also log the UI state for comparison
+    console.log('=== UI STATE FOR COMPARISON ===');
+    console.log('Total controls in UI state:', controls.length);
+    console.log('Total screens in UI state:', screens.length);
+    console.log('Controls in UI state:', controls);
+    console.log('Screens in UI state:', screens);
     
     // Hide saved message after 3 seconds
     setTimeout(() => {
@@ -788,31 +807,29 @@ const Editor: React.FC = () => {
       let imageUrl: string;
       
       if (isR2Enabled()) {
-        if (!user?.email) {
-          console.error('User must be logged in to upload images');
-          throw new Error('User authentication required');
-        }
-        // Upload to R2
+        // Upload to R2 if enabled and user is authenticated
         console.log('Uploading image to R2...');
         const { publicUrl } = await uploadImage(
           currentProject.id,
           file,
-          user.email,
+          'user@example.com', // Since we removed auth, use placeholder
           'background',
           getCurrentOrientation()
         );
         imageUrl = publicUrl;
         console.log('Image uploaded to R2:', imageUrl);
       } else {
-        console.error('R2 storage is required for image uploads');
-        throw new Error('R2 storage is not enabled');
+        // Use local blob URL for localStorage-based projects
+        console.log('Using local blob URL for image storage');
+        imageUrl = URL.createObjectURL(file);
+        console.log('Image stored as blob URL:', imageUrl);
       }
       
       // Set the uploaded image for display
       setUploadedImage({ file, url: imageUrl });
       
       // Don't save automatically - user must click save button
-      // The image is already uploaded and ready to be saved when user clicks save
+      // The image is already stored and ready to be saved when user clicks save
       
       console.log('Image upload completed successfully');
     } catch (error) {

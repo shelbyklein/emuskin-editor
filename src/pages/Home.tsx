@@ -1,39 +1,21 @@
 // Home page displaying all saved skin projects
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProject } from '../contexts/ProjectContextHybrid';
-import { useAuth } from '../contexts/AuthContext';
+import { useProject } from '../contexts/ProjectContext';
 import { useToast } from '../contexts/ToastContext';
 import ImportButton from '../components/ImportButton';
-import LoginModal from '../components/LoginModal';
-import MigrationDialog from '../components/MigrationDialog';
 import ConsoleIcon from '../components/ConsoleIcon';
 import { ControlMapping, ScreenMapping } from '../types';
-import { DatabaseDebugger } from '../components/DatabaseDebugger';
-import { getAllLocalStorageProjects } from '../utils/localStorageProjects';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { projects, loadProject, deleteProject, createProject, clearProject, isLoading: isProjectsLoading } = useProject();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { showError } = useToast();
   const [projectImages, setProjectImages] = useState<{ [key: string]: string }>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   
-  // Use projects directly from the API - no filtering needed
+  // Use projects directly - no filtering needed
   const userProjects = projects;
-  
-  // Check for local projects when user logs in
-  useEffect(() => {
-    if (isAuthenticated && !isAuthLoading) {
-      const localProjects = getAllLocalStorageProjects();
-      if (localProjects.length > 0) {
-        setShowMigrationDialog(true);
-      }
-    }
-  }, [isAuthenticated, isAuthLoading]);
 
   // Load preview images for projects
   useEffect(() => {
@@ -179,9 +161,7 @@ const Home: React.FC = () => {
                 Emulator Skin Generator
               </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                {isAuthenticated && user 
-                  ? `Welcome back, ${user.displayName}!` 
-                  : 'Create custom skins for Delta and Gamma emulators'}
+                Create custom skins for Delta and Gamma emulators
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -203,7 +183,7 @@ const Home: React.FC = () => {
 
       {/* Projects Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isAuthLoading || isProjectsLoading ? (
+        {isProjectsLoading ? (
           <div className="text-center py-16">
             <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading...</p>
@@ -211,74 +191,7 @@ const Home: React.FC = () => {
         ) : (
           <div>
             
-            {/* Non-authenticated welcome message */}
-            {!isAuthenticated && (
-              <div className="mb-8 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6">
-                <div className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                      You're using local storage
-                    </h3>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
-                      Your projects are saved in this browser only. Sign in to sync across devices and never lose your work.
-                    </p>
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => setShowLoginModal(true)}
-                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg text-sm transition-colors"
-                      >
-                        Sign in to save to cloud
-                      </button>
-                      <button
-                        onClick={handleCreateNew}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg text-sm transition-colors"
-                      >
-                        Continue without account
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* User Profile Section */}
-            {isAuthenticated && user && (
-              <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {user.avatar ? (
-                      <img 
-                        src={user.avatar} 
-                        alt={user.displayName}
-                        className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-700"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-medium">
-                        {user.displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {user.displayName}
-                      </h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {userProjects.length} {userProjects.length === 1 ? 'project' : 'projects'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 dark:text-gray-500">
-                      Member since today
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Template Section - Always show for authenticated users */}
+            {/* Template Section */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Start with a template:</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -367,25 +280,6 @@ const Home: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* Storage Type Badge */}
-                  <div className="absolute top-2 left-2">
-                    {project.isLocal ? (
-                      <div className="bg-yellow-500 text-yellow-900 px-2 py-1 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-md">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                        </svg>
-                        <span>Local</span>
-                      </div>
-                    ) : (
-                      <div className="bg-green-500 text-green-900 px-2 py-1 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-md">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
-                        </svg>
-                        <span>Cloud</span>
-                      </div>
-                    )}
-                  </div>
-                  
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <span className="text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -458,21 +352,6 @@ const Home: React.FC = () => {
           </div>
         )}
       </div>
-      
-      {/* Login Modal */}
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
-      />
-      
-      {/* Migration Dialog */}
-      <MigrationDialog
-        isOpen={showMigrationDialog}
-        onClose={() => setShowMigrationDialog(false)}
-      />
-      
-      {/* Database Debugger */}
-      <DatabaseDebugger />
     </div>
   );
 };

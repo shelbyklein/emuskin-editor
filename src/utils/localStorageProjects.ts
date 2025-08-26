@@ -1,5 +1,6 @@
 // LocalStorage utilities for non-authenticated users
 import { ControlMapping, Device, Console, ScreenMapping } from '../types';
+import { dataURLToBlob } from './imageUtils';
 
 const STORAGE_PREFIX = 'emuskin_local_project_';
 const PROJECTS_INDEX_KEY = 'emuskin_local_projects_index';
@@ -11,6 +12,7 @@ interface OrientationData {
     fileName?: string;
     url: string | null;
     hasStoredImage?: boolean;
+    dataURL?: string; // For localStorage persistence
   } | null;
   menuInsetsEnabled?: boolean;
   menuInsetsBottom?: number;
@@ -77,6 +79,37 @@ export const saveProjectToLocalStorage = (project: LocalProject): void => {
   }
 };
 
+// Convert data URLs back to blob URLs for display
+const restoreBlobURLs = (project: LocalProject): LocalProject => {
+  if (!project.orientations) return project;
+  
+  const restoredProject = { ...project };
+  
+  // Restore blob URLs for background images
+  ['portrait', 'landscape'].forEach(orientation => {
+    const orientationKey = orientation as 'portrait' | 'landscape';
+    const orientationData = restoredProject.orientations?.[orientationKey];
+    
+    if (orientationData?.backgroundImage?.dataURL) {
+      // Convert data URL back to blob URL for display
+      try {
+        dataURLToBlob(orientationData.backgroundImage.dataURL).then(blob => {
+          const blobURL = URL.createObjectURL(blob);
+          if (orientationData.backgroundImage) {
+            orientationData.backgroundImage.url = blobURL;
+          }
+        }).catch(error => {
+          console.error('Failed to restore blob URL:', error);
+        });
+      } catch (error) {
+        console.error('Failed to process data URL:', error);
+      }
+    }
+  });
+  
+  return restoredProject;
+};
+
 // Load a specific project from localStorage
 export const loadProjectFromLocalStorage = (id: string): LocalProject | null => {
   try {
@@ -85,7 +118,8 @@ export const loadProjectFromLocalStorage = (id: string): LocalProject | null => 
     if (!projectJson) return null;
     
     const project = JSON.parse(projectJson);
-    return { ...project, isLocal: true };
+    const restoredProject = restoreBlobURLs(project);
+    return { ...restoredProject, isLocal: true };
   } catch (error) {
     console.error('Failed to load project from localStorage:', error);
     return null;

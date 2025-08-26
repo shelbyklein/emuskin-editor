@@ -200,3 +200,5 @@ Final output is a .zip renamed to .deltaskin or .gammaskin containing:
 - JSON configuration following default_config.json structure
 - All uploaded image assets
 - Control mappings in the items array
+
+- the app does not need to be started and stopped and is hosted on localhost:8008

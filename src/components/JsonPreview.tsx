@@ -1,7 +1,7 @@
 // JSON Preview component for displaying generated skin configuration
 import React, { useState, useMemo } from 'react';
 import { Console, Device, ControlMapping, ScreenMapping } from '../types';
-import { useProject } from '../contexts/ProjectContextHybrid';
+import { useProject } from '../contexts/ProjectContext';
 
 interface JsonPreviewProps {
   skinName: string;
@@ -20,11 +20,11 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
   skinIdentifier,
   selectedConsole,
   selectedDevice,
-  controls: _controls,
-  screens: _screens,
-  backgroundImageFile: _backgroundImageFile,
-  menuInsetsEnabled: _menuInsetsEnabled,
-  menuInsetsBottom: _menuInsetsBottom
+  controls,
+  screens,
+  backgroundImageFile,
+  menuInsetsEnabled,
+  menuInsetsBottom
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -69,8 +69,8 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
     // Helper function to create orientation data
     const createOrientationData = (orientationData: any, isLandscape: boolean = false) => {
       const orientation: any = {
-        assets: orientationData?.backgroundImage ? { medium: orientationData.backgroundImage.fileName || 'background.png' } : {},
-        items: (orientationData?.controls || []).map((control: ControlMapping) => {
+        assets: backgroundImageFile ? { medium: backgroundImageFile.name || 'background.png' } : {},
+        items: (controls || []).map((control: ControlMapping) => {
           const item: any = {};
           
           // Add thumbstick if present (must come before inputs)
@@ -103,7 +103,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
           
           return item;
         }),
-        screens: (orientationData?.screens || []).map((screen: ScreenMapping) => {
+        screens: (screens || []).map((screen: ScreenMapping) => {
           const screenObj: any = {
             outputFrame: {
               x: screen.outputFrame?.x || 0,
@@ -138,21 +138,14 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       };
       
       // Add menuInsets if enabled
-      const insetsEnabled = orientationData?.menuInsetsEnabled || false;
-      if (insetsEnabled) {
+      if (menuInsetsEnabled) {
         if (isLandscape) {
-          // Landscape uses left and right
-          const insetsLeft = orientationData?.menuInsetsLeft || 0;
-          const insetsRight = orientationData?.menuInsetsRight || 0;
-          orientation.menuInsets = {
-            left: insetsLeft / 100,
-            right: insetsRight / 100
-          };
+          // Landscape uses left and right - would need additional props for this
+          // For now, skip landscape menu insets since props don't include left/right values
         } else {
           // Portrait uses bottom
-          const insetsBottom = orientationData?.menuInsetsBottom || 0;
           orientation.menuInsets = {
-            bottom: insetsBottom / 100
+            bottom: (menuInsetsBottom || 0) / 100
           };
         }
       }
@@ -160,18 +153,14 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
       return orientation;
     };
 
-    // Add portrait orientation if available
-    if (availableOrientations.includes('portrait')) {
-      config.representations.iphone.edgeToEdge.portrait = createOrientationData(portraitData, false);
-    }
+    // Add portrait orientation (always available for current view)
+    config.representations.iphone.edgeToEdge.portrait = createOrientationData(null, false);
 
-    // Add landscape orientation if available
-    if (availableOrientations.includes('landscape') && landscapeData) {
-      config.representations.iphone.edgeToEdge.landscape = createOrientationData(landscapeData, true);
-    }
+    // For now, only show current orientation data since props don't contain both orientations
+    // TODO: Update to handle both orientations when needed
 
     return config;
-  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, currentProject]);
+  }, [skinName, skinIdentifier, selectedConsole, selectedDevice, controls, screens, backgroundImageFile, menuInsetsEnabled, menuInsetsBottom]);
 
   // Format JSON with indentation
   const formattedJson = jsonConfig ? JSON.stringify(jsonConfig, null, 2) : '';
@@ -212,7 +201,7 @@ const JsonPreview: React.FC<JsonPreviewProps> = ({
           </svg>
           <span>JSON Preview</span>
           <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-            ({currentProject?.orientations?.[currentProject.currentOrientation || 'portrait']?.controls?.length || 0} controls, {currentProject?.orientations?.[currentProject.currentOrientation || 'portrait']?.screens?.length || 0} screens)
+            ({controls?.length || 0} controls, {screens?.length || 0} screens)
           </span>
         </button>
 
